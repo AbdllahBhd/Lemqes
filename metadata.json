@@ -1,0 +1,6 @@
+{
+  "name": "LEMQES",
+  "description": "Algeria's premier barber platform connecting clients and independent barbers with live queues, instant bookings, and portable barber profiles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
