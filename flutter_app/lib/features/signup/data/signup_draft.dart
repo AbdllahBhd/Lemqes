@@ -36,6 +36,14 @@ class SignupDraft {
     return 'code';
   }
 
+  /// The draft before any code was sent: the answers without the phone.
+  SignupDraft withoutPhone() => SignupDraft(
+    space: space,
+    role: role,
+    fullName: fullName,
+    businessName: businessName,
+  );
+
   Map<String, Object?> toJson() => {
     'space': space?.toDb(),
     'role': role?.toDb(),

@@ -85,6 +85,10 @@ class _CodeStepState extends ConsumerState<CodeStep> {
       if (mounted) {
         setState(() => _failure = accountFailureMessage(l10n, failure));
       }
+    } on AuthFailure catch (failure) {
+      if (mounted) {
+        setState(() => _failure = authFailureMessage(l10n, failure));
+      }
     } on IncompleteSignupDraft {
       // Signed in but the names were never saved: ask for them.
       if (mounted) context.go('/signup/credentials');
@@ -112,7 +116,15 @@ class _CodeStepState extends ConsumerState<CodeStep> {
 
   void _backToLogin() {
     ref.read(signupDraftProvider.notifier).clear();
+    ref.read(signupPasswordProvider.notifier).clear();
     context.go('/auth');
+  }
+
+  /// Back to edit the details: the number is sent again from there, so the
+  /// draft forgets it and leaving the wizard no longer resumes this step.
+  void _backToDetails() {
+    ref.read(signupDraftProvider.notifier).update((d) => d.withoutPhone());
+    context.go('/signup/credentials');
   }
 
   @override
@@ -139,7 +151,7 @@ class _CodeStepState extends ConsumerState<CodeStep> {
     return WizardStepScaffold(
       step: 4,
       title: l10n.codeStepTitle,
-      onBack: _busy ? null : () => context.go('/signup/credentials'),
+      onBack: _busy ? null : _backToDetails,
       children: [
         Text(
           l10n.codeSentTo,

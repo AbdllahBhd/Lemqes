@@ -8,6 +8,8 @@ import '../../../core/theme/theme_mode_controller.dart';
 import '../../account/data/account_providers.dart';
 import '../../account/presentation/account_failure_listener.dart';
 import '../../account/presentation/role_switch_sheet.dart';
+import '../../signup/data/signup_draft_store.dart';
+import '../../signup/presentation/signup_completion.dart';
 
 /// Material's `logout` glyph, mirrored in right-to-left layouts.
 const IconData logoutIcon = IconData(
@@ -23,6 +25,8 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
     final repo = ref.read(authRepositoryProvider);
+    final drafts = ref.read(signupDraftProvider.notifier);
+    final passwords = ref.read(signupPasswordProvider.notifier);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -46,8 +50,13 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+    if (!(confirmed ?? false)) return;
+    // Cleared first: signed out with a draft phone, the router would resume
+    // that sign-up's code step instead of showing /auth.
+    drafts.clear();
+    passwords.clear();
     // The session change sends the router to /auth.
-    if (confirmed ?? false) await repo.signOut();
+    await repo.signOut();
   }
 
   @override

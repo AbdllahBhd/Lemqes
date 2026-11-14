@@ -2,7 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/auth/data/auth_repository.dart';
 import 'package:lemqes/features/signup/data/signup_draft.dart';
+import 'package:lemqes/features/signup/data/signup_draft_store.dart';
+import 'package:lemqes/features/signup/presentation/signup_completion.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/presentation/harness.dart';
 
@@ -115,9 +118,16 @@ void main() {
     expect(h.draft!.phone, '+213550123456');
     expect(h.draft!.fullName, 'Amine Benali');
 
+    // Kept in memory only until the code is verified, never in the draft.
+    expect(h.container.read(signupPasswordProvider), isNull);
     request.complete();
     await tester.pumpAndSettle();
     expect(h.location, '/signup/code');
+    expect(h.container.read(signupPasswordProvider), 'secret123');
+    final stored = (await SharedPreferences.getInstance()).getString(
+      SignupDraftStore.prefsKey,
+    );
+    expect(stored, isNot(contains('secret123')));
   });
 
   testWidgets('PhoneAlreadyRegistered offers sign-in and reset', (

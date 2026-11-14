@@ -5,7 +5,10 @@ import 'package:lemqes/core/l10n/locale_controller.dart';
 import 'package:lemqes/core/theme/theme_mode_controller.dart';
 import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:lemqes/features/settings/presentation/settings_screen.dart';
+import 'package:lemqes/features/signup/data/signup_draft_store.dart';
+import 'package:lemqes/features/signup/presentation/signup_completion.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/presentation/harness.dart' show byKey, testAccount;
 import '../../home/presentation/home_harness.dart';
@@ -50,6 +53,25 @@ void main() {
     await tester.tap(byKey('confirmSignOut'));
     await tester.pumpAndSettle();
     verify(() => h.auth.signOut()).called(1);
+  });
+
+  testWidgets('sign-out forgets any sign-up in progress', (tester) async {
+    final h = await pump(tester);
+    h.container
+        .read(signupDraftProvider.notifier)
+        .update((d) => d.copyWith(fullName: 'Amine', phone: '+213550123456'));
+    h.container.read(signupPasswordProvider.notifier).set('secret123');
+    await tester.ensureVisible(byKey('signOut'));
+    await tester.tap(byKey('signOut'));
+    await tester.pumpAndSettle();
+    await tester.tap(byKey('confirmSignOut'));
+    await tester.pumpAndSettle();
+
+    verify(() => h.auth.signOut()).called(1);
+    expect(h.container.read(signupDraftProvider), isNull);
+    expect(h.container.read(signupPasswordProvider), isNull);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(SignupDraftStore.prefsKey), isNull);
   });
 
   testWidgets('cancelling the sign-out keeps the session', (tester) async {

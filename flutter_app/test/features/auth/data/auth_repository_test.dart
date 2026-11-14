@@ -10,7 +10,10 @@ class _MockAuth extends Mock implements GoTrueClient {}
 const _phone = '+213550123456';
 
 void main() {
-  setUpAll(() => registerFallbackValue(OtpType.sms));
+  setUpAll(() {
+    registerFallbackValue(OtpType.sms);
+    registerFallbackValue(UserAttributes());
+  });
 
   late _MockAuth auth;
   late AuthRepository repo;
@@ -208,5 +211,40 @@ void main() {
       ),
     );
     expect(repo.sendResetCode(_phone), throwsA(isA<PhoneNotRegistered>()));
+  });
+
+  group('confirmSignUpPassword', () {
+    UserAttributes? sent;
+
+    void stubUpdate(Future<UserResponse> Function() answer) =>
+        when(() => auth.updateUser(any())).thenAnswer((inv) {
+          sent = inv.positionalArguments.first as UserAttributes;
+          return answer();
+        });
+
+    test('sets the password typed last', () async {
+      stubUpdate(() async => UserResponse.fromJson({}));
+      await repo.confirmSignUpPassword('second-pass');
+      expect(sent?.password, 'second-pass');
+    });
+
+    test('the same password as the first sign-up is already set', () async {
+      stubUpdate(
+        () async => throw const AuthException(
+          'New password should be different from the old password.',
+          statusCode: '422',
+          code: 'same_password',
+        ),
+      );
+      await expectLater(repo.confirmSignUpPassword('secret123'), completes);
+    });
+
+    test('any other failure is mapped', () {
+      stubUpdate(() async => throw const SocketException('offline'));
+      expect(
+        repo.confirmSignUpPassword('secret123'),
+        throwsA(isA<NetworkFailure>()),
+      );
+    });
   });
 }

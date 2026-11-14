@@ -4,6 +4,7 @@ import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:lemqes/features/auth/data/auth_repository.dart';
 import 'package:lemqes/features/signup/data/signup_draft.dart';
+import 'package:lemqes/features/signup/presentation/signup_completion.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../auth/presentation/harness.dart';
@@ -135,6 +136,100 @@ void main() {
       ),
     ).called(1);
     expect(h.draft, isNull);
+  });
+
+  group('the password typed last wins', () {
+    // GoTrue keeps the first password when an unconfirmed number signs up
+    // again; the code step sets the last one once the code is verified.
+    testWidgets('it is set after verification, before the profile', (
+      tester,
+    ) async {
+      final calls = <String>[];
+      stubVerify(() async => calls.add('verify'));
+      when(() => auth.confirmSignUpPassword(any())).thenAnswer((_) async {
+        calls.add('password');
+      });
+      when(
+        () => account.completeSignup(
+          fullName: any(named: 'fullName'),
+          space: any(named: 'space'),
+          role: any(named: 'role'),
+          businessName: any(named: 'businessName'),
+        ),
+      ).thenAnswer((_) async {
+        calls.add('profile');
+        return testAccount;
+      });
+      final h = await pumpCode(tester);
+      h.container.read(signupPasswordProvider.notifier).set('second-pass');
+      await tester.enterText(byKey('codeField'), '123456');
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+
+      verify(() => auth.confirmSignUpPassword('second-pass')).called(1);
+      expect(calls, ['verify', 'password', 'profile']);
+      expect(h.container.read(signupPasswordProvider), isNull);
+    });
+
+    testWidgets('a failure to set it offers a retry', (tester) async {
+      stubVerify(() async {});
+      var fail = true;
+      when(() => auth.confirmSignUpPassword(any())).thenAnswer((_) async {
+        if (fail) throw const NetworkFailure();
+      });
+      final h = await pumpCode(tester);
+      h.container.read(signupPasswordProvider.notifier).set('second-pass');
+      await tester.enterText(byKey('codeField'), '123456');
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+
+      expect(find.text('Réessayer'), findsOneWidget);
+      verifyNever(
+        () => account.completeSignup(
+          fullName: any(named: 'fullName'),
+          space: any(named: 'space'),
+          role: any(named: 'role'),
+          businessName: any(named: 'businessName'),
+        ),
+      );
+
+      fail = false;
+      await tester.tap(find.text('Réessayer'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+      verify(() => auth.confirmSignUpPassword('second-pass')).called(2);
+      expect(h.draft, isNull);
+    });
+
+    testWidgets('without one (a resumed sign-up) nothing is set', (
+      tester,
+    ) async {
+      stubVerify(() async {});
+      await pumpCode(tester);
+      await tester.enterText(byKey('codeField'), '123456');
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+      verifyNever(() => auth.confirmSignUpPassword(any()));
+    });
+  });
+
+  testWidgets('going back to edit the details forgets the sent number', (
+    tester,
+  ) async {
+    final h = await pumpCode(tester);
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+
+    expect(h.location, '/signup/credentials');
+    // A later trip back to sign-in must not bounce to the code step.
+    expect(h.draft?.phone, isNull);
+    expect(h.draft?.fullName, 'Lina Haddad');
+    expect(h.draft?.businessName, 'Institut Lina');
+    expect(h.draft?.role, AppRole.salonOwner);
   });
 
   testWidgets('back to sign-in clears the draft', (tester) async {

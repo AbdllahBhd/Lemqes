@@ -10,7 +10,6 @@ import '../../../account/data/account_repository.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../auth/data/phone_number.dart';
 import '../../../auth/presentation/auth_widgets.dart';
-import '../../data/signup_draft.dart';
 import '../../data/signup_draft_store.dart';
 import '../signup_completion.dart';
 import '../signup_wizard.dart';
@@ -104,6 +103,10 @@ class _CredentialsStepState extends ConsumerState<CredentialsStep> {
         if (mounted) {
           setState(() => _failure = accountFailureMessage(l10n, failure));
         }
+      } on AuthFailure catch (failure) {
+        if (mounted) {
+          setState(() => _failure = authFailureMessage(l10n, failure));
+        }
       } on IncompleteSignupDraft {
         // Space or role is missing; the route guard normally prevents this.
         if (mounted) setState(() => _failure = l10n.errorGeneric);
@@ -136,21 +139,17 @@ class _CredentialsStepState extends ConsumerState<CredentialsStep> {
     // the code step.
     _saveNames(drafts, phone: phone);
     final auth = ref.read(authRepositoryProvider);
+    final passwords = ref.read(signupPasswordProvider.notifier);
     final router = GoRouter.of(context);
+    final password = _password.text;
     setState(() => _loading = true);
     try {
-      await auth.signUp(phone: phone, password: _password.text);
+      await auth.signUp(phone: phone, password: password);
+      passwords.set(password);
       router.go('/signup/code');
     } on AuthFailure catch (failure) {
       // No code is on its way: a restart must come back here, not to the code.
-      drafts.update(
-        (d) => SignupDraft(
-          space: d.space,
-          role: d.role,
-          fullName: d.fullName,
-          businessName: d.businessName,
-        ),
-      );
+      drafts.update((d) => d.withoutPhone());
       if (!mounted) return;
       setState(() {
         if (failure is WeakPassword) {

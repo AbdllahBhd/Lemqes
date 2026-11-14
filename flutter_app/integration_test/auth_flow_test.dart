@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Test OTP numbers only (supabase/config.toml): the code is always 123456.
 const _phone = '0550000001';
 const _code = '123456';
+const _typoPassword = 'lemqes-typo-0';
 const _firstPassword = 'lemqes-test-1';
 const _newPassword = 'lemqes-test-2';
 
@@ -43,8 +44,20 @@ void main() {
     await _tap(tester, find.byKey(const Key('primaryAction')));
     await _enter(tester, const Key('nameField'), 'Amine');
     await _enter(tester, const Key('phoneField'), _phone);
+    await _enter(tester, const Key('passwordField'), _typoPassword);
+    await _enter(tester, const Key('confirmField'), _typoPassword);
+    await _tap(tester, find.byKey(const Key('primaryAction')));
+    await _waitFor(tester, find.byKey(const Key('codeField')));
+    final typoCodeSentAt = DateTime.now();
+
+    // Back from the code step to fix the password, then sign up again: the
+    // password typed last must be the one that works (GoTrue keeps the first
+    // for an unconfirmed number; the app sets the last after verification).
+    await _tap(tester, find.byTooltip('Retour'));
+    await _enter(tester, const Key('phoneField'), _phone);
     await _enter(tester, const Key('passwordField'), _firstPassword);
     await _enter(tester, const Key('confirmField'), _firstPassword);
+    await _waitSmsInterval(typoCodeSentAt);
     await _tap(tester, find.byKey(const Key('primaryAction')));
     // Taken once the code step shows, so after GoTrue has sent the SMS.
     await _waitFor(tester, find.byKey(const Key('codeField')));
@@ -90,8 +103,7 @@ void main() {
     // Reset the password with an SMS code.
     await _tap(tester, find.byKey(const Key('forgotPassword')));
     await _enter(tester, const Key('phoneField'), _phone);
-    final wait = _smsInterval - DateTime.now().difference(signupCodeSentAt);
-    if (wait > Duration.zero) await Future<void>.delayed(wait);
+    await _waitSmsInterval(signupCodeSentAt);
     await _tap(tester, find.byKey(const Key('primaryAction')));
     await _enterCode(tester);
     await _waitFor(tester, find.byKey(const Key('confirmField')));
@@ -106,6 +118,11 @@ void main() {
     await _waitFor(tester, find.text(fr.errorInvalidCredentials));
     expect(find.byKey(const Key('tab_login')), findsOneWidget);
   });
+}
+
+Future<void> _waitSmsInterval(DateTime sentAt) async {
+  final wait = _smsInterval - DateTime.now().difference(sentAt);
+  if (wait > Duration.zero) await Future<void>.delayed(wait);
 }
 
 /// Pumps real frames until [finder] matches; the backend answers in real time

@@ -77,6 +77,19 @@ class AuthRepository {
   Future<void> setNewPassword(String password) =>
       _guard(() => _auth.updateUser(UserAttributes(password: password)));
 
+  /// Sets the password typed at the last sign-up, once its code is verified.
+  ///
+  /// Signing up again with an unconfirmed number keeps the first password,
+  /// so the one the user typed last is applied here. Unchanged, it is
+  /// already in place.
+  Future<void> confirmSignUpPassword(String password) => _guard(() async {
+    try {
+      await _auth.updateUser(UserAttributes(password: password));
+    } on AuthException catch (e) {
+      if (e.code != 'same_password') rethrow;
+    }
+  });
+
   Future<void> signOut() => _guard(() => _auth.signOut());
 
   Stream<AuthState> authStateChanges() => _auth.onAuthStateChange;

@@ -29,11 +29,28 @@ class IncompleteSignupDraft implements Exception {
   String toString() => 'IncompleteSignupDraft(missing: $missing)';
 }
 
+/// The password typed at the last sign-up request, in memory only: it must
+/// never reach the draft or any other storage. Lost on restart, which only
+/// matters if the user signed up twice before verifying.
+final signupPasswordProvider = NotifierProvider<SignupPassword, String?>(
+  SignupPassword.new,
+);
+
+class SignupPassword extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void set(String password) => state = password;
+
+  void clear() => state = null;
+}
+
 final signupCompletionProvider = NotifierProvider<SignupCompletion, void>(
   SignupCompletion.new,
 );
 
-/// Creates the profile from the draft once the phone is verified.
+/// Creates the profile from the draft once the phone is verified, after
+/// applying the password typed last (see [signupPasswordProvider]).
 ///
 /// Lives outside the widgets: verification changes the session, the router
 /// may rebuild the wizard mid-call, and the call must neither stop nor run
@@ -48,6 +65,11 @@ class SignupCompletion extends Notifier<void> {
       _running ??= _finish().whenComplete(() => _running = null);
 
   Future<void> _finish() async {
+    final password = ref.read(signupPasswordProvider);
+    if (password != null) {
+      await ref.read(authRepositoryProvider).confirmSignUpPassword(password);
+      ref.read(signupPasswordProvider.notifier).clear();
+    }
     final draft = ref.read(signupDraftProvider);
     final space = draft?.space;
     final role = draft?.role;
