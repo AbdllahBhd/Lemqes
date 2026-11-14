@@ -789,7 +789,11 @@ class _ServicesState extends ConsumerState<_Services> {
                 byKey[s.presetKey]?.name(locale) ??
                 l10n.serviceCategoryName(s.category.toDb()),
             service: s,
-            onTap: () => _edit(preset: byKey[s.presetKey], existing: s),
+            // Off while a save runs: one write at a time, and a tap must
+            // never be dropped unseen.
+            onTap: _busy
+                ? null
+                : () => _edit(preset: byKey[s.presetKey], existing: s),
           ),
         ],
         const SizedBox(height: 8),
@@ -799,7 +803,7 @@ class _ServicesState extends ConsumerState<_Services> {
             actionKey: 'dashAddService',
             icon: Icons.add,
             label: l10n.dashboardAddService,
-            onPressed: () => _add(presets),
+            onPressed: _busy ? null : () => _add(presets),
           ),
         ),
       ],
@@ -817,7 +821,7 @@ class _ServiceRow extends StatelessWidget {
 
   final String name;
   final ProService service;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

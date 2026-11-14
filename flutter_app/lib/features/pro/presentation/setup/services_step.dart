@@ -139,11 +139,13 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
               key: Key('service_${s.id}'),
               name: s.displayName(locale, byKey),
               service: s,
-              onTap: () => _edit(
-                preset: byKey[s.presetKey],
-                existing: s,
-                categories: categories,
-              ),
+              onTap: _busy
+                  ? null
+                  : () => _edit(
+                      preset: byKey[s.presetKey],
+                      existing: s,
+                      categories: categories,
+                    ),
             ),
         ],
         section(l10n.setupServicesSuggestions),
@@ -165,12 +167,20 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
                   key: Key('preset_${p.key}'),
                   label: Text(p.name(locale)),
                   selected: services.any((s) => s.presetKey == p.key),
-                  onSelected: (_) {
-                    final added = services
-                        .where((s) => s.presetKey == p.key)
-                        .firstOrNull;
-                    _edit(preset: p, existing: added, categories: categories);
-                  },
+                  // Off while a save runs: one write at a time, and a tap
+                  // must never be dropped unseen.
+                  onSelected: _busy
+                      ? null
+                      : (_) {
+                          final added = services
+                              .where((s) => s.presetKey == p.key)
+                              .firstOrNull;
+                          _edit(
+                            preset: p,
+                            existing: added,
+                            categories: categories,
+                          );
+                        },
                 ),
             ],
           ),
@@ -182,7 +192,7 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
             style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
             icon: const Icon(Icons.add),
             label: Text(l10n.setupServicesCustom),
-            onPressed: () => _edit(categories: categories),
+            onPressed: _busy ? null : () => _edit(categories: categories),
           ),
         ),
       ],
@@ -200,7 +210,7 @@ class _ServiceRow extends StatelessWidget {
 
   final String name;
   final ProService service;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

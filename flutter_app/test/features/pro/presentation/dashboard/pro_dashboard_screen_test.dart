@@ -86,6 +86,36 @@ void main() {
     expect(find.text(fr.dashboardGap('services')), findsOneWidget);
   });
 
+  testWidgets('while a service save is in flight the service actions are '
+      'visibly off', (tester) async {
+    final pros = FakeProRepository(profile: publishedBarber());
+    await pumpDashboard(tester, pros: pros);
+    final reload = Completer<ProProfile?>();
+    pros.mineScript.add(() => reload.future);
+    await scrollAndTap(tester, 'dashService_s0');
+    await tester.enterText(byKey('servicePriceField'), '700');
+    await tester.tap(byKey('serviceSave'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      tester.widget<TextButton>(byKey('dashAddService')).onPressed,
+      isNull,
+    );
+    final row = find.descendant(
+      of: byKey('dashService_s0'),
+      matching: find.byType(InkWell),
+    );
+    expect(tester.widget<InkWell>(row.first).onTap, isNull);
+
+    reload.complete(pros.profile);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextButton>(byKey('dashAddService')).onPressed,
+      isNotNull,
+    );
+  });
+
   testWidgets('removing the last service hides the profile too', (
     tester,
   ) async {

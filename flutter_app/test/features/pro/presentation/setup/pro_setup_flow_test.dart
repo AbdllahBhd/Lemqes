@@ -395,6 +395,38 @@ void main() {
       expect(h.location, '/pro/setup/hours');
     });
 
+    testWidgets('while a save is in flight the suggestions are visibly off, '
+        'then on again', (tester) async {
+      // A tap meant for the next suggestion used to be dropped silently
+      // while the previous save and its reload ran.
+      final pros = FakeProRepository(profile: barberProfile(service: false));
+      await pumpSetup(
+        tester,
+        account: proAccount(),
+        pros: pros,
+        location: '/pro/setup/services',
+      );
+      final reload = Completer<ProProfile?>();
+      pros.mineScript.add(() => reload.future);
+      await tapAndSettle(tester, 'preset_men_cut');
+      await tester.tap(byKey('serviceSave'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      FilterChip chip(String key) => tester.widget<FilterChip>(byKey(key));
+      expect(chip('preset_men_beard').onSelected, isNull);
+      expect(
+        tester.widget<TextButton>(byKey('addCustomService')).onPressed,
+        isNull,
+      );
+
+      reload.complete(pros.profile);
+      await tester.pumpAndSettle();
+      expect(chip('preset_men_beard').onSelected, isNotNull);
+      await tapAndSettle(tester, 'preset_men_beard');
+      expect(find.byType(ServiceEditor), findsOneWidget);
+    });
+
     testWidgets('a custom service needs its name', (tester) async {
       final h = await pumpSetup(
         tester,
