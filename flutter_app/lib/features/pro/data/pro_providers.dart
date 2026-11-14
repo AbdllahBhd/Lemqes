@@ -7,6 +7,7 @@ import '../../account/data/account_providers.dart';
 import 'media_storage.dart';
 import 'photo_uploader.dart';
 import 'pro_api.dart';
+import 'pro_failure.dart';
 import 'pro_models.dart';
 import 'pro_repository.dart';
 
@@ -99,9 +100,17 @@ class MyProController extends AsyncNotifier<ProProfile?> {
   }
 
   Future<void> _runOnProfile(Future<void> Function(String proId) action) {
-    final id = state.value?.id;
-    if (id == null) return Future.value();
-    return _run(() => action(id));
+    final profile = state.value;
+    // While a role switch reloads, the value is still the previous role's
+    // profile: writing through it would edit the wrong row.
+    if (profile == null || profile.kind != _kind) {
+      state = AsyncError<ProProfile?>(
+        const UnknownProFailure('no profile for the active role'),
+        StackTrace.current,
+      );
+      return Future.value();
+    }
+    return _run(() => action(profile.id));
   }
 
   // On failure the error is exposed while the previous profile stays in

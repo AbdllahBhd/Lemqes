@@ -112,6 +112,30 @@ void main() {
     },
   );
 
+  test('a write while the profile still belongs to the previous role is '
+      'refused, never sent', () async {
+    when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .thenAnswer((_) async => _profile());
+    when(() => repo.mine(ProKind.homeArtist, activeRole: AppRole.homeArtist))
+        .thenAnswer((_) => Completer<ProProfile?>().future);
+    container = make(AppRole.barber);
+    await container.read(myProProvider.future);
+
+    container.read(accountProvider.notifier).state = AsyncData(
+      _account(AppRole.homeArtist),
+    );
+    await container.pump();
+    // Riverpod keeps the barber profile as the value while reloading.
+    expect(container.read(myProProvider).value?.kind, ProKind.barber);
+
+    await container
+        .read(myProProvider.notifier)
+        .updateProfile(const ProProfilePatch(displayName: 'Lina'));
+
+    verifyNever(() => repo.updateProfile(any(), any()));
+    expect(container.read(myProProvider).hasError, isTrue);
+  });
+
   test('home artist role loads the home_artist kind', () async {
     when(() => repo.mine(ProKind.homeArtist, activeRole: AppRole.homeArtist))
         .thenAnswer((_) async => null);

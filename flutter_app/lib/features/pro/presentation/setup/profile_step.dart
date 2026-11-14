@@ -97,10 +97,28 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
     _fee = p?.travelFeeDzd;
     final id = _localityId;
     if (id != null) {
-      // The picker needs the wilaya to list the saved commune.
-      ref.read(localityProvider(id).future).then((l) {
-        if (mounted && l != null) setState(() => _regionCode = l.regionCode);
-      }, onError: (Object _) {});
+      // The picker needs the wilaya to list the saved commune. Without it the
+      // commune cannot be shown, so it is asked again rather than saved
+      // unseen; a pick made meanwhile wins.
+      ref
+          .read(localityProvider(id).future)
+          .then<void>(
+            (l) {
+              if (!mounted || _localityId != id) return;
+              setState(() {
+                if (l == null) {
+                  _localityId = null;
+                } else {
+                  _regionCode = l.regionCode;
+                }
+              });
+            },
+            onError: (Object _) {
+              if (mounted && _localityId == id) {
+                setState(() => _localityId = null);
+              }
+            },
+          );
     }
   }
 
@@ -164,7 +182,13 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
       if (failure is ProProfileExists) {
         // A retry after a lost response: load the profile and update it.
         ref.invalidate(myProProvider);
-        await ref.read(myProProvider.future);
+        try {
+          if (await ref.read(myProProvider.future) == null) {
+            return const UnknownProFailure('existing profile not found');
+          }
+        } on ProFailure catch (e) {
+          return e;
+        }
       } else if (failure != null) {
         return failure;
       }

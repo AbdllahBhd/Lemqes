@@ -140,9 +140,7 @@ void main() {
     expect(week.single.breakEnd, isNull);
   });
 
-  testWidgets('copy to all days opens every day with the same hours', (
-    tester,
-  ) async {
+  testWidgets('copy to all days keeps closed days closed', (tester) async {
     await pump(tester, [
       _day(6, 10, 18, breakStart: _t(13), breakEnd: _t(14)),
       _day(1, 9, 19),
@@ -151,13 +149,22 @@ void main() {
     await tester.tap(byKey('day_6_copy'));
     await tester.pump();
 
-    expect(week.map((d) => d.weekday).toSet(), {1, 2, 3, 4, 5, 6, 7});
+    // Only the open days change: a closure is never undone off-screen.
+    expect(week.map((d) => d.weekday), [1, 6]);
     for (final d in week) {
       expect(d.opens, _t(10));
       expect(d.closes, _t(18));
       expect(d.breakStart, _t(13));
       expect(d.breakEnd, _t(14));
     }
+
+    // A closed day opened afterwards starts from the copied hours.
+    await tester.ensureVisible(byKey('day_5_open'));
+    await tester.tap(byKey('day_5_open'));
+    await tester.pump();
+    final friday = week.singleWhere((d) => d.weekday == 5);
+    expect(friday.opens, _t(10));
+    expect(friday.breakEnd, _t(14));
   });
 
   testWidgets('switching a day off leaves it out of the week', (tester) async {

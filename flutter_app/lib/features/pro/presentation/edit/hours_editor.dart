@@ -176,10 +176,11 @@ class _HoursEditorState extends State<HoursEditor> {
     });
   }
 
+  // Closed days keep their closure (it may be off-screen) but take the
+  // times, so opening one later starts from them.
   void _copyToAll(_Day from) => _update(() {
     for (final d in _days.values) {
       d
-        ..open = true
         ..opens = from.opens
         ..closes = from.closes
         ..breakStart = from.breakStart

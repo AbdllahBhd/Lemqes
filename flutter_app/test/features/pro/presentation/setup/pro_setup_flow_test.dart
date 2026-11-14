@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/features/account/data/account.dart';
+import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:lemqes/features/pro/presentation/edit/service_editor.dart';
@@ -9,6 +12,7 @@ import 'package:lemqes/features/pro/presentation/setup/profile_step.dart';
 import 'package:lemqes/features/pro/presentation/setup/services_step.dart';
 import 'package:lemqes/features/signup/data/signup_draft.dart';
 import 'package:lemqes/shared/widgets/lemqes_primary_button.dart';
+import 'package:lemqes/shared/widgets/state_views.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -100,6 +104,7 @@ void main() {
       tester,
     ) async {
       var added = false;
+      var switched = false;
       const customer = Account(
         id: 'u1',
         fullName: 'Amine Benali',
@@ -110,8 +115,22 @@ void main() {
       );
       final h = await pumpSetup(
         tester,
-        fetch: () async => added ? proAccount() : customer,
+        // Holding the role is not enough: setup needs it active.
+        fetch: () async => switched
+            ? proAccount()
+            : added
+            ? const Account(
+                id: 'u1',
+                fullName: 'Amine Benali',
+                customerSpace: Space.men,
+                proSpace: Space.men,
+                activeRole: AppRole.customer,
+                roles: {AppRole.customer, AppRole.barber},
+              )
+            : customer,
       );
+      when(() => h.accounts.setActiveRole(AppRole.barber))
+          .thenAnswer((_) async => switched = true);
       when(
         () => h.accounts.addRole(
           any(),
@@ -137,6 +156,53 @@ void main() {
       // The new role becomes the active one, so setup can act as it.
       verify(() => h.accounts.setActiveRole(AppRole.barber)).called(1);
       expect(h.location, '/pro/setup/profile');
+    });
+
+    testWidgets('a role switch never shows the previous role\'s profile', (
+      tester,
+    ) async {
+      var role = AppRole.barber;
+      final pros = FakeProRepository(profile: barberProfile());
+      final h = await pumpSetup(
+        tester,
+        fetch: () async => proAccount(role: role),
+        pros: pros,
+        location: '/home',
+      );
+      final homeProfile = Completer<ProProfile?>();
+      pros.mineScript.add(() => homeProfile.future);
+      role = AppRole.homeArtist;
+      await h.container.read(accountProvider.notifier).refresh();
+      h.router.go('/pro/setup/profile');
+      await settle(tester);
+
+      // The barber's commune must not prefill the home artist's form.
+      expect(find.byType(ProfileStep), findsNothing);
+      expect(find.text('Alger Centre'), findsNothing);
+
+      homeProfile.complete(null);
+      await settle(tester);
+      expect(find.byType(ProfileStep), findsOneWidget);
+      expect(find.text('Alger Centre'), findsNothing);
+      expect(byKey('workplace_salon'), findsNothing);
+    });
+
+    testWidgets('a failed first load offers a retry, not a spinner', (
+      tester,
+    ) async {
+      final pros = FakeProRepository(profile: barberProfile(service: false));
+      pros.mineScript.add(() async => throw const ProNetworkFailure());
+      final h = await pumpSetup(
+        tester,
+        account: proAccount(),
+        pros: pros,
+        location: '/pro/setup',
+      );
+      expect(find.byType(ErrorView), findsOneWidget);
+
+      await tester.tap(find.text(fr.actionRetry));
+      await settle(tester);
+      expect(h.location, '/pro/setup/services');
     });
   });
 
@@ -229,6 +295,73 @@ void main() {
       expect(p.serviceRadiusKm, 20);
       expect(p.travelFeeDzd, 0);
     });
+
+    testWidgets('a profile created by a lost request is updated, not lost', (
+      tester,
+    ) async {
+      // The first create went through but its answer was lost: the app
+      // still believes there is no profile.
+      final pros = FakeProRepository(profile: barberProfile(service: false));
+      pros.mineScript.add(() async => null);
+      final h = await pumpSetup(
+        tester,
+        account: proAccount(),
+        pros: pros,
+        location: '/pro/setup/profile',
+      );
+      await tapAndSettle(tester, 'pickRegion');
+      await tapAndSettle(tester, 'option_16');
+      await tapAndSettle(tester, 'option_1601');
+      await tapAndSettle(tester, 'mix_adults');
+      await tapAndSettle(tester, 'setupContinue');
+
+      expect(h.pros.calls, ['create', 'updateProfile']);
+      expect(h.pros.profile!.customerMix, CustomerMix.adults);
+      expect(h.location, '/pro/setup/services');
+    });
+
+    testWidgets('a failed reload after a lost create says so and frees the '
+        'button', (tester) async {
+      final pros = FakeProRepository(profile: barberProfile(service: false));
+      pros.mineScript
+        ..add(() async => null)
+        ..add(() async => throw const ProNetworkFailure());
+      final h = await pumpSetup(
+        tester,
+        account: proAccount(),
+        pros: pros,
+        location: '/pro/setup/profile',
+      );
+      await tapAndSettle(tester, 'pickRegion');
+      await tapAndSettle(tester, 'option_16');
+      await tapAndSettle(tester, 'option_1601');
+      await tapAndSettle(tester, 'mix_adults');
+      await tapAndSettle(tester, 'setupContinue');
+
+      expect(find.text(fr.errorNetwork), findsOneWidget);
+      expect(
+        tester.widget<LemqesPrimaryButton>(byKey('setupContinue')).onPressed,
+        isNotNull,
+      );
+      expect(h.location, '/pro/setup/profile');
+    });
+
+    testWidgets(
+      'a saved commune that cannot be looked up must be picked again',
+      (tester) async {
+        final h = await pumpSetup(
+          tester,
+          account: proAccount(),
+          pros: FakeProRepository(profile: barberProfile(service: false)),
+          geo: FakeGeoRepository(failLocality: true),
+          location: '/pro/setup/profile',
+        );
+        await tapAndSettle(tester, 'setupContinue');
+
+        expect(find.text(fr.setupLocalityRequired), findsOneWidget);
+        expect(h.pros.calls, isEmpty);
+      },
+    );
   });
 
   group('services step', () {

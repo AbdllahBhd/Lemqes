@@ -83,6 +83,11 @@ const _algerCentre = Locality(
 );
 
 class FakeGeoRepository extends Fake implements GeoRepository {
+  FakeGeoRepository({this.failLocality = false});
+
+  /// The by-id lookup of a saved commune fails (e.g. offline).
+  final bool failLocality;
+
   @override
   Future<List<Region>> regions(String country) async => [_alger];
 
@@ -91,7 +96,10 @@ class FakeGeoRepository extends Fake implements GeoRepository {
       regionCode == '16' ? [_algerCentre] : [];
 
   @override
-  Future<Locality?> locality(int id) async => id == 1601 ? _algerCentre : null;
+  Future<Locality?> locality(int id) async {
+    if (failLocality) throw const ProNetworkFailure();
+    return id == 1601 ? _algerCentre : null;
+  }
 }
 
 /// An in-memory pro backend with the database's publish rule.
@@ -107,9 +115,15 @@ class FakeProRepository extends Fake implements ProRepository {
   ProFailure? publishFailure;
   var _ids = 0;
 
+  /// Answers for the next `mine` calls, in order (then the stored profile):
+  /// a pending future, a lost profile, a failure.
+  final mineScript = <Future<ProProfile?> Function()>[];
+
   @override
-  Future<ProProfile?> mine(ProKind kind, {required AppRole activeRole}) async =>
-      profile?.kind == kind ? profile : null;
+  Future<ProProfile?> mine(ProKind kind, {required AppRole activeRole}) async {
+    if (mineScript.isNotEmpty) return mineScript.removeAt(0)();
+    return profile?.kind == kind ? profile : null;
+  }
 
   @override
   Future<ProProfile> create(
@@ -316,6 +330,7 @@ Future<SetupHarness> pumpSetup(
   SignupDraft? draft,
   void Function()? stubSignup,
   List<TimeOfDay>? timeAnswers,
+  FakeGeoRepository? geo,
   Locale locale = const Locale('fr'),
   ThemeMode themeMode = ThemeMode.light,
   double textScale = 1,
@@ -361,7 +376,7 @@ Future<SetupHarness> pumpSetup(
       accountRepositoryProvider.overrideWithValue(accounts),
       sessionProvider.overrideWith((ref) => Stream.value(testSession)),
       proRepositoryProvider.overrideWithValue(fakePros),
-      geoRepositoryProvider.overrideWithValue(FakeGeoRepository()),
+      geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
       if (timeAnswers != null)
         timePickProvider.overrideWithValue(
           (_, _) async => timeAnswers.removeAt(0),
