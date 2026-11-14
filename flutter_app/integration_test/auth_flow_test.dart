@@ -64,8 +64,19 @@ void main() {
     final signupCodeSentAt = DateTime.now();
     await _enterCode(tester);
 
-    // Pro home: no profile wizard until M2.
+    // A new pro carries on into the profile setup (steps 5-7 of 7); leaving
+    // it lands on the dashboard, which asks for the missing profile.
+    await _waitFor(tester, find.byKey(const Key('displayNameField')));
+    expect(find.text(fr.setupProfileTitle), findsOneWidget);
+    await _tap(tester, find.byTooltip('Retour'));
     await _waitFor(tester, find.text(fr.homeProEmptyTitle));
+    // The setup page leaves with a transition; its name field holds "Amine".
+    final deadline = DateTime.now().add(const Duration(seconds: 10));
+    while (find.byKey(const Key('displayNameField')).evaluate().isNotEmpty &&
+        DateTime.now().isBefore(deadline)) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byKey(const Key('dashComplete')), findsOneWidget);
     expect(find.text('Amine'), findsOneWidget);
     expect(find.text(fr.homeSpaceLabel('men')), findsOneWidget);
 
