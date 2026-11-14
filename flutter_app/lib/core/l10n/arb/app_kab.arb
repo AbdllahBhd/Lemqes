@@ -81,5 +81,108 @@
   "resetNewPasswordTitle": "Fren awal uffir amaynut",
   "newPasswordLabel": "Awal uffir amaynut",
   "resetSave": "Sekles awal uffir",
-  "resetDone": "Awal uffir yettwabeddel."
+  "resetDone": "Awal uffir yettwabeddel.",
+  "homeSpaceLabel": "{space, select, women{Tamnaṭ n tilawin} other{Tamnaṭ n yirgazen}}",
+  "@homeSpaceLabel": {
+    "description": "Current space name in the home header; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "spaceSwitchLabel": "Beddel tamnaṭ",
+  "@spaceSwitchLabel": {
+    "description": "Accessibility label of the Men/Women switch"
+  },
+  "homeCustomerEmptyTitle": "{space, select, women{Ihenyiten ad d-asent d imir} other{Iḥeffafen ad d-asen d imir}}",
+  "@homeCustomerEmptyTitle": {
+    "description": "Customer home, before search exists",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCustomerEmptyBody": "Ad twaliḍ da qrib anwa i d yeldin d acḥal n medden i yettṛaǧun.",
+  "@homeCustomerEmptyBody": {
+    "description": "Customer home empty state body"
+  },
+  "homeProEmptyTitle": "Fak amaɣnu-ik",
+  "@homeProEmptyTitle": {
+    "description": "Pro home empty state title"
+  },
+  "homeProEmptyBody": "Rnu tinawin-ik d yisragen-ik akken ad d-tbanem i yiɣellayen. Aya ad d-yas qrib.",
+  "@homeProEmptyBody": {
+    "description": "Pro home empty state body"
+  },
+  "homeProEmptyAction": "Fak amaɣnu-inu",
+  "@homeProEmptyAction": {
+    "description": "Disabled button until profile setup exists"
+  },
+  "proSpaceFixedHint": "Tamnaṭ n umiḍan n uxeddim ur tettbeddil ara.",
+  "@proSpaceFixedHint": {
+    "description": "Tooltip on the pro space tag"
+  },
+  "roleSwitchTitle": "Beddel tamlilt",
+  "@roleSwitchTitle": {
+    "description": "Role switch sheet title, action tooltip and settings entry"
+  },
+  "rolesHeldTitle": "Timlilin-ik",
+  "@rolesHeldTitle": {
+    "description": "Heading above the roles the user holds"
+  },
+  "roleActive": "Yermed",
+  "@roleActive": {
+    "description": "Status word on the active role"
+  },
+  "roleAddAction": "Rnu tamlilt",
+  "@roleAddAction": {
+    "description": "Opens the add-a-role list and titles it"
+  },
+  "roleAddNone": "Tesɛiḍ yakan akk timlilin yellan.",
+  "@roleAddNone": {
+    "description": "Shown when every role is held"
+  },
+  "roleSpaceLockedNote": "{space, select, women{Tamnaṭ-ik n uxeddim d tamnaṭ n tilawin. Tettwasbadu yakan.} other{Tamnaṭ-ik n uxeddim d tamnaṭ n yirgazen. Tettwasbadu yakan.}}",
+  "@roleSpaceLockedNote": {
+    "description": "Pro space already fixed; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleChooseSpace": "Fren tamnaṭ n umaɣnu-ik n uxeddim. Aya ur yettbeddil ara i yal timlilin n uxeddim.",
+  "@roleChooseSpace": {
+    "description": "Asks for the pro space when none is set"
+  },
+  "roleAddConfirm": "Rnu tamlilt-a",
+  "@roleAddConfirm": {
+    "description": "Confirms adding the chosen role"
+  },
+  "settingsTitle": "Iɣewwaren",
+  "@settingsTitle": {
+    "description": "Settings screen title and header action tooltip"
+  },
+  "settingsThemeTitle": "Asentel",
+  "@settingsThemeTitle": {
+    "description": "Settings theme group"
+  },
+  "settingsSignOut": "Ffeɣ",
+  "@settingsSignOut": {
+    "description": "Sign out button"
+  },
+  "signOutConfirmTitle": "Ad teffɣeḍ?",
+  "@signOutConfirmTitle": {
+    "description": "Sign-out dialog title"
+  },
+  "signOutConfirmBody": "Ad teǧǧeḍ tuqqna s uṭṭun-ik d wawal uffir.",
+  "@signOutConfirmBody": {
+    "description": "Sign-out dialog body"
+  },
+  "actionCancel": "Sefsex",
+  "@actionCancel": {
+    "description": "Dialog cancel button"
+  }
 }

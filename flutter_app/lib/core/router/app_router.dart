@@ -1,13 +1,14 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/account/data/account_providers.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/home/presentation/home_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/signup/data/signup_draft_store.dart';
 import '../../features/signup/presentation/signup_wizard.dart';
-import 'placeholder_screen.dart';
 import 'redirect.dart';
 
 /// Re-runs the router redirect whenever session, account or draft change.
@@ -31,7 +32,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       location: state.uri.path,
     ),
     routes: [
-      GoRoute(path: '/', redirect: (_, _) => null, builder: _page('/')),
+      GoRoute(
+        path: '/',
+        redirect: (_, _) => null,
+        builder: (_, _) => const SizedBox.shrink(),
+      ),
       GoRoute(path: '/auth', builder: (_, _) => const AuthScreen()),
       GoRoute(
         path: '/auth/reset',
@@ -47,8 +52,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             SignupWizard(step: state.pathParameters['step']!),
       ),
-      GoRoute(path: '/home', builder: _page('/home')),
-      GoRoute(path: '/settings', builder: _page('/settings')),
+      GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
+      GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
     ],
   );
   ref.onDispose(() {
@@ -62,6 +67,3 @@ bool _hasSession(Ref ref) => resolveHasSession(
   ref.read(sessionProvider),
   () => ref.read(authRepositoryProvider).currentSession,
 );
-
-GoRouterWidgetBuilder _page(String name) =>
-    (context, state) => PlaceholderScreen(name);

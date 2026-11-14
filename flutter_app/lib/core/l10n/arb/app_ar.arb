@@ -81,5 +81,108 @@
   "resetNewPasswordTitle": "اختر كلمة مرور جديدة",
   "newPasswordLabel": "كلمة المرور الجديدة",
   "resetSave": "حفظ كلمة المرور",
-  "resetDone": "تم تغيير كلمة المرور."
+  "resetDone": "تم تغيير كلمة المرور.",
+  "homeSpaceLabel": "{space, select, women{فضاء النساء} other{فضاء الرجال}}",
+  "@homeSpaceLabel": {
+    "description": "Current space name in the home header; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "spaceSwitchLabel": "تبديل الفضاء",
+  "@spaceSwitchLabel": {
+    "description": "Accessibility label of the Men/Women switch"
+  },
+  "homeCustomerEmptyTitle": "{space, select, women{الصالونات قادمة قريباً} other{الحلاقون قادمون قريباً}}",
+  "@homeCustomerEmptyTitle": {
+    "description": "Customer home, before search exists",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCustomerEmptyBody": "قريباً سترى هنا من هو مفتوح وكم شخصاً ينتظر.",
+  "@homeCustomerEmptyBody": {
+    "description": "Customer home empty state body"
+  },
+  "homeProEmptyTitle": "أكمل ملفك الشخصي",
+  "@homeProEmptyTitle": {
+    "description": "Pro home empty state title"
+  },
+  "homeProEmptyBody": "أضف خدماتك وساعات عملك لتظهر للزبائن. هذه الخطوة قادمة قريباً.",
+  "@homeProEmptyBody": {
+    "description": "Pro home empty state body"
+  },
+  "homeProEmptyAction": "إكمال ملفي الشخصي",
+  "@homeProEmptyAction": {
+    "description": "Disabled button until profile setup exists"
+  },
+  "proSpaceFixedHint": "فضاء الحساب المهني ثابت ولا يمكن تغييره.",
+  "@proSpaceFixedHint": {
+    "description": "Tooltip on the pro space tag"
+  },
+  "roleSwitchTitle": "تبديل الدور",
+  "@roleSwitchTitle": {
+    "description": "Role switch sheet title, action tooltip and settings entry"
+  },
+  "rolesHeldTitle": "أدوارك",
+  "@rolesHeldTitle": {
+    "description": "Heading above the roles the user holds"
+  },
+  "roleActive": "نشط",
+  "@roleActive": {
+    "description": "Status word on the active role"
+  },
+  "roleAddAction": "إضافة دور",
+  "@roleAddAction": {
+    "description": "Opens the add-a-role list and titles it"
+  },
+  "roleAddNone": "لديك بالفعل جميع الأدوار المتاحة.",
+  "@roleAddNone": {
+    "description": "Shown when every role is held"
+  },
+  "roleSpaceLockedNote": "{space, select, women{فضاؤك المهني هو فضاء النساء، وهو ثابت.} other{فضاؤك المهني هو فضاء الرجال، وهو ثابت.}}",
+  "@roleSpaceLockedNote": {
+    "description": "Pro space already fixed; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleChooseSpace": "اختر فضاء ملفك المهني. هذا الاختيار نهائي لجميع أدوارك المهنية.",
+  "@roleChooseSpace": {
+    "description": "Asks for the pro space when none is set"
+  },
+  "roleAddConfirm": "إضافة هذا الدور",
+  "@roleAddConfirm": {
+    "description": "Confirms adding the chosen role"
+  },
+  "settingsTitle": "الإعدادات",
+  "@settingsTitle": {
+    "description": "Settings screen title and header action tooltip"
+  },
+  "settingsThemeTitle": "المظهر",
+  "@settingsThemeTitle": {
+    "description": "Settings theme group"
+  },
+  "settingsSignOut": "تسجيل الخروج",
+  "@settingsSignOut": {
+    "description": "Sign out button"
+  },
+  "signOutConfirmTitle": "تسجيل الخروج؟",
+  "@signOutConfirmTitle": {
+    "description": "Sign-out dialog title"
+  },
+  "signOutConfirmBody": "ستحتاج إلى تسجيل الدخول مجدداً برقمك وكلمة المرور.",
+  "@signOutConfirmBody": {
+    "description": "Sign-out dialog body"
+  },
+  "actionCancel": "إلغاء",
+  "@actionCancel": {
+    "description": "Dialog cancel button"
+  }
 }

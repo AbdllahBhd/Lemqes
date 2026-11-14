@@ -353,5 +353,108 @@
   "resetDone": "Mot de passe modifié.",
   "@resetDone": {
     "description": "Snackbar after reset"
+  },
+  "homeSpaceLabel": "{space, select, women{Espace Femmes} other{Espace Hommes}}",
+  "@homeSpaceLabel": {
+    "description": "Current space name in the home header; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "spaceSwitchLabel": "Changer d’espace",
+  "@spaceSwitchLabel": {
+    "description": "Accessibility label of the Men/Women switch"
+  },
+  "homeCustomerEmptyTitle": "{space, select, women{Les salons arrivent bientôt} other{Les barbiers arrivent bientôt}}",
+  "@homeCustomerEmptyTitle": {
+    "description": "Customer home, before search exists",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCustomerEmptyBody": "Vous verrez bientôt ici qui est ouvert et combien de personnes attendent.",
+  "@homeCustomerEmptyBody": {
+    "description": "Customer home empty state body"
+  },
+  "homeProEmptyTitle": "Complétez votre profil",
+  "@homeProEmptyTitle": {
+    "description": "Pro home empty state title"
+  },
+  "homeProEmptyBody": "Ajoutez vos services et vos horaires pour apparaître auprès des clients. Cette étape arrive bientôt.",
+  "@homeProEmptyBody": {
+    "description": "Pro home empty state body"
+  },
+  "homeProEmptyAction": "Compléter mon profil",
+  "@homeProEmptyAction": {
+    "description": "Disabled button until profile setup exists"
+  },
+  "proSpaceFixedHint": "L’espace d’un compte professionnel est fixe : il ne peut pas être changé.",
+  "@proSpaceFixedHint": {
+    "description": "Tooltip on the pro space tag"
+  },
+  "roleSwitchTitle": "Changer de rôle",
+  "@roleSwitchTitle": {
+    "description": "Role switch sheet title, action tooltip and settings entry"
+  },
+  "rolesHeldTitle": "Vos rôles",
+  "@rolesHeldTitle": {
+    "description": "Heading above the roles the user holds"
+  },
+  "roleActive": "Actif",
+  "@roleActive": {
+    "description": "Status word on the active role"
+  },
+  "roleAddAction": "Ajouter un rôle",
+  "@roleAddAction": {
+    "description": "Opens the add-a-role list and titles it"
+  },
+  "roleAddNone": "Vous avez déjà tous les rôles disponibles.",
+  "@roleAddNone": {
+    "description": "Shown when every role is held"
+  },
+  "roleSpaceLockedNote": "{space, select, women{Votre espace professionnel est l’espace Femmes. Il est déjà fixé.} other{Votre espace professionnel est l’espace Hommes. Il est déjà fixé.}}",
+  "@roleSpaceLockedNote": {
+    "description": "Pro space already fixed; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleChooseSpace": "Choisissez l’espace de votre profil professionnel. Ce choix est définitif pour tous vos rôles professionnels.",
+  "@roleChooseSpace": {
+    "description": "Asks for the pro space when none is set"
+  },
+  "roleAddConfirm": "Ajouter ce rôle",
+  "@roleAddConfirm": {
+    "description": "Confirms adding the chosen role"
+  },
+  "settingsTitle": "Réglages",
+  "@settingsTitle": {
+    "description": "Settings screen title and header action tooltip"
+  },
+  "settingsThemeTitle": "Thème",
+  "@settingsThemeTitle": {
+    "description": "Settings theme group"
+  },
+  "settingsSignOut": "Se déconnecter",
+  "@settingsSignOut": {
+    "description": "Sign out button"
+  },
+  "signOutConfirmTitle": "Se déconnecter ?",
+  "@signOutConfirmTitle": {
+    "description": "Sign-out dialog title"
+  },
+  "signOutConfirmBody": "Vous devrez vous reconnecter avec votre numéro et votre mot de passe.",
+  "@signOutConfirmBody": {
+    "description": "Sign-out dialog body"
+  },
+  "actionCancel": "Annuler",
+  "@actionCancel": {
+    "description": "Dialog cancel button"
   }
 }
