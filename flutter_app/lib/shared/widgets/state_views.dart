@@ -24,20 +24,31 @@ class _CenteredState extends StatelessWidget {
   }
 }
 
-/// Content is on its way.
+/// Content is on its way; [label] is what screen readers announce.
 class LoadingView extends StatelessWidget {
-  const LoadingView({super.key});
+  const LoadingView({super.key, required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    return Center(child: CircularProgressIndicator(semanticsLabel: label));
   }
 }
 
 /// Nothing to show yet; [action] offers the way forward.
 class EmptyView extends StatelessWidget {
-  const EmptyView({super.key, required this.title, this.body, this.action});
+  const EmptyView({
+    super.key,
+    required this.title,
+    this.icon,
+    this.body,
+    this.action,
+  });
 
+  /// Names what will fill this space, in the same tinted disc as the
+  /// choice cards.
+  final IconData? icon;
   final String title;
   final String? body;
   final Widget? action;
@@ -45,10 +56,27 @@ class EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final icon = this.icon;
     final body = this.body;
     final action = this.action;
     return _CenteredState(
       children: [
+        if (icon != null) ...[
+          ExcludeSemantics(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.secondaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: SizedBox.square(
+                dimension: 64,
+                child: Icon(icon, size: 28, color: scheme.onSecondaryContainer),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         Text(
           title,
           style: theme.textTheme.titleLarge,

@@ -124,5 +124,11 @@ ThemeData lemqesTheme(Brightness brightness) {
       elevation: 0,
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
+    // Sheets sit on the ground colour so their cards lift off it as they do
+    // on a page; M3's surfaceContainerLow is the card colour in dark.
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: scheme.surface,
+      modalBackgroundColor: scheme.surface,
+    ),
   );
 }

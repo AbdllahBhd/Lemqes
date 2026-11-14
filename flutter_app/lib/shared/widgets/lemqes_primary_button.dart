@@ -163,7 +163,7 @@ class _LemqesPrimaryButtonState extends State<LemqesPrimaryButton> {
       ),
     );
 
-    return Stack(
+    final pill = Stack(
       clipBehavior: Clip.none,
       children: [
         DecoratedBox(
@@ -186,6 +186,16 @@ class _LemqesPrimaryButtonState extends State<LemqesPrimaryButton> {
             child: IgnorePointer(child: _FocusRing(width: _ringWidth)),
           ),
       ],
+    );
+    if (!widget.loading) return pill;
+
+    // Taps are swallowed while loading; screen readers must not offer one.
+    return Semantics(
+      button: true,
+      enabled: false,
+      label: widget.label,
+      excludeSemantics: true,
+      child: pill,
     );
   }
 }

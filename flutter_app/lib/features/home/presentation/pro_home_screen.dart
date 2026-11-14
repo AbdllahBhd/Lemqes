@@ -58,6 +58,7 @@ class ProHomeScreen extends StatelessWidget {
           ),
           Expanded(
             child: EmptyView(
+              icon: Icons.badge_outlined,
               title: l10n.homeProEmptyTitle,
               body: l10n.homeProEmptyBody,
               action: LemqesPrimaryButton(

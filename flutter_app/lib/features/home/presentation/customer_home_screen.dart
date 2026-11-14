@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/locale_controller.dart';
+import '../../../shared/widgets/lemqes_wordmark.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account.dart';
 import '../../account/data/account_providers.dart';
@@ -44,7 +45,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             title: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Wordmark(),
+                const LemqesWordmark(),
                 const SizedBox(width: 12),
                 Flexible(
                   child: BandTag(label: l10n.homeSpaceLabel(space.toDb())),
@@ -62,6 +63,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           ),
           Expanded(
             child: EmptyView(
+              icon: Icons.storefront_outlined,
               title: l10n.homeCustomerEmptyTitle(space.toDb()),
               body: l10n.homeCustomerEmptyBody,
             ),

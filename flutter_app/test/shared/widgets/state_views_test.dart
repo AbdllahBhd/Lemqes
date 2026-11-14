@@ -42,8 +42,18 @@ void main() {
     expect(find.widgetWithText(TextButton, 'Explore'), findsOneWidget);
   });
 
-  testWidgets('LoadingView shows a progress indicator', (tester) async {
-    await tester.pumpWidget(_host(const LoadingView()));
+  testWidgets('LoadingView shows a labelled progress indicator', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host(const LoadingView(label: 'Loading')));
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.bySemanticsLabel('Loading'), findsOneWidget);
+  });
+
+  testWidgets('EmptyView shows its icon', (tester) async {
+    await tester.pumpWidget(
+      _host(const EmptyView(icon: Icons.storefront_outlined, title: 'Soon')),
+    );
+    expect(find.byIcon(Icons.storefront_outlined), findsOneWidget);
   });
 }

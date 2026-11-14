@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/locale_controller.dart';
-import '../../../core/theme/lemqes_theme.dart';
 import '../../../shared/widgets/lagoon_header_band.dart';
+import '../../../shared/widgets/lemqes_wordmark.dart';
 import '../../account/presentation/role_switch_sheet.dart';
 
 /// The Lagoon band that heads both homes: actions on top, [children] below.
@@ -54,7 +54,7 @@ class HomeHeader extends StatelessWidget {
                     Expanded(
                       child: Align(
                         alignment: AlignmentDirectional.centerStart,
-                        child: title ?? const Wordmark(),
+                        child: title ?? const LemqesWordmark(),
                       ),
                     ),
                     const HeaderActions(),
@@ -68,26 +68,6 @@ class HomeHeader extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// LEMQES in the display face, spaced out, white on the band.
-class Wordmark extends StatelessWidget {
-  const Wordmark({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Semantics(
-      header: true,
-      child: Text(
-        context.l10n.appName,
-        style: lemqesWeight(
-          theme.textTheme.titleMedium!,
-          FontWeight.w600,
-        ).copyWith(color: Colors.white, fontSize: 18, letterSpacing: 18 * 0.16),
       ),
     );
   }

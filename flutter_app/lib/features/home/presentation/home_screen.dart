@@ -33,7 +33,9 @@ class HomeScreen extends ConsumerWidget {
           ),
         );
       }
-      return const Scaffold(body: SafeArea(child: LoadingView()));
+      return Scaffold(
+        body: SafeArea(child: LoadingView(label: l10n.loading)),
+      );
     }
     return AccountFailureListener(
       child: account.activeRole.isPro

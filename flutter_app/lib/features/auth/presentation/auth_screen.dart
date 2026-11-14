@@ -9,6 +9,7 @@ import '../../../core/theme/lemqes_theme.dart';
 import '../../../core/theme/lemqes_tokens.dart';
 import '../../../core/theme/theme_mode_controller.dart';
 import '../../../shared/widgets/lagoon_header_band.dart';
+import '../../../shared/widgets/lemqes_wordmark.dart';
 import 'login_form.dart';
 
 /// Sign-in, with the way into sign-up. Language and theme sit in the band.
@@ -72,18 +73,10 @@ class _TopBar extends ConsumerWidget {
     final dark = theme.brightness == Brightness.dark;
     return Row(
       children: [
-        Expanded(
-          child: Semantics(
-            header: true,
-            child: Text(
-              l10n.appName,
-              style: lemqesWeight(theme.textTheme.titleMedium!, FontWeight.w600)
-                  .copyWith(
-                    color: Colors.white,
-                    fontSize: 18,
-                    letterSpacing: 18 * 0.16,
-                  ),
-            ),
+        const Expanded(
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: LemqesWordmark(),
           ),
         ),
         IconButton(
