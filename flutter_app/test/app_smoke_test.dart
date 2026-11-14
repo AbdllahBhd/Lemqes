@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/app.dart';
 import 'package:lemqes/core/storage/shared_preferences_provider.dart';
 import 'package:lemqes/core/supabase/supabase_providers.dart';
+import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,10 +20,13 @@ void main() {
         overrides: [
           supabaseClientProvider.overrideWithValue(_MockSupabaseClient()),
           sharedPreferencesProvider.overrideWithValue(prefs),
+          sessionProvider.overrideWith((ref) => Stream.value(null)),
         ],
         child: const LemqesApp(),
       ),
     );
+
+    await tester.pumpAndSettle();
 
     expect(find.byType(MaterialApp), findsOneWidget);
   });
