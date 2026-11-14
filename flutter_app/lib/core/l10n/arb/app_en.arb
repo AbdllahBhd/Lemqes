@@ -332,5 +332,6 @@
   "privacyShowPrices": "Show my prices",
   "privacyShowPricesHint": "{type, select, mobile{When hidden, customers read “Price on request”.} other{When hidden, customers read “Price at the salon”.}}",
   "previewTag": "Preview",
-  "previewCallNote": "Customers will see a button to call you here."
+  "previewCallNote": "Customers will see a button to call you here.",
+  "photoPickFailed": "Couldn’t open your photos. Check photo access in Settings."
 }

@@ -265,3 +265,4 @@
 | `privacyShowPricesHint` | final | final | draft | draft |
 | `previewTag` | final | final | draft | draft |
 | `previewCallNote` | final | final | draft | draft |
+| `photoPickFailed` | final | final | draft | draft |

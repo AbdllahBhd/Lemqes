@@ -318,10 +318,12 @@ class FakeProPhotoUploader extends Fake implements PhotoUploader {
   final FakeProRepository pros;
   final calls = <String>[];
 
-  /// When set, the next upload throws it (then it is cleared).
+  /// When set, the next upload (work photo or avatar) throws it, then it is
+  /// cleared.
   ProFailure? nextFailure;
 
-  /// When set, uploads wait for it, so a test can see them in flight.
+  /// When set, uploads (work photo or avatar) wait for it, so a test can
+  /// see them in flight.
   Completer<void>? gate;
   var _n = 0;
 
@@ -361,6 +363,12 @@ class FakeProPhotoUploader extends Fake implements PhotoUploader {
   @override
   Future<String> uploadAvatar(String proId, XFile file) async {
     calls.add('uploadAvatar');
+    await gate?.future;
+    final failure = nextFailure;
+    if (failure != null) {
+      nextFailure = null;
+      throw failure;
+    }
     final path = '$proId/avatar.jpg';
     pros.profile = copyProfile(pros.profile!, avatarPath: path);
     return path;

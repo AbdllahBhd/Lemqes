@@ -1172,5 +1172,9 @@
   "previewCallNote": "Vos clients verront ici un bouton pour vous appeler.",
   "@previewCallNote": {
     "description": "Preview: under the disabled call button"
+  },
+  "photoPickFailed": "Impossible d’ouvrir vos photos. Vérifiez l’accès aux photos dans les réglages.",
+  "@photoPickFailed": {
+    "description": "The photo picker or reading the picked file failed"
   }
 }

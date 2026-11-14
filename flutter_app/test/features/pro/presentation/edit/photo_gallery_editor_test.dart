@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
@@ -128,5 +130,56 @@ void main() {
     await _toGallery(tester);
     await tapAndSettle(tester, 'photoAdd');
     expect(find.text(fr.proErrorTooManyPhotos), findsOneWidget);
+  });
+
+  testWidgets('a photo stored but not reloaded is not offered again', (
+    tester,
+  ) async {
+    final h = await pumpDashboard(tester, profile: publishedBarber());
+    h.pros.mineScript.add(() async => throw const ProNetworkFailure());
+    await _toGallery(tester);
+    await tapAndSettle(tester, 'photoAdd');
+
+    expect(h.photos.calls, ['addWorkPhoto']);
+    expect(byKey('photoRetry_0'), findsNothing);
+    expect(byKey('photoUploading_0'), findsNothing);
+    // The reload that follows shows it.
+    expect(byKey('photo_new1'), findsOneWidget);
+  });
+
+  testWidgets('a reload that keeps failing is said, never retried', (
+    tester,
+  ) async {
+    final h = await pumpDashboard(tester, profile: publishedBarber());
+    h.pros.mineScript
+      ..add(() async => throw const ProNetworkFailure())
+      ..add(() async => throw const ProNetworkFailure());
+    await _toGallery(tester);
+    await tapAndSettle(tester, 'photoAdd');
+
+    expect(find.text(fr.errorNetwork), findsOneWidget);
+    expect(byKey('photoRetry_0'), findsNothing);
+    expect(h.photos.calls, ['addWorkPhoto']);
+  });
+
+  testWidgets('a picker that fails says so and frees the add tile', (
+    tester,
+  ) async {
+    var opened = 0;
+    final h = await pumpDashboard(
+      tester,
+      profile: publishedBarber(),
+      picker: () async {
+        opened++;
+        throw PlatformException(code: 'already_active');
+      },
+    );
+    await _toGallery(tester);
+    await tapAndSettle(tester, 'photoAdd');
+    expect(find.text(fr.photoPickFailed), findsOneWidget);
+
+    await tapAndSettle(tester, 'photoAdd');
+    expect(opened, 2);
+    expect(h.photos.calls, isEmpty);
   });
 }

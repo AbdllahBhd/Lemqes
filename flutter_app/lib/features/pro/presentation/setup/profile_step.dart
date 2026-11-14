@@ -176,8 +176,19 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
       });
       return;
     }
-    router.go(_edit ? '/home' : '/pro/setup/services');
+    if (_edit) {
+      // The save's profile change makes the router refresh its stack; a pop
+      // before that refresh lands is undone by it.
+      await WidgetsBinding.instance.endOfFrame;
+      if (mounted) _backToDashboard(router);
+    } else {
+      router.go('/pro/setup/services');
+    }
   }
+
+  // Edit mode is pushed over the dashboard; a deep link has none below.
+  void _backToDashboard(GoRouter router) =>
+      router.canPop() ? router.pop() : router.go('/home');
 
   Future<ProFailure?> _save() async {
     final name = _name.text.trim();
@@ -236,7 +247,11 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
 
   void _leave() {
     ref.read(signupJustCompletedProvider.notifier).set(false);
-    context.go('/home');
+    if (_edit) {
+      _backToDashboard(GoRouter.of(context));
+    } else {
+      context.go('/home');
+    }
   }
 
   @override

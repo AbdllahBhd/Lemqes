@@ -188,6 +188,37 @@ void main() {
     },
   );
 
+  test('a write that went through is not reported as failed when the reload '
+      'fails; the profile loads again', () async {
+    var reloads = 0;
+    when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .thenAnswer((_) async {
+          reloads++;
+          if (reloads == 2) throw const ProNetworkFailure();
+          return _profile();
+        });
+    when(() => repo.publish('p1'))
+        .thenAnswer((_) async => DateTime.utc(2026, 11, 14));
+    container = make(AppRole.barber);
+    await container.read(myProProvider.future);
+    final failure = await container.read(myProProvider.notifier).publish();
+    expect(failure, isNull);
+    await container.read(myProProvider.future);
+    expect(container.read(myProProvider).hasError, isFalse);
+    expect(reloads, 3);
+  });
+
+  test('a failed write returns its failure', () async {
+    when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .thenAnswer((_) async => _profile());
+    when(() => repo.publish('p1'))
+        .thenThrow(const ProfileIncomplete({ProfileGap.hours}));
+    container = make(AppRole.barber);
+    await container.read(myProProvider.future);
+    final failure = await container.read(myProProvider.notifier).publish();
+    expect(failure, isA<ProfileIncomplete>());
+  });
+
   test('create refetches', () async {
     ProProfile? stored;
     when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))

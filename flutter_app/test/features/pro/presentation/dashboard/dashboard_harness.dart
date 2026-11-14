@@ -3,11 +3,14 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lemqes/features/account/data/account.dart';
+import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:lemqes/features/pro/presentation/edit/photo_gallery_editor.dart';
 import 'package:lemqes/features/pro/presentation/setup/profile_step.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../explore/presentation/explore_harness.dart'
+    show FakeExploreRepository;
 import '../setup/setup_harness.dart';
 
 export '../setup/setup_harness.dart';
@@ -41,27 +44,37 @@ ProProfile publishedBarber({
 );
 
 /// The real router on `/home` as a barber whose profile is [profile]; the
-/// photo pickers answer [picked] (null = the user cancelled).
+/// photo pickers answer [picked] (null = the user cancelled), or run
+/// [picker] when given. [fetch] answers `fetchMine` instead of [account];
+/// a customer home searches an empty explore backend.
 Future<SetupHarness> pumpDashboard(
   WidgetTester tester, {
   ProProfile? profile,
   Account? account,
+  Future<Account?> Function()? fetch,
   FakeProRepository? pros,
   XFile? Function()? picked,
+  Future<XFile?> Function()? picker,
+  List<TimeOfDay>? timeAnswers,
   Locale locale = const Locale('fr'),
   ThemeMode themeMode = ThemeMode.light,
   double textScale = 1,
   Size size = const Size(390, 844),
 }) {
   final pick = picked ?? jpegFile;
+  final choose = picker ?? () async => pick();
   return pumpSetup(
     tester,
     account: account ?? proAccount(),
+    fetch: fetch,
     pros: pros ?? FakeProRepository(profile: profile),
     location: '/home',
+    timeAnswers: timeAnswers,
     overrides: [
-      workPhotoPickerProvider.overrideWithValue(() async => pick()),
-      avatarPickerProvider.overrideWithValue(() async => pick()),
+      workPhotoPickerProvider.overrideWithValue(choose),
+      avatarPickerProvider.overrideWithValue(choose),
+      exploreRepositoryProvider.overrideWithValue(FakeExploreRepository()),
+      exploreDebounceProvider.overrideWithValue(Duration.zero),
     ],
     locale: locale,
     themeMode: themeMode,

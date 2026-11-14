@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -51,7 +53,7 @@ class MyProController extends AsyncNotifier<ProProfile?> {
     return ref.read(proRepositoryProvider).mine(kind, activeRole: role);
   }
 
-  Future<void> create({
+  Future<ProFailure?> create({
     required String displayName,
     required WorkplaceType workplaceType,
   }) {
@@ -64,33 +66,33 @@ class MyProController extends AsyncNotifier<ProProfile?> {
     );
   }
 
-  Future<void> updateProfile(ProProfilePatch patch) => _runOnProfile(
+  Future<ProFailure?> updateProfile(ProProfilePatch patch) => _runOnProfile(
     (id) => ref.read(proRepositoryProvider).updateProfile(id, patch),
   );
 
-  Future<void> upsertService(ProServiceDraft draft) => _runOnProfile(
+  Future<ProFailure?> upsertService(ProServiceDraft draft) => _runOnProfile(
     (id) => ref.read(proRepositoryProvider).upsertService(id, draft),
   );
 
-  Future<void> archiveService(String serviceId) => _runOnProfile(
+  Future<ProFailure?> archiveService(String serviceId) => _runOnProfile(
     (_) => ref.read(proRepositoryProvider).archiveService(serviceId),
   );
 
-  Future<void> setHours(List<DayHours> week) =>
+  Future<ProFailure?> setHours(List<DayHours> week) =>
       _runOnProfile((id) => ref.read(proRepositoryProvider).setHours(id, week));
 
-  Future<void> publish() =>
+  Future<ProFailure?> publish() =>
       _runOnProfile((id) => ref.read(proRepositoryProvider).publish(id));
 
-  Future<void> uploadAvatar(XFile file) => _runOnProfile(
+  Future<ProFailure?> uploadAvatar(XFile file) => _runOnProfile(
     (id) => ref.read(photoUploaderProvider).uploadAvatar(id, file),
   );
 
-  Future<void> addWorkPhoto(XFile file) => _runOnProfile(
+  Future<ProFailure?> addWorkPhoto(XFile file) => _runOnProfile(
     (id) => ref.read(photoUploaderProvider).addWorkPhoto(id, file),
   );
 
-  Future<void> removeWorkPhoto(ProPhoto photo) => _runOnProfile(
+  Future<ProFailure?> removeWorkPhoto(ProPhoto photo) => _runOnProfile(
     (_) => ref.read(photoUploaderProvider).removeWorkPhoto(photo),
   );
 
@@ -99,25 +101,36 @@ class MyProController extends AsyncNotifier<ProProfile?> {
     return role == null ? null : ProKind.forRole(role);
   }
 
-  Future<void> _runOnProfile(Future<void> Function(String proId) action) {
+  Future<ProFailure?> _runOnProfile(
+    Future<void> Function(String proId) action,
+  ) {
     final profile = state.value;
     // While a role switch reloads, the value is still the previous role's
     // profile: writing through it would edit the wrong row.
     if (profile == null || profile.kind != _kind) {
-      state = AsyncError<ProProfile?>(
-        const UnknownProFailure('no profile for the active role'),
-        StackTrace.current,
-      );
-      return Future.value();
+      const failure = UnknownProFailure('no profile for the active role');
+      state = AsyncError<ProProfile?>(failure, StackTrace.current);
+      return Future.value(failure);
     }
     return _run(() => action(profile.id));
   }
 
-  // On failure the error is exposed while the previous profile stays in
-  // `state.value`, so screens keep showing it.
-  Future<void> _run(Future<Object?> Function() action) async {
+  /// Runs a write, then reloads the profile. Returns the write's failure, or
+  /// null when the write went through, even if the reload then failed.
+  ///
+  /// A failed write is exposed while the previous profile stays in
+  /// `state.value`, so screens keep showing it. A failed reload is not the
+  /// write's failure (reported as one, a retry would store the photo or
+  /// service twice): the profile is loaded again, and a second failure is
+  /// that load's error.
+  Future<ProFailure?> _run(Future<Object?> Function() action) async {
     try {
       await action();
+    } on Object catch (e, st) {
+      if (ref.mounted) state = AsyncError<ProProfile?>(e, st);
+      return e is ProFailure ? e : UnknownProFailure('$e');
+    }
+    try {
       // Re-read the role: it may have changed while the action ran, and
       // `mine` must only be queried while acting as the pro role.
       final role = ref.read(accountProvider).value?.activeRole;
@@ -125,11 +138,15 @@ class MyProController extends AsyncNotifier<ProProfile?> {
       final fresh = role == null || kind == null
           ? null
           : await ref.read(proRepositoryProvider).mine(kind, activeRole: role);
-      if (!ref.mounted) return;
-      state = AsyncData(fresh);
+      if (ref.mounted) state = AsyncData(fresh);
     } on Object catch (e, st) {
-      if (!ref.mounted) return;
-      state = AsyncError<ProProfile?>(e, st);
+      developer.log(
+        'profile reload after a write failed',
+        error: e,
+        stackTrace: st,
+      );
+      if (ref.mounted) ref.invalidateSelf();
     }
+    return null;
   }
 }

@@ -1,5 +1,8 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/l10n/locale_controller.dart';
@@ -53,7 +56,12 @@ class ProDashboardScreen extends ConsumerWidget {
         title: l10n.dashboardSalonTitle,
         body: l10n.dashboardSalonBody,
       );
-    } else if (!state.hasValue || stale) {
+    } else if (!state.hasValue ||
+        stale ||
+        // Riverpod keeps the last value through a reload: a customer's
+        // "no profile" stays the value while the pro role's profile loads,
+        // and through a failed load. Only a settled value says there is none.
+        (profile == null && (state.isLoading || state.hasError))) {
       body = state.hasError && !state.isLoading
           ? ErrorView(
               message: proFailureMessage(l10n, state.error),
@@ -144,8 +152,9 @@ class _Header extends StatelessWidget {
               message: l10n.proSpaceFixedHint,
               triggerMode: TooltipTriggerMode.tap,
               showDuration: const Duration(seconds: 4),
+              // A hint, not an action: the tooltip opens on tap for
+              // sighted users and the label reads it out.
               child: Semantics(
-                button: true,
                 label: l10n.proSpaceFixedHint,
                 excludeSemantics: true,
                 child: const SizedBox.square(
@@ -175,13 +184,28 @@ class _AvatarButtonState extends ConsumerState<_AvatarButton> {
   bool _busy = false;
 
   Future<void> _change() async {
+    // Set before the picker opens: a second tap would open a second one.
     if (_busy) return;
-    final file = await ref.read(avatarPickerProvider)();
-    if (file == null || !mounted) return;
     setState(() => _busy = true);
-    // A failure keeps the old photo; the listener says why.
-    await ref.read(myProProvider.notifier).uploadAvatar(file);
-    if (mounted) setState(() => _busy = false);
+    try {
+      final XFile? file;
+      try {
+        file = await ref.read(avatarPickerProvider)();
+      } on Object catch (e, st) {
+        developer.log('avatar pick failed', error: e, stackTrace: st);
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(context.l10n.photoPickFailed)));
+        }
+        return;
+      }
+      if (file == null || !mounted) return;
+      // A failure keeps the old photo; the listener says why.
+      await ref.read(myProProvider.notifier).uploadAvatar(file);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -264,7 +288,8 @@ class _DashboardBody extends StatelessWidget {
             actionKey: 'dashEditProfile',
             icon: Icons.edit_outlined,
             label: l10n.dashboardEditProfile,
-            onPressed: () => context.go('/pro/setup/profile?edit=1'),
+            // Pushed, so back (and saving) returns here.
+            onPressed: () => context.push('/pro/setup/profile?edit=1'),
           ),
           child: _ProfileSummary(profile: profile),
         ),

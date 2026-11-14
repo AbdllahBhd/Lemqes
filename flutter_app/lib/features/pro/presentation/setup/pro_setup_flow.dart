@@ -205,15 +205,10 @@ class _EditScaffold extends StatelessWidget {
   }
 }
 
-/// Runs a [MyProController] action and returns its failure, or null when it
-/// went through: the controller reports failures through its state only.
+/// Runs a [MyProController] action and returns the write's failure, or null
+/// when it went through (a failed reload afterwards is the controller's to
+/// report).
 Future<ProFailure?> runPro(
   WidgetRef ref,
-  Future<void> Function(MyProController pro) action,
-) async {
-  await action(ref.read(myProProvider.notifier));
-  final state = ref.read(myProProvider);
-  if (!state.hasError) return null;
-  final error = state.error;
-  return error is ProFailure ? error : UnknownProFailure('$error');
-}
+  Future<ProFailure?> Function(MyProController pro) action,
+) => action(ref.read(myProProvider.notifier));

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -62,8 +63,20 @@ class _PhotoGalleryEditorState extends ConsumerState<PhotoGalleryEditor> {
   Future<void> _add() async {
     if (_busy || _count >= maxWorkPhotos) return;
     setState(() => _busy = true);
-    final file = await ref.read(workPhotoPickerProvider)();
-    final bytes = await file?.readAsBytes();
+    final XFile? file;
+    final Uint8List? bytes;
+    try {
+      file = await ref.read(workPhotoPickerProvider)();
+      bytes = await file?.readAsBytes();
+    } on Object catch (e, st) {
+      // Denied photo access, a picker already open, an unreadable file.
+      developer.log('work photo pick failed', error: e, stackTrace: st);
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(context.l10n.photoPickFailed)));
+      return;
+    }
     if (!mounted) return;
     if (file == null || bytes == null) {
       setState(() => _busy = false);
@@ -83,7 +96,9 @@ class _PhotoGalleryEditorState extends ConsumerState<PhotoGalleryEditor> {
     if (!mounted) return;
     setState(() {
       _busy = false;
-      // At the cap a retry can only fail again; the listener says why.
+      // Stored (even if the reload then failed: the controller loads again),
+      // or at the cap, where a retry can only fail again; the listener says
+      // why.
       if (failure == null || failure is TooManyPhotos) {
         _pending.remove(pending);
       } else {

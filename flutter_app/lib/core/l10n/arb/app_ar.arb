@@ -332,5 +332,6 @@
   "privacyShowPrices": "إظهار أسعاري",
   "privacyShowPricesHint": "{type, select, mobile{عند إخفائها، يقرأ الزبائن «السعر عند الطلب».} other{عند إخفائها، يقرأ الزبائن «السعر في الصالون».}}",
   "previewTag": "معاينة",
-  "previewCallNote": "سيرى زبائنك هنا زراً للاتصال بك."
+  "previewCallNote": "سيرى زبائنك هنا زراً للاتصال بك.",
+  "photoPickFailed": "تعذّر فتح صورك. تحقّق من إذن الوصول إلى الصور في الإعدادات."
 }

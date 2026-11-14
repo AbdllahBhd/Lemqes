@@ -332,5 +332,6 @@
   "privacyShowPrices": "Sken-d ssuma-inu",
   "privacyShowPricesHint": "{type, select, mobile{Ma ffren, iɣellayen ad ɣren « Ssuma s usuter ».} other{Ma ffren, iɣellayen ad ɣren « Ssuma deg ssalun ».}}",
   "previewTag": "Taskant",
-  "previewCallNote": "Iɣellayen-ik ad walin dagi taqeffalt i usiwel."
+  "previewCallNote": "Iɣellayen-ik ad walin dagi taqeffalt i usiwel.",
+  "photoPickFailed": "Ur nezmir ara ad d-nldi tiwlafin-ik. Senqed tasireg n tewlafin deg yiɣewwaren."
 }
