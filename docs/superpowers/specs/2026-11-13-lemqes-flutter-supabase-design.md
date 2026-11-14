@@ -1,6 +1,6 @@
 # LEMQES — Flutter + Supabase rebuild: design
 
-Date: 2026-11-13 · Status: READY FOR APPROVAL · Product record: [PRODUCT.md](../../../PRODUCT.md)
+Date: 2026-11-13 · Status: APPROVED 2026-11-14 · Product record: [PRODUCT.md](../../../PRODUCT.md)
 
 ## 1. Intent and why
 
