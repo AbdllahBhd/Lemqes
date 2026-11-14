@@ -9,6 +9,14 @@ import '../data/auth_repository.dart';
 
 export 'auth_fields.dart';
 
+/// Material's `login` glyph, mirrored in right-to-left layouts: the arrow
+/// points into the door in the reading direction.
+const IconData loginIcon = IconData(
+  0xe3b2,
+  fontFamily: 'MaterialIcons',
+  matchTextDirection: true,
+);
+
 /// The words for an auth failure; never the raw exception.
 String authFailureMessage(AppLocalizations l10n, AuthFailure failure) =>
     switch (failure) {

@@ -44,10 +44,7 @@ void main() {
       final field = tester.widget<EditableText>(find.byType(EditableText));
       expect(field.keyboardType, TextInputType.number);
       expect(field.autofillHints, contains(AutofillHints.oneTimeCode));
-      expect(
-        Directionality.of(tester.element(find.byType(EditableText))),
-        TextDirection.ltr,
-      );
+      expect(field.textDirection, TextDirection.ltr);
     });
   });
 

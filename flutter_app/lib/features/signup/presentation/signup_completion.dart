@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/router/redirect.dart';
 import '../../account/data/account.dart';
 import '../../account/data/account_providers.dart';
 import '../../account/data/account_repository.dart';
@@ -8,15 +8,25 @@ import '../data/signup_draft_store.dart';
 
 /// Whether the user is signed in right now. While the session stream has not
 /// emitted, the stored session answers synchronously.
-bool watchHasSession(WidgetRef ref) =>
-    _hasSession(ref, ref.watch(sessionProvider));
+bool watchHasSession(WidgetRef ref) => resolveHasSession(
+  ref.watch(sessionProvider),
+  () => ref.read(authRepositoryProvider).currentSession,
+);
 
-bool readHasSession(WidgetRef ref) =>
-    _hasSession(ref, ref.read(sessionProvider));
+bool readHasSession(WidgetRef ref) => resolveHasSession(
+  ref.read(sessionProvider),
+  () => ref.read(authRepositoryProvider).currentSession,
+);
 
-bool _hasSession(WidgetRef ref, AsyncValue<Session?> session) {
-  if (session.hasValue) return session.value != null;
-  return ref.read(authRepositoryProvider).currentSession != null;
+/// The draft lacks an answer the profile needs (space, role or name).
+class IncompleteSignupDraft implements Exception {
+  const IncompleteSignupDraft(this.missing);
+
+  /// Names of the missing fields only: the draft holds personal data.
+  final List<String> missing;
+
+  @override
+  String toString() => 'IncompleteSignupDraft(missing: $missing)';
 }
 
 final signupCompletionProvider = NotifierProvider<SignupCompletion, void>(
@@ -43,7 +53,11 @@ class SignupCompletion extends Notifier<void> {
     final role = draft?.role;
     final fullName = draft?.fullName;
     if (space == null || role == null || fullName == null) {
-      throw StateError('Sign-up draft is incomplete: ${draft?.toJson()}');
+      throw IncompleteSignupDraft([
+        if (space == null) 'space',
+        if (role == null) 'role',
+        if (fullName == null) 'fullName',
+      ]);
     }
     try {
       await ref

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/l10n/locale_controller.dart';
-import '../../../shared/widgets/ltr.dart';
 
 /// Outlined field look shared by the auth and sign-up forms.
 InputDecoration lemqesFieldDecoration(
@@ -63,26 +62,32 @@ class PhoneField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Ltr(
-      child: TextField(
-        key: const Key('phoneField'),
-        controller: controller,
-        enabled: enabled,
-        keyboardType: TextInputType.phone,
-        textInputAction: textInputAction,
-        autofillHints: const [AutofillHints.telephoneNumber],
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩۰-۹+ ]')),
-        ],
-        onSubmitted: onSubmitted,
-        decoration: lemqesFieldDecoration(
-          context,
-          label: l10n.phoneLabel,
-          hint: l10n.phoneHint,
-          error: error,
-          icon: Icons.phone_outlined,
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    // The label, icon and error follow the reading direction like every
+    // other field; only the number itself runs left-to-right, aligned with
+    // the label's side.
+    return TextField(
+      key: const Key('phoneField'),
+      controller: controller,
+      enabled: enabled,
+      keyboardType: TextInputType.phone,
+      textDirection: TextDirection.ltr,
+      textAlign: rtl ? TextAlign.right : TextAlign.left,
+      textInputAction: textInputAction,
+      autofillHints: const [AutofillHints.telephoneNumber],
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(
+          RegExp('[0-9\u0660-\u0669\u06F0-\u06F9+ ]'),
         ),
-      ),
+      ],
+      onSubmitted: onSubmitted,
+      decoration: lemqesFieldDecoration(
+        context,
+        label: l10n.phoneLabel,
+        hint: l10n.phoneHint,
+        error: error,
+        icon: Icons.phone_outlined,
+      ).copyWith(hintTextDirection: TextDirection.ltr),
     );
   }
 }

@@ -104,6 +104,9 @@ class _CredentialsStepState extends ConsumerState<CredentialsStep> {
         if (mounted) {
           setState(() => _failure = accountFailureMessage(l10n, failure));
         }
+      } on IncompleteSignupDraft {
+        // Space or role is missing; the route guard normally prevents this.
+        if (mounted) setState(() => _failure = l10n.errorGeneric);
       } finally {
         if (mounted) setState(() => _loading = false);
       }

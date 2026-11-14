@@ -13,20 +13,24 @@ const _full = SignupDraft(
   phone: '+213550123456',
 );
 
-const _screens = {
-  '/auth': null,
-  '/auth/reset': null,
-  '/signup/space': SignupDraft(),
-  '/signup/role': SignupDraft(space: Space.men),
-  '/signup/credentials': SignupDraft(
-    space: Space.men,
-    role: AppRole.salonOwner,
+/// Each screen, its draft, and the LTR inputs it must show.
+const _screens = <String, (SignupDraft?, List<String>)>{
+  '/auth': (null, ['phoneField']),
+  '/auth/reset': (null, ['phoneField']),
+  '/signup/space': (SignupDraft(), []),
+  '/signup/role': (SignupDraft(space: Space.men), []),
+  '/signup/credentials': (
+    SignupDraft(space: Space.men, role: AppRole.salonOwner),
+    ['phoneField'],
   ),
-  '/signup/code': _full,
+  '/signup/code': (_full, ['codeField']),
 };
 
+final _easternDigits = RegExp('[٠-٩۰-۹]');
+
 void main() {
-  for (final MapEntry(key: location, value: draft) in _screens.entries) {
+  for (final MapEntry(key: location, value: (draft, ltrKeys))
+      in _screens.entries) {
     testWidgets('$location in Arabic at 2x text fits 360x740', (tester) async {
       await pumpApp(
         tester,
@@ -44,18 +48,25 @@ void main() {
         Directionality.of(tester.element(find.byType(Scaffold).first)),
         TextDirection.rtl,
       );
-      for (final key in ['phoneField', 'codeField']) {
-        final field = byKey(key);
-        if (field.evaluate().isEmpty) continue;
+      for (final key in ltrKeys) {
         final input = find.descendant(
-          of: field,
+          of: byKey(key),
           matching: find.byType(EditableText),
         );
+        expect(input, findsOneWidget, reason: '$key on $location');
         expect(
-          Directionality.of(tester.element(input)),
+          tester.widget<EditableText>(input).textDirection,
           TextDirection.ltr,
           reason: '$key on $location',
         );
+      }
+      // Numbers (hint, phone, step count, countdown) use Latin digits.
+      expect(find.textContaining(_easternDigits), findsNothing);
+      if (ltrKeys.contains('phoneField')) {
+        expect(find.text('0550 12 34 56'), findsOneWidget);
+      }
+      if (location == '/signup/code') {
+        expect(find.text('+213 550 12 34 56'), findsOneWidget);
       }
     });
   }

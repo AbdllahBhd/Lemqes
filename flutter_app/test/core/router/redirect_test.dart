@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/router/redirect.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/signup/data/signup_draft.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _account = Account(
   id: 'u1',
@@ -11,6 +14,18 @@ const _account = Account(
   proSpace: null,
   activeRole: AppRole.customer,
   roles: {AppRole.customer},
+);
+
+final _session = Session(
+  accessToken: 't',
+  tokenType: 'bearer',
+  user: const User(
+    id: 'u1',
+    appMetadata: {},
+    userMetadata: {},
+    aud: 'authenticated',
+    createdAt: '2026-01-01T00:00:00Z',
+  ),
 );
 
 const _loading = AsyncValue<Account?>.loading();
@@ -143,6 +158,152 @@ void main() {
 
     test('/settings stays put', () {
       expect(_go(location: '/settings'), isNull);
+    });
+  });
+
+  group('reset', () {
+    test('stays put in every session and account state', () {
+      for (final hasSession in [false, true]) {
+        for (final account in [_loading, _none, _present, _error]) {
+          expect(
+            _go(
+              hasSession: hasSession,
+              account: account,
+              draft: const SignupDraft(phone: '+213550000000'),
+              location: '/auth/reset',
+            ),
+            isNull,
+            reason: 'session $hasSession, account $account',
+          );
+        }
+      }
+    });
+  });
+
+  group('code step while the account loads after verification', () {
+    // Riverpod 3 keeps the previous value while rebuilding: when the session
+    // arrives, accountProvider goes from AsyncData(null) to a loading state
+    // that still has the value null. Produced by a real container, not
+    // hand-built, so the test tracks Riverpod's actual behaviour.
+    Future<AsyncValue<Account?>> reloadingFrom(Account? previous) async {
+      var builds = 0;
+      final provider = FutureProvider<Account?>(
+        (ref) => builds++ == 0
+            ? Future.value(previous)
+            : Completer<Account?>().future,
+      );
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container.listen(provider, (_, _) {});
+      await container.read(provider.future);
+      container.invalidate(provider);
+      return container.read(provider);
+    }
+
+    test('the reloading state still has its previous null value', () async {
+      final reloading = await reloadingFrom(null);
+      expect(reloading.isLoading, isTrue);
+      expect(reloading.hasValue, isTrue);
+      expect(reloading.value, isNull);
+    });
+
+    test('first load: stays on the code step', () {
+      expect(_go(account: _loading, location: '/signup/code'), isNull);
+    });
+
+    test('reload with a previous null: stays on the code step', () async {
+      final reloading = await reloadingFrom(null);
+      expect(_go(account: reloading, location: '/signup/code'), isNull);
+    });
+
+    test('reload with a previous account: stays on the code step', () async {
+      final withAccount = await reloadingFrom(_account);
+      expect(_go(account: withAccount, location: '/signup/code'), isNull);
+    });
+
+    test('once the account exists, the code step goes home', () {
+      expect(_go(account: _present, location: '/signup/code'), '/home');
+    });
+
+    test('other wizard steps still wait on home during a first load', () {
+      expect(_go(account: _loading, location: '/signup/credentials'), '/home');
+    });
+  });
+
+  group('signupStepRedirect', () {
+    String? step(String s, {SignupDraft? draft, bool hasSession = false}) =>
+        signupStepRedirect(step: s, draft: draft, hasSession: hasSession);
+
+    const full = SignupDraft(
+      space: Space.men,
+      role: AppRole.customer,
+      fullName: 'Amine',
+      phone: '+213550000000',
+    );
+
+    test('an unknown step opens the space step', () {
+      expect(step('bogus'), '/signup/space');
+    });
+
+    test('no draft: only the space step is open', () {
+      expect(step('space'), isNull);
+      expect(step('role'), '/signup/space');
+      expect(step('code'), '/signup/space');
+    });
+
+    test('a step beyond the answers goes to the resume step', () {
+      expect(
+        step('credentials', draft: const SignupDraft(space: Space.men)),
+        '/signup/role',
+      );
+      expect(
+        step(
+          'code',
+          draft: const SignupDraft(space: Space.men, role: AppRole.barber),
+        ),
+        '/signup/credentials',
+      );
+    });
+
+    test('earlier steps stay open for going back', () {
+      expect(step('space', draft: full), isNull);
+      expect(step('credentials', draft: full), isNull);
+      expect(step('code', draft: full), isNull);
+    });
+
+    test('signed in without a saved name, the code step asks for it', () {
+      const noName = SignupDraft(
+        space: Space.men,
+        role: AppRole.customer,
+        phone: '+213550000000',
+      );
+      expect(
+        step('code', draft: noName, hasSession: true),
+        '/signup/credentials',
+      );
+      expect(step('code', draft: noName), isNull);
+      expect(step('code', draft: full, hasSession: true), isNull);
+    });
+  });
+
+  group('resolveHasSession', () {
+    test('a loading stream falls back to the stored session', () {
+      expect(
+        resolveHasSession(const AsyncValue.loading(), () => _session),
+        isTrue,
+      );
+      expect(
+        resolveHasSession(const AsyncValue.loading(), () => null),
+        isFalse,
+      );
+    });
+
+    test('an emitted value wins over the stored session', () {
+      expect(
+        resolveHasSession(const AsyncValue.data(null), () => _session),
+        isFalse,
+      );
+      expect(resolveHasSession(AsyncValue.data(_session), () => null), isTrue);
     });
   });
 }

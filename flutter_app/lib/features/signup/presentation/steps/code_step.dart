@@ -56,7 +56,6 @@ class _CodeStepState extends ConsumerState<CodeStep> {
     });
     try {
       await auth.verifySignUpCode(phone: phone, code: code);
-      _verified = true;
     } on AuthFailure catch (failure) {
       if (mounted) {
         setState(() {
@@ -67,6 +66,8 @@ class _CodeStepState extends ConsumerState<CodeStep> {
       }
       return;
     }
+    // Unmounted, the rebuilt code step resumes the (idempotent) completion.
+    if (!mounted) return;
     await _finish();
   }
 
@@ -84,6 +85,9 @@ class _CodeStepState extends ConsumerState<CodeStep> {
       if (mounted) {
         setState(() => _failure = accountFailureMessage(l10n, failure));
       }
+    } on IncompleteSignupDraft {
+      // Signed in but the names were never saved: ask for them.
+      if (mounted) context.go('/signup/credentials');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -183,7 +187,7 @@ class _CodeStepState extends ConsumerState<CodeStep> {
             key: const Key('backToLogin'),
             style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
             onPressed: _busy ? null : _backToLogin,
-            icon: const Icon(Icons.login),
+            icon: const Icon(Icons.arrow_back),
             label: Text(l10n.backToLogin),
           ),
         ),

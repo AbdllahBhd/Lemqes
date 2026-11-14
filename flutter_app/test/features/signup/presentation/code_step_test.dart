@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/account/data/account.dart';
+import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:lemqes/features/auth/data/auth_repository.dart';
 import 'package:lemqes/features/signup/data/signup_draft.dart';
 import 'package:mocktail/mocktail.dart';
@@ -143,5 +144,67 @@ void main() {
 
     expect(h.draft, isNull);
     expect(h.location, '/auth');
+  });
+
+  testWidgets('signed in already: finishes the profile without a code', (
+    tester,
+  ) async {
+    final h = await pumpApp(
+      tester,
+      location: '/signup/code',
+      auth: auth,
+      account: account,
+      session: testSession,
+      draft: _draft,
+    );
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+
+    expect(byKey('codeField'), findsNothing);
+    verifyNever(
+      () => auth.verifySignUpCode(
+        phone: any(named: 'phone'),
+        code: any(named: 'code'),
+      ),
+    );
+    verify(
+      () => account.completeSignup(
+        fullName: 'Lina Haddad',
+        space: Space.women,
+        role: AppRole.salonOwner,
+        businessName: 'Institut Lina',
+      ),
+    ).called(1);
+    expect(h.draft, isNull);
+  });
+
+  testWidgets('a profile failure offers a retry, not an endless spinner', (
+    tester,
+  ) async {
+    when(
+      () => account.completeSignup(
+        fullName: any(named: 'fullName'),
+        space: any(named: 'space'),
+        role: any(named: 'role'),
+        businessName: any(named: 'businessName'),
+      ),
+    ).thenAnswer((_) async => throw const NetworkAccountFailure());
+    await pumpApp(
+      tester,
+      location: '/signup/code',
+      auth: auth,
+      account: account,
+      session: testSession,
+      draft: _draft,
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text('Connexion impossible. Vérifiez votre réseau.'),
+      findsOneWidget,
+    );
+    expect(find.text('Réessayer'), findsOneWidget);
   });
 }

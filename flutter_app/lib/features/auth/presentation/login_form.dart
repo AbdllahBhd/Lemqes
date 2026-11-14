@@ -99,7 +99,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           LemqesPrimaryButton(
             key: const Key('primaryAction'),
             label: l10n.actionSignIn,
-            icon: Icons.login,
+            icon: loginIcon,
             expand: true,
             loading: _loading,
             onPressed: _submit,

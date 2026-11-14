@@ -9,9 +9,6 @@ import 'steps/credentials_step.dart';
 import 'steps/role_step.dart';
 import 'steps/space_step.dart';
 
-/// The wizard steps in order; their names are the `/signup/:step` paths.
-const signupSteps = ['space', 'role', 'credentials', 'code'];
-
 /// `/signup/:step`. Steps 4-5 for pros (profile, hours) arrive in M2; until
 /// then pros land on home after the code step.
 class SignupWizard extends StatelessWidget {

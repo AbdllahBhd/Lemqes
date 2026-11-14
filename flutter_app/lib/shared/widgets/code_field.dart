@@ -92,40 +92,42 @@ class _CodeFieldState extends State<CodeField> {
       ],
     );
 
-    return Ltr(
-      child: Semantics(
-        label: widget.semanticsLabel,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            ExcludeSemantics(child: FittedBox(child: boxes)),
-            // The real input sits over the boxes, invisible, taking the taps.
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0,
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focus,
-                  enabled: widget.enabled,
-                  autofocus: true,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  autofillHints: const [AutofillHints.oneTimeCode],
-                  showCursor: false,
-                  enableInteractiveSelection: false,
-                  inputFormatters: [
-                    _LatinDigitsFormatter(),
-                    LengthLimitingTextInputFormatter(widget.length),
-                  ],
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    counterText: '',
-                  ),
+    return Semantics(
+      label: widget.semanticsLabel,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Digit order is left-to-right in every language.
+          ExcludeSemantics(
+            child: FittedBox(child: Ltr(child: boxes)),
+          ),
+          // The real input sits over the boxes, invisible, taking the taps.
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focus,
+                enabled: widget.enabled,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                textDirection: TextDirection.ltr,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.oneTimeCode],
+                showCursor: false,
+                enableInteractiveSelection: false,
+                inputFormatters: [
+                  _LatinDigitsFormatter(),
+                  LengthLimitingTextInputFormatter(widget.length),
+                ],
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  counterText: '',
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
