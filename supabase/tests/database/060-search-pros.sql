@@ -1,5 +1,5 @@
 begin;
-select plan(26);
+select plan(31);
 
 -- Fixture: three published men pros, one unpublished men pro, one published women pro.
 --   m1 'Salon Dégradé'  Alger (16/1601)  adults           + preset men_salon_beard_trim, phone public
@@ -43,6 +43,7 @@ begin
   update public.pro_profiles set phone_visibility = 'public' where id in (m4, w1);
 
   perform set_config('t.m1', m1::text, true);
+  perform set_config('t.m2', m2::text, true);
   perform set_config('t.m3', m3::text, true);
   perform set_config('t.m4', m4::text, true);
   perform set_config('t.w1', w1::text, true);
@@ -113,6 +114,19 @@ select results_eq(
   $$ select display_name, min_price_dzd from public.search_pros() order by display_name $$,
   $$ values ('Barber Oran'::text, null::int), ('Kids Corner', 1500), ('Salon Dégradé', 800) $$,
   'min_price_dzd is the cheapest active service, null when prices are hidden');
+select is(
+  (select count(*)::int from public.pro_services where pro_id = current_setting('t.m2')::uuid),
+  0, 'customers have no direct read of pro_services (so no hidden price leaks)');
+select results_eq(
+  $$ select coalesce(name, preset_key), price_dzd
+       from public.pro_public_services(current_setting('t.m2')::uuid) order by 1 $$,
+  $$ values ('Base service'::text, null::int), ('Coupe Spéciale Zarzis', null) $$,
+  'pro_public_services hides every price when show_prices is false');
+select results_eq(
+  $$ select coalesce(name, preset_key), price_dzd
+       from public.pro_public_services(current_setting('t.m1')::uuid) order by 1 $$,
+  $$ values ('Base service'::text, 800), ('men_salon_beard_trim', 1000) $$,
+  'pro_public_services shows prices when show_prices is true');
 select is(public.pro_contact_phone(current_setting('t.m1')::uuid), '+213550000501',
   'a public phone of a listable pro is returned to a customer');
 select is(public.pro_contact_phone(current_setting('t.m3')::uuid), null,
@@ -132,6 +146,9 @@ select results_eq(
   'women customer: only the women pro');
 select is(public.pro_contact_phone(current_setting('t.m1')::uuid), null,
   'a women customer gets no phone of a men pro');
+select is(
+  (select count(*)::int from public.pro_public_services(current_setting('t.m1')::uuid)),
+  0, 'a customer of another space gets no services from the RPC');
 do $$ begin perform tests.clear_auth(); end; $$;
 
 do $$ begin perform tests.authenticate_as(current_setting('t.o1')::uuid); end; $$;
@@ -139,6 +156,14 @@ select is((select count(*)::int from public.search_pros()), 0,
   'a user acting as barber gets no search results');
 select is(public.pro_contact_phone(current_setting('t.m1')::uuid), null,
   'no phone while not acting as customer');
+do $$ begin perform tests.clear_auth(); end; $$;
+
+do $$ begin perform tests.authenticate_as(current_setting('t.o2')::uuid); end; $$;
+select results_eq(
+  $$ select price_dzd from public.pro_services
+      where pro_id = current_setting('t.m2')::uuid order by price_dzd $$,
+  $$ values (600), (700) $$,
+  'the owner always reads its own prices, even hidden ones');
 do $$ begin perform tests.clear_auth(); end; $$;
 
 -- Limit cap ---------------------------------------------------------------------------------------

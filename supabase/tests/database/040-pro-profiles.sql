@@ -1,5 +1,5 @@
 begin;
-select plan(85);
+select plan(91);
 
 -- Accounts are created as postgres up front: once a test switches role it cannot write auth.users.
 do $$
@@ -23,13 +23,14 @@ select is(
     where pronamespace = 'public'::regnamespace
       and proname in ('f_unaccent', 'is_listable', 'pro_missing_fields', 'create_pro_profile',
                       'set_pro_hours', 'publish_pro_profile', 'pro_contact_phone',
+                      'pro_public_services', 'owns_pro', 'owns_pro_folder',
                       'pro_profiles_before_write', 'pro_services_before_write',
                       'pro_services_after_change', 'pro_photos_before_insert',
                       'trim_profile_full_name')
       and prosecdef
       and proconfig @> array['search_path=""']),
-  12,
-  'all 12 new non-search functions are security definer with search_path = '''''
+  15,
+  'all 15 new non-search functions are security definer with search_path = '''''
 );
 select ok(
   (select not prosecdef and proconfig @> array['search_path=""'] and provolatile = 's'
@@ -50,6 +51,7 @@ select is(
     where pronamespace = 'public'::regnamespace
       and proname in ('f_unaccent', 'is_listable', 'pro_missing_fields', 'create_pro_profile',
                       'set_pro_hours', 'publish_pro_profile', 'pro_contact_phone', 'search_pros',
+                      'pro_public_services', 'owns_pro', 'owns_pro_folder',
                       'pro_profiles_before_write', 'pro_services_before_write',
                       'pro_services_after_change', 'pro_photos_before_insert',
                       'trim_profile_full_name')
@@ -82,6 +84,8 @@ select throws_ok($$ select public.pro_contact_phone(gen_random_uuid()) $$,
   '42501', null, 'anon cannot call pro_contact_phone');
 select throws_ok($$ select * from public.search_pros() $$,
   '42501', null, 'anon cannot call search_pros');
+select throws_ok($$ select * from public.pro_public_services(gen_random_uuid()) $$,
+  '42501', null, 'anon cannot call pro_public_services');
 select throws_ok($$ select public.is_listable(gen_random_uuid()) $$,
   '42501', null, 'anon cannot call is_listable');
 select throws_ok($$ select public.f_unaccent('é') $$,
@@ -205,6 +209,14 @@ select throws_ok(
   'P0001', 'invalid_weekday', 'the same weekday twice is refused');
 select throws_ok(
   $$ select public.set_pro_hours(current_setting('t.pa')::uuid,
+       '[{"weekday":2,"opens":"09:00","closes":"24:00"}]') $$,
+  'P0001', 'invalid_hours', 'closes = 24:00 is refused (use 00:00 past midnight)');
+select throws_ok(
+  $$ select public.set_pro_hours(current_setting('t.pa')::uuid,
+       '[{"weekday":2,"opens":"24:00","closes":"02:00"}]') $$,
+  'P0001', 'invalid_hours', 'opens = 24:00 is refused');
+select throws_ok(
+  $$ select public.set_pro_hours(current_setting('t.pa')::uuid,
        '[{"weekday":2,"opens":"9h","closes":"18:00"}]') $$,
   'P0001', 'invalid_hours', 'an unparsable time is refused with invalid_hours');
 select is(
@@ -228,8 +240,8 @@ select throws_ok(
      values (current_setting('t.pa')::uuid, 'Intrus', 'hair', 500, 20) $$,
   '42501', null, 'another owner cannot insert services for my profile');
 select is(
-  (select count(*)::int from public.pro_profiles where owner_id <> auth.uid()),
-  0, 'a user acting as barber selects no other pro profile');
+  (select count(*)::int from public.pro_profiles where id <> current_setting('t.pb')::uuid),
+  0, 'a user acting as barber selects no other (unpublished) pro profile');
 do $$ begin perform tests.clear_auth(); end; $$;
 
 -- Publishing ----------------------------------------------------------------------------------
@@ -331,8 +343,8 @@ do $$ begin perform tests.authenticate_as(current_setting('t.cm')::uuid); end; $
 select is((select count(*)::int from public.search_pros('signature')), 0,
   'an archived service no longer matches in search');
 select is(
-  (select count(*)::int from public.pro_services
-    where pro_id = current_setting('t.pa')::uuid and archived_at is not null),
+  (select count(*)::int from public.pro_public_services(current_setting('t.pa')::uuid)
+    where name = 'Coupe signature'),
   0, 'customers do not see archived services');
 do $$ begin perform tests.clear_auth(); end; $$;
 
@@ -355,14 +367,38 @@ select is(
   0, 'a pro does not see another pro''s unpublished profile');
 do $$ begin perform tests.clear_auth(); end; $$;
 
+-- Acting as barber vs acting as customer, same space, A published -------------------------------
+
+do $$ begin perform tests.authenticate_as(current_setting('t.b')::uuid); end; $$;
+select results_eq(
+  $$ select (select count(*) from public.pro_profiles where id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_hours where pro_id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_photos where pro_id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_services where pro_id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_public_services(current_setting('t.pa')::uuid))::int $$,
+  $$ values (0, 0, 0, 0, 0) $$,
+  'acting as barber: nothing of another published same-space pro (profile, hours, photos, services)');
+select public.set_active_role('customer');
+select results_eq(
+  $$ select (select count(*) from public.pro_profiles where id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_hours where pro_id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_photos where pro_id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_services where pro_id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_public_services(current_setting('t.pa')::uuid))::int $$,
+  $$ values (1, 1, 1, 0, 1) $$,
+  'the same user acting as customer: profile, hours, photos, and services only through the RPC');
+select public.set_active_role('barber');
+do $$ begin perform tests.clear_auth(); end; $$;
+
 -- Space separation and visibility -----------------------------------------------------------------
 
 do $$ begin perform tests.authenticate_as(current_setting('t.cw')::uuid); end; $$;
 select is((select count(*)::int from public.pro_profiles where space = 'men'), 0,
   'a women-space customer selects no men pro');
 select is(
-  (select count(*)::int from public.pro_services where pro_id = current_setting('t.pa')::uuid),
-  0, 'a women-space customer selects none of a men pro''s services');
+  (select count(*)::int from public.pro_services where pro_id = current_setting('t.pa')::uuid)
+  + (select count(*)::int from public.pro_public_services(current_setting('t.pa')::uuid)),
+  0, 'a women-space customer gets none of a men pro''s services (table or RPC)');
 select is(
   (select count(*)::int from public.pro_photos where pro_id = current_setting('t.pa')::uuid),
   0, 'a women-space customer selects none of a men pro''s photos');
@@ -374,11 +410,14 @@ do $$ begin perform tests.clear_auth(); end; $$;
 do $$ begin perform tests.authenticate_as(current_setting('t.cm')::uuid); end; $$;
 select results_eq(
   $$ select (select count(*) from public.pro_profiles where id = current_setting('t.pa')::uuid)::int,
-            (select count(*) from public.pro_services where pro_id = current_setting('t.pa')::uuid)::int,
+            (select count(*) from public.pro_public_services(current_setting('t.pa')::uuid))::int,
             (select count(*) from public.pro_photos where pro_id = current_setting('t.pa')::uuid)::int,
             (select count(*) from public.pro_hours where pro_id = current_setting('t.pa')::uuid)::int $$,
   $$ values (1, 1, 1, 1) $$,
   'a men-space customer sees the published profile, its active service, photo and hours');
+select throws_ok(
+  $$ select owner_id from public.pro_profiles where id = current_setting('t.pa')::uuid $$,
+  '42501', null, 'a customer cannot read owner_id');
 select is(
   (select count(*)::int from public.pro_profiles where id = current_setting('t.pb')::uuid),
   0, 'an unpublished profile is invisible to customers');

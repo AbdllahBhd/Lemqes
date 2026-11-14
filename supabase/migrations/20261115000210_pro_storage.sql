@@ -10,51 +10,37 @@ values
   ('avatars', 'avatars', true, 5242880, array['image/jpeg', 'image/png', 'image/webp']),
   ('work-photos', 'work-photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp']);
 
--- The folder is compared as text, so a segment that is not a uuid is simply no match (no cast
--- error). pro_profiles RLS applies inside the subquery and only adds the owner's own rows.
+-- public.owns_pro_folder(name) (definer, 20261115000200) is the ownership join of the plan:
+-- exists (pro_profiles p where p.id::text = (storage.foldername(name))[1] and p.owner_id = auth.uid()).
+-- It is a definer helper because clients have no SELECT on pro_profiles.owner_id.
 create policy pro_media_select_own on storage.objects
 for select to authenticated
 using (
   bucket_id in ('avatars', 'work-photos')
-  and exists (
-    select 1 from public.pro_profiles p
-    where p.id::text = (storage.foldername(name))[1] and p.owner_id = (select auth.uid())
-  )
+  and public.owns_pro_folder(name)
 );
 
 create policy pro_media_insert_own on storage.objects
 for insert to authenticated
 with check (
   bucket_id in ('avatars', 'work-photos')
-  and exists (
-    select 1 from public.pro_profiles p
-    where p.id::text = (storage.foldername(name))[1] and p.owner_id = (select auth.uid())
-  )
+  and public.owns_pro_folder(name)
 );
 
 create policy pro_media_update_own on storage.objects
 for update to authenticated
 using (
   bucket_id in ('avatars', 'work-photos')
-  and exists (
-    select 1 from public.pro_profiles p
-    where p.id::text = (storage.foldername(name))[1] and p.owner_id = (select auth.uid())
-  )
+  and public.owns_pro_folder(name)
 )
 with check (
   bucket_id in ('avatars', 'work-photos')
-  and exists (
-    select 1 from public.pro_profiles p
-    where p.id::text = (storage.foldername(name))[1] and p.owner_id = (select auth.uid())
-  )
+  and public.owns_pro_folder(name)
 );
 
 create policy pro_media_delete_own on storage.objects
 for delete to authenticated
 using (
   bucket_id in ('avatars', 'work-photos')
-  and exists (
-    select 1 from public.pro_profiles p
-    where p.id::text = (storage.foldername(name))[1] and p.owner_id = (select auth.uid())
-  )
+  and public.owns_pro_folder(name)
 );

@@ -7,6 +7,11 @@
 --   * listable = published_at is not null + same space as the caller's (select current_space())
 --     + the caller acts as customer. Only a listable profile (and its child rows) is readable by
 --     someone other than its owner; public.is_listable(pro_id) backs the child-table policies.
+--   * Customers never read pro_services directly (price_dzd must stay hidden when show_prices is
+--     false): they go through public.pro_public_services(pro_id), which nulls hidden prices.
+--   * pro_profiles.owner_id is not selectable by clients (column grants): it links a public card
+--     to an account. Policies on other tables check ownership through the definer helpers
+--     public.owns_pro(pro_id) / public.owns_pro_folder(object name), which may read it.
 --   * pro_profiles.space is copied from profiles.pro_space at creation and is never writable,
 --     so a pro cannot move into the other space's listings.
 --   * Services are archived (archived_at), never deleted: M5 bookings will reference them.
@@ -127,6 +132,7 @@ create table public.pro_hours (
   break_end time,
   primary key (pro_id, weekday),
   check (opens <> closes),
+  check (opens < '24:00' and closes < '24:00'),
   check (not (closes < opens) or closes <= '06:00'),
   check ((break_start is null) = (break_end is null)),
   check (break_end is null or break_end > break_start)
@@ -158,6 +164,33 @@ as $$
       and p.published_at is not null
       and p.space = public.current_space()
       and public.acts_as('customer')
+  );
+$$;
+
+create function public.owns_pro(p_pro_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.pro_profiles p where p.id = p_pro_id and p.owner_id = auth.uid()
+  );
+$$;
+
+-- Storage object names are '<pro id>/<file>'; the folder is compared as text, so a segment that
+-- is not a uuid is simply no match (no cast error).
+create function public.owns_pro_folder(p_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.pro_profiles p
+    where p.id::text = (storage.foldername(p_name))[1] and p.owner_id = auth.uid()
   );
 $$;
 
@@ -223,13 +256,13 @@ begin
 
   -- A non-owner's write is left to RLS (which runs after this trigger) so it neither locks
   -- another pro's row nor learns its service count from the error.
-  if (select auth.uid()) is not null and not exists (
-    select 1 from public.pro_profiles p where p.id = new.pro_id and p.owner_id = (select auth.uid())
-  ) then
+  if auth.uid() is not null and not public.owns_pro(new.pro_id) then
     return new;
   end if;
 
   -- The parent row lock serialises concurrent inserts, so two of them cannot both pass the cap.
+  -- Lock-then-count relies on READ COMMITTED (PostgREST's default): the count after the lock sees
+  -- rows committed by the transaction that held it.
   select p.space into v_space from public.pro_profiles p where p.id = new.pro_id for update;
 
   if new.preset_key is not null
@@ -285,12 +318,11 @@ set search_path = ''
 as $$
 begin
   -- Same as pro_services_before_write: a non-owner's insert is left to RLS.
-  if (select auth.uid()) is not null and not exists (
-    select 1 from public.pro_profiles p where p.id = new.pro_id and p.owner_id = (select auth.uid())
-  ) then
+  if auth.uid() is not null and not public.owns_pro(new.pro_id) then
     return new;
   end if;
 
+  -- Lock-then-count relies on READ COMMITTED (PostgREST's default), as in the services cap.
   perform 1 from public.pro_profiles p where p.id = new.pro_id for update;
   if (select count(*) from public.pro_photos ph where ph.pro_id = new.pro_id) >= 9 then
     raise exception 'too_many_photos';
@@ -315,9 +347,13 @@ revoke all on public.pro_profiles, public.service_presets, public.pro_services,
   public.pro_hours, public.pro_photos
   from anon, authenticated;
 
-grant select on public.pro_profiles, public.service_presets, public.pro_services,
-  public.pro_hours, public.pro_photos
+grant select on public.service_presets, public.pro_services, public.pro_hours, public.pro_photos
   to authenticated;
+-- Every column but owner_id (clients use explicit column lists, never select *).
+grant select (id, kind, space, display_name, bio, experience_years, workplace_type, workplace_name,
+  country_code, locality_id, customer_mix, service_radius_km, travel_fee_dzd, avatar_path,
+  phone_visibility, show_prices, is_verified, published_at, created_at, updated_at)
+  on public.pro_profiles to authenticated;
 grant update (display_name, bio, experience_years, workplace_type, workplace_name, locality_id,
   customer_mix, service_radius_km, travel_fee_dzd, avatar_path, phone_visibility, show_prices)
   on public.pro_profiles to authenticated;
@@ -350,73 +386,48 @@ using (true);
 create policy pro_services_select on public.pro_services
 for select to authenticated
 using (
-  exists (
-    select 1 from public.pro_profiles p
-    where p.id = pro_id and p.owner_id = (select auth.uid())
-  )
-  or (active and archived_at is null and public.is_listable(pro_id))
+  public.owns_pro(pro_id)
 );
 
 create policy pro_services_insert_own on public.pro_services
 for insert to authenticated
 with check (
-  exists (
-    select 1 from public.pro_profiles p
-    where p.id = pro_id and p.owner_id = (select auth.uid())
-  )
+  public.owns_pro(pro_id)
 );
 
 create policy pro_services_update_own on public.pro_services
 for update to authenticated
 using (
-  exists (
-    select 1 from public.pro_profiles p
-    where p.id = pro_id and p.owner_id = (select auth.uid())
-  )
+  public.owns_pro(pro_id)
 )
 with check (
-  exists (
-    select 1 from public.pro_profiles p
-    where p.id = pro_id and p.owner_id = (select auth.uid())
-  )
+  public.owns_pro(pro_id)
 );
 
 create policy pro_hours_select on public.pro_hours
 for select to authenticated
 using (
-  exists (
-    select 1 from public.pro_profiles p
-    where p.id = pro_id and p.owner_id = (select auth.uid())
-  )
+  public.owns_pro(pro_id)
   or public.is_listable(pro_id)
 );
 
 create policy pro_photos_select on public.pro_photos
 for select to authenticated
 using (
-  exists (
-    select 1 from public.pro_profiles p
-    where p.id = pro_id and p.owner_id = (select auth.uid())
-  )
+  public.owns_pro(pro_id)
   or public.is_listable(pro_id)
 );
 
 create policy pro_photos_insert_own on public.pro_photos
 for insert to authenticated
 with check (
-  exists (
-    select 1 from public.pro_profiles p
-    where p.id = pro_id and p.owner_id = (select auth.uid())
-  )
+  public.owns_pro(pro_id)
 );
 
 create policy pro_photos_delete_own on public.pro_photos
 for delete to authenticated
 using (
-  exists (
-    select 1 from public.pro_profiles p
-    where p.id = pro_id and p.owner_id = (select auth.uid())
-  )
+  public.owns_pro(pro_id)
 );
 
 -- RPCs ------------------------------------------------------------------------------------------
@@ -511,13 +522,16 @@ begin
       raise exception 'invalid_hours';
     end;
 
+    -- '24:00' is a valid Postgres time but not a wall-clock reading; midnight is '00:00'.
     if v_opens is null or v_closes is null or v_opens = v_closes
+       or v_opens = '24:00' or v_closes = '24:00'
        or (v_closes < v_opens and v_closes > '06:00') then
       raise exception 'invalid_hours';
     end if;
 
     if v_break_start is not null or v_break_end is not null then
-      if v_break_start is null or v_break_end is null or v_break_end <= v_break_start then
+      if v_break_start is null or v_break_end is null or v_break_end <= v_break_start
+         or v_break_end = '24:00' then
         raise exception 'invalid_break';
       end if;
       -- Strictly inside the open span. Past midnight the span is [opens, 24:00) + [00:00, closes].
@@ -592,6 +606,36 @@ as $$
     and u.phone is not null;
 $$;
 
+-- The customer view of a listable pro's services: active, non-archived, prices null when the pro
+-- hides them. Empty for anything not listable to the caller (other space, unpublished, not acting
+-- as customer). search_pros reads services only through this function.
+create function public.pro_public_services(p_pro_id uuid)
+returns table (
+  id uuid,
+  preset_key text,
+  name text,
+  category public.service_category,
+  price_dzd integer,
+  duration_min smallint,
+  sort smallint
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select s.id, s.preset_key, s.name, s.category,
+         case when p.show_prices then s.price_dzd end,
+         s.duration_min, s.sort
+  from public.pro_profiles p
+  join public.pro_services s on s.pro_id = p.id
+  where p.id = p_pro_id
+    and public.is_listable(p.id)
+    and s.active
+    and s.archived_at is null
+  order by s.sort, s.id;
+$$;
+
 -- Security invoker: RLS on every table it reads still applies; the filters below repeat the
 -- listable predicate so the owner's own unpublished row never shows up in search.
 create function public.search_pros(
@@ -631,10 +675,7 @@ as $$
   )
   select p.id, p.kind, p.display_name, p.avatar_path, p.workplace_type, p.workplace_name,
          l.region_code, r.name_ar, r.name_fr, l.name_ar, l.name_fr, p.customer_mix,
-         case when p.show_prices then (
-           select min(s.price_dzd) from public.pro_services s
-           where s.pro_id = p.id and s.active and s.archived_at is null
-         ) end,
+         (select min(s.price_dzd) from public.pro_public_services(p.id) s),
          p.is_verified
   from public.pro_profiles p
   cross join q
@@ -647,18 +688,16 @@ as $$
     and (p_locality_id is null or p.locality_id = p_locality_id)
     and (p_kids is not true or p.customer_mix in ('adults_and_kids', 'kids_only'))
     and (p_category is null or exists (
-      select 1 from public.pro_services s
-      where s.pro_id = p.id and s.active and s.archived_at is null and s.category = p_category
+      select 1 from public.pro_public_services(p.id) s where s.category = p_category
     ))
     and (q.pattern is null
       or lower(public.f_unaccent(p.display_name)) like q.pattern
       or lower(public.f_unaccent(coalesce(p.workplace_name, ''))) like q.pattern
       or exists (
         select 1
-        from public.pro_services s
+        from public.pro_public_services(p.id) s
         left join public.service_presets sp on sp.key = s.preset_key
-        where s.pro_id = p.id and s.active and s.archived_at is null
-          and lower(public.f_unaccent(concat_ws(' ', s.name, sp.name_ar, sp.name_fr, sp.name_en,
+        where lower(public.f_unaccent(concat_ws(' ', s.name, sp.name_ar, sp.name_fr, sp.name_en,
                                                 sp.name_kab))) like q.pattern
       ))
   order by p.is_verified desc, p.published_at desc, p.id
@@ -669,6 +708,9 @@ $$;
 revoke execute on function
   public.f_unaccent(text),
   public.is_listable(uuid),
+  public.owns_pro(uuid),
+  public.owns_pro_folder(text),
+  public.pro_public_services(uuid),
   public.pro_missing_fields(uuid),
   public.pro_profiles_before_write(),
   public.pro_services_before_write(),
@@ -692,6 +734,9 @@ from authenticated;
 grant execute on function
   public.f_unaccent(text),
   public.is_listable(uuid),
+  public.owns_pro(uuid),
+  public.owns_pro_folder(text),
+  public.pro_public_services(uuid),
   public.create_pro_profile(public.pro_kind, text, public.workplace_type),
   public.set_pro_hours(uuid, jsonb),
   public.publish_pro_profile(uuid),
