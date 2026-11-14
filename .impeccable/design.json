@@ -1,0 +1,576 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-14T07:03:20+00:00",
+  "title": "Design System: LEMQES",
+  "extensions": {
+    "colorMeta": {
+      "deep-sea": {
+        "role": "primary",
+        "displayName": "Deep Sea",
+        "canonical": "#062A35",
+        "tonalRamp": [
+          "#083645",
+          "#0D5B73",
+          "#127FA0",
+          "#17A3CE",
+          "#48C4EA",
+          "#8CDAF2",
+          "#C3ECF8",
+          "#E8F8FC"
+        ]
+      },
+      "lagoon-teal": {
+        "role": "primary",
+        "displayName": "Lagoon Teal",
+        "canonical": "#0F6E7A",
+        "tonalRamp": [
+          "#083D44",
+          "#0E6672",
+          "#148F9F",
+          "#19B8CC",
+          "#49D7E9",
+          "#8DE6F1",
+          "#C4F2F8",
+          "#E8FAFC"
+        ]
+      },
+      "lagoon-blue": {
+        "role": "primary",
+        "displayName": "Lagoon Blue",
+        "canonical": "#1F6FD1",
+        "tonalRamp": [
+          "#0A2343",
+          "#103B6F",
+          "#17539B",
+          "#1E6AC8",
+          "#4D91E5",
+          "#90BAEF",
+          "#C5DBF6",
+          "#E9F1FC"
+        ]
+      },
+      "teal-deep": {
+        "role": "primary",
+        "displayName": "Deep Teal",
+        "canonical": "#0B5560",
+        "tonalRamp": [
+          "#083D45",
+          "#0D6572",
+          "#128EA0",
+          "#18B6CE",
+          "#48D5EA",
+          "#8DE5F2",
+          "#C4F1F8",
+          "#E8FAFC"
+        ]
+      },
+      "pill-mist": {
+        "role": "secondary",
+        "displayName": "Pill Mist",
+        "canonical": "#D3E7EF",
+        "tonalRamp": [
+          "#142E38",
+          "#224D5E",
+          "#306B83",
+          "#3D8AA8",
+          "#69ADC9",
+          "#A2CCDD",
+          "#CEE4ED",
+          "#ECF5F8"
+        ]
+      },
+      "row-tint": {
+        "role": "secondary",
+        "displayName": "Row Tint",
+        "canonical": "#E8F3F7",
+        "tonalRamp": [
+          "#142F39",
+          "#214E5F",
+          "#2E6D84",
+          "#3B8DAA",
+          "#68B0CA",
+          "#A0CEDE",
+          "#CEE5EE",
+          "#ECF5F8"
+        ]
+      },
+      "champagne-gold": {
+        "role": "tertiary",
+        "displayName": "Champagne Gold",
+        "canonical": "#D8B46A",
+        "tonalRamp": [
+          "#3D2E10",
+          "#654D1A",
+          "#8D6B25",
+          "#B68A30",
+          "#D5AE5D",
+          "#E5CC9A",
+          "#F1E5CA",
+          "#FAF5EB"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Ground",
+        "canonical": "#F5F5F8",
+        "tonalRamp": [
+          "#20202D",
+          "#35354B",
+          "#4A4A69",
+          "#5F5F87",
+          "#8787AB",
+          "#B4B4CA",
+          "#D8D8E4",
+          "#F0F0F4"
+        ]
+      },
+      "card-white": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#999999",
+          "#BFBFBF",
+          "#DEDEDE",
+          "#F2F2F2"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#111827",
+        "tonalRamp": [
+          "#172135",
+          "#273759",
+          "#364C7C",
+          "#4662A0",
+          "#718AC1",
+          "#A6B6D8",
+          "#D1D9EB",
+          "#EDF0F7"
+        ]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#5E6573",
+        "tonalRamp": [
+          "#22252A",
+          "#393E46",
+          "#505662",
+          "#676F7E",
+          "#8F96A3",
+          "#B9BDC6",
+          "#DBDDE1",
+          "#F1F2F4"
+        ]
+      },
+      "outline": {
+        "role": "neutral",
+        "displayName": "Outline",
+        "canonical": "#8A90A0",
+        "tonalRamp": [
+          "#22242A",
+          "#393D46",
+          "#505563",
+          "#676D7F",
+          "#8E94A4",
+          "#B9BCC6",
+          "#DADCE1",
+          "#F1F2F4"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#E4E4EC",
+        "tonalRamp": [
+          "#20202D",
+          "#35354B",
+          "#4A4A69",
+          "#5F5F87",
+          "#8787AB",
+          "#B4B4CA",
+          "#D8D8E4",
+          "#F0F0F4"
+        ]
+      },
+      "error": {
+        "role": "error",
+        "displayName": "Error Red",
+        "canonical": "#B3261E",
+        "tonalRamp": [
+          "#420E0B",
+          "#6D1712",
+          "#99201A",
+          "#C52A21",
+          "#E25850",
+          "#ED9792",
+          "#F5C9C6",
+          "#FBEAE9"
+        ]
+      },
+      "status-open": {
+        "role": "status",
+        "displayName": "Open Green",
+        "canonical": "#15803D",
+        "tonalRamp": [
+          "#0B421F",
+          "#126E34",
+          "#199949",
+          "#20C55E",
+          "#50E287",
+          "#91EDB4",
+          "#C6F6D8",
+          "#E9FBF0"
+        ]
+      },
+      "status-break": {
+        "role": "status",
+        "displayName": "Break Amber",
+        "canonical": "#B45309",
+        "tonalRamp": [
+          "#492204",
+          "#793806",
+          "#AA4E08",
+          "#DB650B",
+          "#F58D3D",
+          "#F9B786",
+          "#FCDAC0",
+          "#FEF1E7"
+        ]
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Dark Ground",
+        "canonical": "#071A21",
+        "tonalRamp": [
+          "#0D323F",
+          "#165369",
+          "#1F7493",
+          "#2895BD",
+          "#57B8DB",
+          "#96D2E9",
+          "#C8E8F3",
+          "#EAF6FB"
+        ]
+      },
+      "dark-card": {
+        "role": "neutral",
+        "displayName": "Dark Card",
+        "canonical": "#0E242C",
+        "tonalRamp": [
+          "#122F3A",
+          "#1F4F61",
+          "#2B6F87",
+          "#378EAE",
+          "#64B2CE",
+          "#9ECFE0",
+          "#CDE6EF",
+          "#ECF5F9"
+        ]
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Dark Ink",
+        "canonical": "#E3ECEF",
+        "tonalRamp": [
+          "#1C2B31",
+          "#2E4851",
+          "#416572",
+          "#538292",
+          "#7DA7B5",
+          "#AEC8D1",
+          "#D5E2E7",
+          "#EFF4F6"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark Muted",
+        "canonical": "#A3B6BD",
+        "tonalRamp": [
+          "#20292D",
+          "#35454A",
+          "#4B6068",
+          "#607B86",
+          "#88A1AA",
+          "#B5C4CA",
+          "#D8E0E3",
+          "#F0F3F4"
+        ]
+      },
+      "dark-teal": {
+        "role": "primary",
+        "displayName": "Dark Lagoon Teal",
+        "canonical": "#7DD3DD",
+        "tonalRamp": [
+          "#10383D",
+          "#1A5D65",
+          "#25838D",
+          "#30A8B6",
+          "#5DC8D5",
+          "#9ADDE5",
+          "#CAEDF1",
+          "#EBF8FA"
+        ]
+      },
+      "status-open-on-dark": {
+        "role": "status",
+        "displayName": "Open Green on Dark",
+        "canonical": "#4ADE80",
+        "tonalRamp": [
+          "#0C411F",
+          "#146C34",
+          "#1C9749",
+          "#23C25D",
+          "#52E086",
+          "#93EBB3",
+          "#C7F5D8",
+          "#E9FBF0"
+        ]
+      },
+      "status-break-on-dark": {
+        "role": "status",
+        "displayName": "Break Amber on Dark",
+        "canonical": "#FBBF24",
+        "tonalRamp": [
+          "#4B3701",
+          "#7D5B02",
+          "#AF7F03",
+          "#E1A404",
+          "#FBC437",
+          "#FDDA82",
+          "#FEECBE",
+          "#FFF8E6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Big live numbers (queue length, wait); tabular figures."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Screen titles; the pro's name on the band."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, settings sections, empty-state titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Explanations in muted ink."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, tabs, pills, tags."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "LEMQES on the band, via LemqesWordmark only."
+      },
+      "numeric": {
+        "displayName": "Numeric",
+        "purpose": "Counts, times, prices (tabular figures)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-lift",
+        "value": "0 1px 2px rgba(20,18,40,.05), 0 10px 28px rgba(20,18,40,.09)",
+        "purpose": "Every card, the auth card, settings groups."
+      },
+      {
+        "name": "pill-glow",
+        "value": "0 10px 20px -8px rgba(31,111,209,.6)",
+        "purpose": "Under the primary pill in light mode."
+      },
+      {
+        "name": "pill-drop-dark",
+        "value": "0 8px 16px -6px rgba(0,0,0,.6)",
+        "purpose": "Under the primary pill in dark mode."
+      },
+      {
+        "name": "pill-highlight",
+        "value": "inset 0 1px 0 rgba(255,255,255,.25)",
+        "purpose": "1 px top shine on the pill."
+      }
+    ],
+    "gradients": [
+      {
+        "name": "brand",
+        "value": "linear-gradient(160deg,#062A35 0%,#0F6E7A 55%,#1F6FD1 100%)",
+        "purpose": "Header band."
+      },
+      {
+        "name": "bloom",
+        "value": "radial-gradient(90% 70% at 100% 0, rgba(255,255,255,.2), transparent 60%)",
+        "purpose": "Soft light top-trailing over the band (mirrors in RTL)."
+      },
+      {
+        "name": "button",
+        "value": "linear-gradient(120deg,#0F6E7A,#1F6FD1)",
+        "purpose": "Primary pill and the live ring."
+      }
+    ],
+    "motion": [
+      {
+        "name": "material-standard",
+        "value": "Material 3 defaults",
+        "purpose": "No custom motion tokens yet; state layers change instantly."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "390x844 design size; single column"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Pill",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action of a screen: Lagoon gradient pill under the thumb.",
+      "html": "<button class=\"ds-btn-primary\">Se connecter</button>",
+      "css": ".ds-btn-primary{font-family:Inter,'Noto Sans Arabic',sans-serif;height:48px;padding:0 24px;border:none;border-radius:9999px;color:#fff;font-size:14px;font-weight:600;letter-spacing:.1px;background:linear-gradient(120deg,#0F6E7A,#1F6FD1);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 20px -8px rgba(31,111,209,.6);cursor:pointer}.ds-btn-primary:hover{background:linear-gradient(0deg,rgba(0,0,0,.08),rgba(0,0,0,.08)),linear-gradient(120deg,#0F6E7A,#1F6FD1)}.ds-btn-primary:active{background:linear-gradient(0deg,rgba(0,0,0,.16),rgba(0,0,0,.16)),linear-gradient(120deg,#0F6E7A,#1F6FD1)}.ds-btn-primary:focus-visible{outline:2px solid #0F6E7A;outline-offset:3px}"
+    },
+    {
+      "name": "Primary Pill (disabled)",
+      "kind": "button",
+      "refersTo": "button-primary-disabled",
+      "description": "Flat, no shadow, 38 % ink label.",
+      "html": "<button class=\"ds-btn-primary-off\" disabled>Continuer</button>",
+      "css": ".ds-btn-primary-off{font-family:Inter,'Noto Sans Arabic',sans-serif;height:48px;padding:0 24px;border:none;border-radius:9999px;background:rgba(17,24,39,.12);color:rgba(17,24,39,.38);font-size:14px;font-weight:600}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "Filled white field, 14 px radius, teal 2 px focus stroke.",
+      "html": "<label class=\"ds-field\"><span>Numéro de téléphone</span><input placeholder=\"0550 12 34 56\"></label>",
+      "css": ".ds-field{font-family:Inter,'Noto Sans Arabic',sans-serif;display:flex;flex-direction:column;gap:4px;font-size:12px;color:#5E6573}.ds-field input{height:56px;padding:0 16px;border:1px solid #8A90A0;border-radius:14px;background:#fff;color:#111827;font-size:16px}.ds-field input:focus-visible{outline:none;border:2px solid #0F6E7A}"
+    },
+    {
+      "name": "Choice Card",
+      "kind": "card",
+      "refersTo": "choice-card-selected",
+      "description": "White card with mist icon disc, title, muted body, radio; selected adds the teal outline.",
+      "html": "<button class=\"ds-choice\" aria-pressed=\"true\"><span class=\"ds-disc\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M12 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4m0 9c2.7 0 5.8 1.3 6 2v1H6v-1c.2-.7 3.3-2 6-2m0-11a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 9c-2.7 0-8 1.3-8 4v3h16v-3c0-2.7-5.3-4-8-4\"/></svg></span><span class=\"ds-txt\"><b>Je suis client</b><small>Trouvez les barbiers près de vous.</small></span></button>",
+      "css": ".ds-choice{font-family:Inter,'Noto Sans Arabic',sans-serif;display:flex;align-items:center;gap:16px;width:320px;padding:16px;text-align:start;background:#fff;border:2px solid #0F6E7A;border-radius:20px;box-shadow:0 1px 2px rgba(20,18,40,.05),0 10px 28px rgba(20,18,40,.09);cursor:pointer}.ds-choice:focus-visible{outline:2px solid #0F6E7A;outline-offset:3px}.ds-disc{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#D3E7EF;color:#0B5560}.ds-txt{display:flex;flex-direction:column;gap:4px}.ds-txt b{font-family:Alexandria,'Noto Sans Arabic',sans-serif;font-size:16px;font-weight:500;color:#111827}.ds-txt small{font-size:14px;color:#5E6573}"
+    },
+    {
+      "name": "Header Band",
+      "kind": "custom",
+      "refersTo": "header-band",
+      "description": "Signature Lagoon band with the wordmark and space switch.",
+      "html": "<div class=\"ds-band\"><span class=\"ds-wordmark\">LEMQES</span><div class=\"ds-switch\"><button class=\"on\">Hommes</button><button>Femmes</button></div></div>",
+      "css": ".ds-band{width:360px;height:150px;padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;background:radial-gradient(90% 70% at 100% 0,rgba(255,255,255,.2),transparent 60%),linear-gradient(160deg,#062A35 0%,#0F6E7A 55%,#1F6FD1 100%)}.ds-wordmark{font-family:Alexandria,'Noto Sans Arabic',sans-serif;color:#fff;font-size:18px;font-weight:600;letter-spacing:2.88px}.ds-switch{display:flex;gap:8px}.ds-switch button{font-family:Inter,'Noto Sans Arabic',sans-serif;height:48px;padding:0 20px;border-radius:24px;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;font-size:14px;font-weight:600}.ds-switch button.on{background:#fff;color:#062A35;border-color:#fff}.ds-switch button:focus-visible{outline:2px solid #fff;outline-offset:3px}"
+    },
+    {
+      "name": "Tag",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Mist tag for Free / Active.",
+      "html": "<span class=\"ds-tag\">Gratuit</span>",
+      "css": ".ds-tag{font-family:Inter,'Noto Sans Arabic',sans-serif;display:inline-block;padding:2px 8px;border-radius:8px;background:#D3E7EF;color:#0B5560;font-size:12px;font-weight:600}"
+    },
+    {
+      "name": "Code Box",
+      "kind": "input",
+      "refersTo": "code-box",
+      "description": "One of six SMS-code boxes, always LTR.",
+      "html": "<div class=\"ds-code\"><span class=\"on\"></span><span></span><span></span><i></i><span></span><span></span><span></span></div>",
+      "css": ".ds-code{display:flex;gap:8px;direction:ltr}.ds-code i{width:8px}.ds-code span{width:44px;height:56px;border:1px solid #8A90A0;border-radius:12px;background:#fff}.ds-code span.on{border:2px solid #0F6E7A}"
+    },
+    {
+      "name": "Empty State",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "64 dp mist disc, title, muted body.",
+      "html": "<div class=\"ds-empty\"><span class=\"ds-edisc\"><svg width=\"28\" height=\"28\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M21.9 8.9 20.8 4.3c-.2-.8-.9-1.3-1.7-1.3H4.9c-.8 0-1.5.6-1.7 1.3L2.1 8.9c-.3 1 .1 2 .8 2.6V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7.5c.8-.6 1.2-1.6 1-2.6M19 19H5v-6.1h.2c.9 0 1.7-.4 2.3-1 .6.6 1.4 1 2.3 1h.1c.9 0 1.7-.4 2.2-1 .6.6 1.4 1 2.3 1s1.7-.4 2.3-1c.6.6 1.4 1 2.3 1h.1z\"/></svg></span><b>Les barbiers arrivent bientôt</b><small>Vous verrez ici qui est ouvert.</small></div>",
+      "css": ".ds-empty{font-family:Inter,'Noto Sans Arabic',sans-serif;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:24px}.ds-edisc{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:#D3E7EF;color:#0B5560;margin-bottom:8px}.ds-empty b{font-family:Alexandria,'Noto Sans Arabic',sans-serif;font-size:22px;font-weight:500;color:#111827}.ds-empty small{font-size:14px;color:#5E6573}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Deep Water, Clear Signal",
+    "overview": "LEMQES is category-standard Material 3, executed at full craft. The brand lives in one deep body of colour, the Lagoon gradient, laid across the top of the screen like water seen from above, and everything below it is clear, quiet ground where the live state of a barbershop can be read at a glance. Nothing is themed: no scissors ornament, no barber-pole stripes, no salon pastel. The premium feel comes from the depth of the band, the soft lift of white cards, and a confident display face, not from decoration.\n\nDensity is calm and thumb-sized. Every touch target is at least 48 dp, every screen has one primary action, and that action is a gradient pill placed where a standing barber's thumb lands. Arabic is designed, not mirrored: every layout uses start/end, and phone numbers and codes stay left-to-right inside right-to-left screens.\n\nDark mode is its own scheme built from the deep-sea hue, not an inversion: surfaces are near-black sea tones, the teal lifts to a pale lagoon, and the band stays the same so the brand reads identically at night.",
+    "keyCharacteristics": [
+      "One gradient world (deep sea, teal, blue) on three surfaces only: the header band, the primary pill and the live ring.",
+      "Cool grey ground with white 20 px cards lifted by a two-layer soft shadow; no card borders.",
+      "Alexandria for headings, names and numbers; Inter for reading and controls; Noto Arabic and Tifinagh as fallbacks.",
+      "Champagne gold is held back for \"you\" and money; it never decorates.",
+      "Material Icons (outlined) only, in tinted discs on cards."
+    ],
+    "rules": [
+      {
+        "name": "The Three Surfaces Rule",
+        "body": "The Lagoon gradient appears on the header band, the primary pill and the live ring around an open barber's photo. Nowhere else: not on cards, not on text, not on icons.",
+        "section": "colors"
+      },
+      {
+        "name": "The Gold Is Personal Rule",
+        "body": "Champagne gold marks only what belongs to the viewer (their queue place) or money. If it is decorative, remove it.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Means Status Rule",
+        "body": "Green, amber and grey are spent only on open, on break and closed. A success message does not borrow the open green.",
+        "section": "colors"
+      },
+      {
+        "name": "The Variable Weight Rule",
+        "body": "The bundled faces are variable fonts; a weight only renders through `lemqesWeight()`, which moves the `wght` axis. A bare `fontWeight` silently stays at 400.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Count Rule",
+        "body": "Every count, time and price uses `lemqesNumeric` (tabular figures) so live numbers never jitter as they change.",
+        "section": "typography"
+      },
+      {
+        "name": "The sp Rule",
+        "body": "Sizes are sp and follow the system font scale. Layouts that hold text (the band, the code boxes) grow with the scale rather than clipping.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Pill Rule",
+        "body": "A screen has at most one gradient primary pill. Secondary actions are text buttons or outlined buttons.",
+        "section": "layout"
+      },
+      {
+        "name": "The Start/End Rule",
+        "body": "Every padding, alignment and icon position uses directional (start/end) values; phone numbers, codes and other digits are wrapped LTR inside RTL.",
+        "section": "layout"
+      },
+      {
+        "name": "The No Border Card Rule",
+        "body": "Cards are separated from the ground by the shadow and the tone step, never by a stroke. The only card stroke is the 2 dp teal outline that marks a selected choice.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep the gradient on the band, the primary pill and the live ring only (The Three Surfaces Rule).",
+      "**Do** put one primary pill per screen, pinned under the thumb, 48 dp tall.",
+      "**Do** set weights through `lemqesWeight()` and numbers through `lemqesNumeric`.",
+      "**Do** use start/end everywhere and keep phone numbers and codes LTR inside Arabic.",
+      "**Do** reuse `LemqesWordmark`, `LemqesPrimaryButton`, `ChoiceCard`, `LagoonHeaderBand` and the state views rather than restyling locally.",
+      "**Do** check every new screen in French light and Arabic dark, and at 130 % text."
+    ],
+    "donts": [
+      "**Don't** use gradient text, glass or blur, eyebrows or kickers above headings, or coloured side borders thicker than 1 px.",
+      "**Don't** use emoji or Unicode glyphs as icons; Material Icons only.",
+      "**Don't** put a border on a card, or tint a surface with Material's surface tint.",
+      "**Don't** use champagne gold for decoration, or status green and amber for anything but status.",
+      "**Don't** use #6B7280 for muted text on the ground; it fails AA. Use Muted Ink.",
+      "**Don't** mix the men's and women's spaces on one screen."
+    ]
+  }
+}
