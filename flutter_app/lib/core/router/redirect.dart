@@ -88,6 +88,12 @@ String? setupStepForGaps(Set<ProfileGap> gaps) {
 String? _firstGapStep(ProProfile? profile) =>
     profile == null ? 'profile' : setupStepForGaps(profile.gaps);
 
+/// What the setup redirects read from the pro profile: whether it has
+/// loaded and its first step with a gap. The router refreshes only when this
+/// changes, since a refresh re-runs routing and undoes a same-frame pop.
+(bool, String?) proRoutingKey(AsyncValue<ProProfile?> profile) =>
+    (profile.hasValue, profile.hasValue ? _firstGapStep(profile.value) : null);
+
 /// `/pro/setup` resumes at the first step with a gap; a complete profile has
 /// nothing to set up. Null while the profile loads.
 String? proSetupEntry(AsyncValue<ProProfile?> profile) {

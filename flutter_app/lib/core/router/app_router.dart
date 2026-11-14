@@ -15,7 +15,8 @@ import '../../features/signup/data/signup_draft_store.dart';
 import '../../features/signup/presentation/signup_wizard.dart';
 import 'redirect.dart';
 
-/// Re-runs the router redirect whenever account, draft or pro profile change.
+/// Re-runs the router redirect whenever the account, the draft or the pro
+/// profile's setup routing ([proRoutingKey]) change.
 ///
 /// Not on session events: the account rebuilds on every sign-in and sign-out,
 /// and a session listener ran before that rebuild, showing the redirect a
@@ -24,13 +25,25 @@ class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     ref.listen(accountProvider, (_, _) => notifyListeners());
     ref.listen(signupDraftProvider, (_, _) => notifyListeners());
-    // Setup steps open once the profile has loaded and as its gaps close.
-    ref.listen(myProProvider, (_, _) => notifyListeners());
+    // Setup steps open once the profile has loaded and as its gaps close;
+    // other profile writes leave routing alone.
+    ref.listen(
+      myProProvider.select(proRoutingKey),
+      (_, _) => notifyListeners(),
+    );
   }
 }
 
-final routerProvider = Provider<GoRouter>((ref) {
+/// What makes the router re-run its redirects; read by tests to check when
+/// it fires.
+final routerRefreshProvider = Provider<Listenable>((ref) {
   final refresh = _RouterRefresh(ref);
+  ref.onDispose(refresh.dispose);
+  return refresh;
+});
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final refresh = ref.watch(routerRefreshProvider);
   final router = GoRouter(
     initialLocation: '/',
     refreshListenable: refresh,
@@ -91,10 +104,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
-  ref.onDispose(() {
-    router.dispose();
-    refresh.dispose();
-  });
+  ref.onDispose(router.dispose);
   return router;
 });
 

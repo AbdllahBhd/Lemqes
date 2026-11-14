@@ -177,10 +177,7 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
       return;
     }
     if (_edit) {
-      // The save's profile change makes the router refresh its stack; a pop
-      // before that refresh lands is undone by it.
-      await WidgetsBinding.instance.endOfFrame;
-      if (mounted) _backToDashboard(router);
+      _backToDashboard(router);
     } else {
       router.go('/pro/setup/services');
     }

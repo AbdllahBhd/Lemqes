@@ -270,6 +270,26 @@ void main() {
     );
     expect(await client.from('pro_photos').select('id'), hasLength(1));
 
+    // Editing the profile from the dashboard saves and comes back to it (the
+    // save's reload must not undo the pop).
+    await _scrollToTop(tester);
+    await _tap(tester, find.byKey(const Key('dashEditProfile')));
+    await _enter(tester, const Key('workplaceNameField'), 'Salon Nadia');
+    await _tap(tester, find.byKey(const Key('setupContinue')));
+    await _waitForGone(tester, find.byKey(const Key('displayNameField')));
+    await _waitFor(
+      tester,
+      find.byKey(const Key('dashEditProfile')).hitTestable(),
+    );
+    await _scrollToTop(tester);
+    await _waitFor(tester, find.byKey(const Key('visibilityCard')));
+    expect(find.text(l10n.dashboardPublished), findsOneWidget);
+    expect(
+      (await client.from('pro_profiles').select('workplace_name'))
+          .single['workplace_name'],
+      'Salon Nadia',
+    );
+
     await _signOut(tester);
 
     // --- A men customer ---------------------------------------------------
