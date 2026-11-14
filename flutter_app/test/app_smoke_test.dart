@@ -11,14 +11,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
 
+class _MockGoTrueClient extends Mock implements GoTrueClient {}
+
 void main() {
   testWidgets('LemqesApp renders a MaterialApp', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
+    final client = _MockSupabaseClient();
+    final auth = _MockGoTrueClient();
+    when(() => client.auth).thenReturn(auth);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          supabaseClientProvider.overrideWithValue(_MockSupabaseClient()),
+          supabaseClientProvider.overrideWithValue(client),
           sharedPreferencesProvider.overrideWithValue(prefs),
           sessionProvider.overrideWith((ref) => Stream.value(null)),
         ],

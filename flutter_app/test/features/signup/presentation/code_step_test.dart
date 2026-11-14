@@ -1,0 +1,147 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lemqes/features/account/data/account.dart';
+import 'package:lemqes/features/auth/data/auth_repository.dart';
+import 'package:lemqes/features/signup/data/signup_draft.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../auth/presentation/harness.dart';
+
+const _phone = '+213550123456';
+const _draft = SignupDraft(
+  space: Space.women,
+  role: AppRole.salonOwner,
+  fullName: 'Lina Haddad',
+  businessName: 'Institut Lina',
+  phone: _phone,
+);
+
+void main() {
+  late MockAuthRepository auth;
+  late MockAccountRepository account;
+
+  setUpAll(registerHarnessFallbacks);
+  setUp(() {
+    auth = MockAuthRepository();
+    account = MockAccountRepository();
+    when(() => account.fetchMine()).thenAnswer((_) async => null);
+    when(
+      () => account.completeSignup(
+        fullName: any(named: 'fullName'),
+        space: any(named: 'space'),
+        role: any(named: 'role'),
+        businessName: any(named: 'businessName'),
+      ),
+    ).thenAnswer((_) async => testAccount);
+  });
+
+  void stubVerify(Future<void> Function() answer) {
+    when(
+      () => auth.verifySignUpCode(
+        phone: any(named: 'phone'),
+        code: any(named: 'code'),
+      ),
+    ).thenAnswer((_) => answer());
+  }
+
+  Future<Harness> pumpCode(WidgetTester tester) => pumpApp(
+    tester,
+    location: '/signup/code',
+    auth: auth,
+    account: account,
+    draft: _draft,
+  );
+
+  testWidgets('pasting 123456 verifies once', (tester) async {
+    stubVerify(() async {});
+    await pumpCode(tester);
+    await tester.enterText(byKey('codeField'), '123456');
+    await tester.pump();
+
+    verify(() => auth.verifySignUpCode(phone: _phone, code: '123456'))
+        .called(1);
+  });
+
+  testWidgets('Eastern Arabic digits are accepted', (tester) async {
+    stubVerify(() async {});
+    await pumpCode(tester);
+    await tester.enterText(byKey('codeField'), '١٢٣٤٥٦');
+    await tester.pump();
+
+    verify(() => auth.verifySignUpCode(phone: _phone, code: '123456'))
+        .called(1);
+  });
+
+  testWidgets('InvalidOrExpiredCode shows a message and clears the field', (
+    tester,
+  ) async {
+    stubVerify(() async => throw const InvalidOrExpiredCode());
+    await pumpCode(tester);
+    await tester.enterText(byKey('codeField'), '123456');
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text(
+        'Code incorrect ou expiré. Vérifiez-le ou demandez un nouveau code.',
+      ),
+      findsOneWidget,
+    );
+    expect(fieldText(tester, 'codeField'), isEmpty);
+    verifyNever(
+      () => account.completeSignup(
+        fullName: any(named: 'fullName'),
+        space: any(named: 'space'),
+        role: any(named: 'role'),
+        businessName: any(named: 'businessName'),
+      ),
+    );
+  });
+
+  testWidgets('resend is enabled only after 60 seconds', (tester) async {
+    when(() => auth.resendSignUpCode(any())).thenAnswer((_) async {});
+    await pumpCode(tester);
+
+    expect(tester.widget<TextButton>(byKey('resendCode')).onPressed, isNull);
+    await tester.pump(const Duration(seconds: 59));
+    expect(tester.widget<TextButton>(byKey('resendCode')).onPressed, isNull);
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.widget<TextButton>(byKey('resendCode')).onPressed, isNotNull);
+    await tapKey(tester, 'resendCode');
+    verify(() => auth.resendSignUpCode(_phone)).called(1);
+    expect(tester.widget<TextButton>(byKey('resendCode')).onPressed, isNull);
+  });
+
+  testWidgets('success completes sign-up from the draft, then clears it', (
+    tester,
+  ) async {
+    stubVerify(() async {});
+    final h = await pumpCode(tester);
+    await tester.enterText(byKey('codeField'), '123456');
+    // The finishing spinner never settles; let the completion chain run.
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(find.text('Création de votre compte…'), findsOneWidget);
+
+    verify(
+      () => account.completeSignup(
+        fullName: 'Lina Haddad',
+        space: Space.women,
+        role: AppRole.salonOwner,
+        businessName: 'Institut Lina',
+      ),
+    ).called(1);
+    expect(h.draft, isNull);
+  });
+
+  testWidgets('back to sign-in clears the draft', (tester) async {
+    final h = await pumpCode(tester);
+    await tapKey(tester, 'backToLogin');
+    await tester.pumpAndSettle();
+
+    expect(h.draft, isNull);
+    expect(h.location, '/auth');
+  });
+}

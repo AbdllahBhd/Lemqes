@@ -10,8 +10,13 @@ Map<String, dynamic> _load(String code) =>
 Set<String> _keys(Map<String, dynamic> arb) =>
     arb.keys.where((k) => !k.startsWith('@')).toSet();
 
+// A placeholder is `{name}` or the head of `{name, plural|select, ...}`;
+// words opening an ICU branch (`other{Je suis}`) are translated text.
 Set<String> _placeholders(String message) =>
-    RegExp(r'\{(\w+)').allMatches(message).map((m) => m.group(1)!).toSet();
+    RegExp(r'\{(\w+)\s*(?:\}|,)')
+        .allMatches(message)
+        .map((m) => m.group(1)!)
+        .toSet();
 
 void main() {
   final fr = _load('fr');

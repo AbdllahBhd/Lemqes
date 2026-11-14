@@ -12,6 +12,7 @@ class LemqesPrimaryButton extends StatefulWidget {
     required this.onPressed,
     this.loading = false,
     this.icon,
+    this.expand = false,
     super.key,
   });
 
@@ -19,6 +20,9 @@ class LemqesPrimaryButton extends StatefulWidget {
   final VoidCallback? onPressed;
   final bool loading;
   final IconData? icon;
+
+  /// Fills the available width (a form's submit pill).
+  final bool expand;
 
   @override
   State<LemqesPrimaryButton> createState() => _LemqesPrimaryButtonState();
@@ -113,7 +117,9 @@ class _LemqesPrimaryButtonState extends State<LemqesPrimaryButton> {
           ? _ignoreWhileLoading
           : widget.onPressed,
       style: ButtonStyle(
-        minimumSize: const WidgetStatePropertyAll(Size(64, 48)),
+        minimumSize: WidgetStatePropertyAll(
+          Size(widget.expand ? double.infinity : 64, 48),
+        ),
         padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(horizontal: 24),
         ),
