@@ -1,0 +1,17 @@
+{
+  "@@locale": "ar",
+  "appName": "LEMQES",
+  "spaceMen": "الرجال",
+  "spaceWomen": "النساء",
+  "languageName_ar": "العربية",
+  "languageName_fr": "Français",
+  "languageName_en": "English",
+  "languageName_kab": "Taqbaylit",
+  "themeSystem": "النظام",
+  "themeLight": "فاتح",
+  "themeDark": "داكن",
+  "actionRetry": "إعادة المحاولة",
+  "errorGeneric": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+  "errorNetwork": "تعذّر الاتصال. تحقق من الشبكة.",
+  "loading": "جارٍ التحميل…"
+}

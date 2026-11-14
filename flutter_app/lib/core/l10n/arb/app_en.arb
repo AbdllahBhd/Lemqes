@@ -1,0 +1,17 @@
+{
+  "@@locale": "en",
+  "appName": "LEMQES",
+  "spaceMen": "Men",
+  "spaceWomen": "Women",
+  "languageName_ar": "العربية",
+  "languageName_fr": "Français",
+  "languageName_en": "English",
+  "languageName_kab": "Taqbaylit",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "actionRetry": "Try again",
+  "errorGeneric": "Something went wrong. Please try again.",
+  "errorNetwork": "Can't connect. Check your network.",
+  "loading": "Loading…"
+}

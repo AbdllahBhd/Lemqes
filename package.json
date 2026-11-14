@@ -2,7 +2,7 @@
   "name": "lemqes",
   "private": true,
   "scripts": {
-    "lint": "scripts/sdk dart format --output=none --set-exit-if-changed lib test && scripts/sdk flutter analyze",
+    "lint": "scripts/sdk flutter gen-l10n && scripts/sdk dart format --output=none --set-exit-if-changed lib test && scripts/sdk flutter analyze",
     "typecheck": "scripts/sdk flutter analyze --no-pub",
     "test": "scripts/sdk flutter test && supabase test db"
   }

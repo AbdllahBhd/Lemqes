@@ -1,0 +1,17 @@
+{
+  "@@locale": "kab",
+  "appName": "LEMQES",
+  "spaceMen": "Irgazen",
+  "spaceWomen": "Tilawin",
+  "languageName_ar": "العربية",
+  "languageName_fr": "Français",
+  "languageName_en": "English",
+  "languageName_kab": "Taqbaylit",
+  "themeSystem": "Anagraw",
+  "themeLight": "Amellal",
+  "themeDark": "Aberkan",
+  "actionRetry": "Ɛreḍ tikelt-nniḍen",
+  "errorGeneric": "Teḍra-d tuccḍa. Ɛreḍ tikelt-nniḍen.",
+  "errorNetwork": "Ur nezmir ara ad neqqen. Senqed azeṭṭa-ik.",
+  "loading": "Asali…"
+}
