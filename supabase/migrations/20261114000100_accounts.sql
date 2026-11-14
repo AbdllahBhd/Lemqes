@@ -13,6 +13,11 @@
 --     through security definer RPCs (set search_path = '', fully-qualified names,
 --     execute revoked from public/anon, granted to authenticated). Column-level UPDATE grants
 --     are allowed only for fields the user may freely edit.
+--
+-- WARNING: roles are self-declared. Any signed-in user can call add_role and become a barber,
+-- home artist or salon owner; holding a role is NOT a trust boundary. Anything that must only
+-- reach vetted professionals (payouts, verified badges, ranking) needs its own explicit
+-- verification flag set by a trusted path, never has_role()/acts_as() alone.
 
 create type public.space as enum ('men', 'women');
 create type public.app_role as enum ('customer', 'barber', 'home_artist', 'salon_owner');
