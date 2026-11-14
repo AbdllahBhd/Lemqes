@@ -31,3 +31,4 @@ flutter_app/test/**/failures/
 supabase/.temp/
 supabase/.branches/
 node_modules/
+flutter_app/android/build/
