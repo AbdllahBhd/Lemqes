@@ -41,8 +41,11 @@ class ProSetupScreen extends ConsumerWidget {
     // After a role switch the value is the previous role's profile until the
     // reload lands; it must never prefill this role's steps. A failed save
     // keeps the profile in `value`, so only a load that never produced one
-    // needs the error view.
-    if (!state.hasValue || (profile != null && profile.kind != kind)) {
+    // needs the error view. A role without a pro kind (just switched to
+    // customer or salon owner) has no setup: the redirect takes it home.
+    if (kind == null ||
+        !state.hasValue ||
+        (profile != null && profile.kind != kind)) {
       return _ProfileLoading(state: state);
     }
     // Keyed by role so a step's form never outlives the role it was for.
