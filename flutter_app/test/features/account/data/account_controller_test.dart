@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/account/data/account.dart';
@@ -68,5 +70,21 @@ void main() {
     final state = container.read(accountProvider);
     expect(state.hasError, isTrue);
     expect(state.value!.currentSpace, Space.men);
+  });
+
+  test('stays loading while the session has not emitted', () async {
+    final pending = StreamController<Session?>();
+    addTearDown(pending.close);
+    final c = ProviderContainer(
+      overrides: [
+        accountRepositoryProvider.overrideWithValue(repo),
+        sessionProvider.overrideWith((ref) => pending.stream),
+      ],
+    );
+    addTearDown(c.dispose);
+    c.listen(accountProvider, (_, _) {});
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(accountProvider).isLoading, isTrue);
+    expect(c.read(accountProvider).hasValue, isFalse);
   });
 }

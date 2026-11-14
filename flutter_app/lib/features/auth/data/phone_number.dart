@@ -14,8 +14,10 @@ String? normalizeAlgerianMobile(String input) {
   var s = buffer.toString().replaceAll(RegExp(r'[\s.\-()]'), '');
   if (s.startsWith('+213')) {
     s = s.substring(4);
+    if (s.startsWith('0')) s = s.substring(1);
   } else if (s.startsWith('00213')) {
     s = s.substring(5);
+    if (s.startsWith('0')) s = s.substring(1);
   } else if (s.startsWith('213') && s.length == 12) {
     s = s.substring(3);
   } else if (s.startsWith('0')) {

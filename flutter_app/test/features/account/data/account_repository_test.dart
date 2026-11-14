@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_api.dart';
@@ -112,5 +114,48 @@ void main() {
     final a = (await repo.fetchMine())!;
     expect(a.currentSpace, Space.women);
     expect(a.displayName, 'Salon Lina');
+  });
+
+  test('network errors map to NetworkAccountFailure', () {
+    when(() => api.rpc(any(), any())).thenThrow(const SocketException('off'));
+    expect(
+      repo.setActiveRole(AppRole.barber),
+      throwsA(isA<NetworkAccountFailure>()),
+    );
+  });
+
+  test('unexpected errors map to UnknownAccountFailure', () {
+    when(() => api.rpc(any(), any())).thenThrow(StateError('boom'));
+    expect(
+      repo.setActiveRole(AppRole.barber),
+      throwsA(isA<UnknownAccountFailure>()),
+    );
+  });
+
+  test('fetchMine with unknown enum value is UnknownAccountFailure', () {
+    when(() => api.myProfile()).thenAnswer(
+      (_) async => {
+        'id': 'u1',
+        'full_name': 'L',
+        'pro_space': null,
+        'customer_space': 'men',
+        'active_role': 'admin',
+      },
+    );
+    when(() => api.myRoles()).thenAnswer((_) async => []);
+    expect(repo.fetchMine(), throwsA(isA<UnknownAccountFailure>()));
+  });
+
+  test('fetchMine with null column is UnknownAccountFailure', () {
+    when(() => api.myProfile()).thenAnswer(
+      (_) async => {
+        'id': 'u1',
+        'full_name': null,
+        'customer_space': 'men',
+        'active_role': 'customer',
+      },
+    );
+    when(() => api.myRoles()).thenAnswer((_) async => []);
+    expect(repo.fetchMine(), throwsA(isA<UnknownAccountFailure>()));
   });
 }

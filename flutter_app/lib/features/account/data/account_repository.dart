@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'account.dart';
@@ -29,6 +32,10 @@ class ProfileMissing extends AccountFailure {
 
 class PhoneNotVerified extends AccountFailure {
   const PhoneNotVerified();
+}
+
+class NetworkAccountFailure extends AccountFailure {
+  const NetworkAccountFailure();
 }
 
 class UnknownAccountFailure extends AccountFailure {
@@ -105,6 +112,17 @@ class AccountRepository {
       rethrow;
     } on PostgrestException catch (e) {
       throw _map(e);
+    } on SocketException {
+      throw const NetworkAccountFailure();
+    } on TimeoutException {
+      throw const NetworkAccountFailure();
+    } on Object catch (e) {
+      // package:http's ClientException is matched by name: http is not a
+      // direct dependency of this package.
+      if (e.runtimeType.toString() == 'ClientException') {
+        throw const NetworkAccountFailure();
+      }
+      throw UnknownAccountFailure(e.toString());
     }
   }
 

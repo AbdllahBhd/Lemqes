@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -29,8 +31,14 @@ final accountProvider = AsyncNotifierProvider<AccountController, Account?>(
 class AccountController extends AsyncNotifier<Account?> {
   @override
   Future<Account?> build() async {
-    // Only the user id matters; token refreshes must not refetch.
-    final userId = ref.watch(sessionProvider.select((s) => s.value?.user.id));
+    // Only the user id matters (token refreshes must not refetch), but stay
+    // loading until the session resolves so routing never sees a false null.
+    final (:loading, :userId) = ref.watch(
+      sessionProvider.select(
+        (s) => (loading: !s.hasValue && !s.hasError, userId: s.value?.user.id),
+      ),
+    );
+    if (loading) return Completer<Account?>().future;
     if (userId == null) return null;
     return ref.read(accountRepositoryProvider).fetchMine();
   }
@@ -53,8 +61,11 @@ class AccountController extends AsyncNotifier<Account?> {
   Future<void> _run(Future<void> Function() action) async {
     try {
       await action();
-      state = AsyncData(await ref.read(accountRepositoryProvider).fetchMine());
+      final fresh = await ref.read(accountRepositoryProvider).fetchMine();
+      if (!ref.mounted) return;
+      state = AsyncData(fresh);
     } on Object catch (e, st) {
+      if (!ref.mounted) return;
       state = AsyncError<Account?>(e, st);
     }
   }
