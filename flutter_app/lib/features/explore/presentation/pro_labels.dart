@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/l10n/gen/app_localizations.dart';
 import '../../../core/l10n/locale_controller.dart';
+import '../../geo/presentation/search_fold.dart';
 import '../../pro/data/pro_models.dart';
 
 /// "Salon · Salon El Bahdja", or the workplace word alone.
@@ -11,12 +12,16 @@ String workplaceLine(AppLocalizations l10n, WorkplaceType type, String? name) {
   return n == null || n.isEmpty ? word : '$word · $n';
 }
 
-/// "Commune · Wilaya"; null when neither is known.
+/// "Commune · Wilaya"; null when neither is known. A commune that gives its
+/// name to its wilaya (Bou Saâda, wilaya 68) is named once.
 String? placeLine(String? locality, String? region) {
   final parts = [
     for (final p in [locality, region])
       if (p != null && p.isNotEmpty) p,
   ];
+  if (parts.length == 2 && foldLatin(parts[0]) == foldLatin(parts[1])) {
+    return parts.first;
+  }
   return parts.isEmpty ? null : parts.join(' · ');
 }
 
