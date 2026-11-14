@@ -6,6 +6,7 @@ import '../../../core/l10n/locale_controller.dart';
 import '../../../core/theme/lemqes_tokens.dart';
 import '../../../core/theme/theme_mode_controller.dart';
 import '../../account/data/account_providers.dart';
+import '../../account/presentation/account_failure_listener.dart';
 import '../../account/presentation/role_switch_sheet.dart';
 
 /// Material's `logout` glyph, mirrored in right-to-left layouts.
@@ -68,72 +69,74 @@ class SettingsScreen extends ConsumerWidget {
       (ThemeMode.dark, l10n.themeDark, Icons.dark_mode_outlined),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/home'),
+    return AccountFailureListener(
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/home'),
+          ),
+          title: Text(l10n.settingsTitle),
         ),
-        title: Text(l10n.settingsTitle),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
-            _GroupTitle(l10n.languageChooserLabel),
-            _Group(
-              children: [
-                for (final (code, name) in languages)
-                  _OptionRow(
-                    key: Key('language_$code'),
-                    label: name,
-                    selected: code == locale,
-                    onTap: () => ref
-                        .read(localeProvider.notifier)
-                        .setLocale(Locale(code)),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _GroupTitle(l10n.settingsThemeTitle),
-            _Group(
-              children: [
-                for (final (value, label, icon) in themes)
-                  _OptionRow(
-                    key: Key('theme_${value.name}'),
-                    label: label,
-                    icon: icon,
-                    selected: value == mode,
-                    onTap: () =>
-                        ref.read(themeModeProvider.notifier).setMode(value),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _Group(
-              children: [
-                _NavRow(
-                  key: const Key('roleSwitch'),
-                  icon: Icons.swap_horiz,
-                  label: l10n.roleSwitchTitle,
-                  onTap: () => showRoleSwitchSheet(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            OutlinedButton.icon(
-              key: const Key('signOut'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                foregroundColor: theme.colorScheme.error,
-                side: BorderSide(color: theme.colorScheme.error),
-                shape: const StadiumBorder(),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [
+              _GroupTitle(l10n.languageChooserLabel),
+              _Group(
+                children: [
+                  for (final (code, name) in languages)
+                    _OptionRow(
+                      key: Key('language_$code'),
+                      label: name,
+                      selected: code == locale,
+                      onTap: () => ref
+                          .read(localeProvider.notifier)
+                          .setLocale(Locale(code)),
+                    ),
+                ],
               ),
-              icon: const Icon(logoutIcon),
-              label: Text(l10n.settingsSignOut),
-              onPressed: () => _confirmSignOut(context, ref),
-            ),
-          ],
+              const SizedBox(height: 24),
+              _GroupTitle(l10n.settingsThemeTitle),
+              _Group(
+                children: [
+                  for (final (value, label, icon) in themes)
+                    _OptionRow(
+                      key: Key('theme_${value.name}'),
+                      label: label,
+                      icon: icon,
+                      selected: value == mode,
+                      onTap: () =>
+                          ref.read(themeModeProvider.notifier).setMode(value),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _Group(
+                children: [
+                  _NavRow(
+                    key: const Key('roleSwitch'),
+                    icon: Icons.swap_horiz,
+                    label: l10n.roleSwitchTitle,
+                    onTap: () => showRoleSwitchSheet(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              OutlinedButton.icon(
+                key: const Key('signOut'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: theme.colorScheme.error,
+                  side: BorderSide(color: theme.colorScheme.error),
+                  shape: const StadiumBorder(),
+                ),
+                icon: const Icon(logoutIcon),
+                label: Text(l10n.settingsSignOut),
+                onPressed: () => _confirmSignOut(context, ref),
+              ),
+            ],
+          ),
         ),
       ),
     );

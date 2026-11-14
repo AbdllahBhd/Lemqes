@@ -1,3 +1,4 @@
+import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
@@ -79,5 +80,20 @@ void main() {
       textScale: 2,
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a failed role switch shows the snackbar', (tester) async {
+    final h = await pump(tester);
+    when(() => h.account.setActiveRole(any()))
+        .thenThrow(const NetworkAccountFailure());
+    await tester.ensureVisible(byKey('roleSwitch'));
+    await tester.tap(byKey('roleSwitch'));
+    await tester.pumpAndSettle();
+    await tester.tap(byKey('role_customer'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text(fr.errorNetwork), findsWidgets);
   });
 }

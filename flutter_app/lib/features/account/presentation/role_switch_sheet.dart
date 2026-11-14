@@ -10,6 +10,7 @@ import '../../auth/presentation/auth_widgets.dart';
 import '../../signup/presentation/signup_wizard.dart' show SignupRoleIcon;
 import '../data/account.dart';
 import '../data/account_providers.dart';
+import 'account_failure_listener.dart';
 
 /// Opens [RoleSwitchSheet] as a modal bottom sheet.
 Future<void> showRoleSwitchSheet(BuildContext context) =>
@@ -65,6 +66,7 @@ class _RoleSwitchSheetState extends ConsumerState<RoleSwitchSheet> {
   AppRole? _adding;
   Space? _space;
   String? _businessError;
+  String? _failure;
   bool _busy = false;
 
   @override
@@ -83,12 +85,29 @@ class _RoleSwitchSheetState extends ConsumerState<RoleSwitchSheet> {
     _ => _go(_View.held),
   };
 
-  void _switchTo(AppRole role) {
+  /// Runs [action]; closes the sheet on success, else stays open and says why.
+  Future<void> _run(Future<void> Function(AccountController) action) async {
+    if (_busy) return;
     final notifier = ref.read(accountProvider.notifier);
-    Navigator.of(context).pop();
-    // The home screen shows the result (or its error view) once it lands.
-    notifier.switchRole(role);
+    final navigator = Navigator.of(context);
+    setState(() {
+      _busy = true;
+      _failure = null;
+    });
+    await action(notifier);
+    if (!mounted) return;
+    final state = ref.read(accountProvider);
+    if (state.hasError) {
+      setState(() {
+        _busy = false;
+        _failure = accountErrorMessage(context.l10n, state.error);
+      });
+    } else {
+      navigator.pop();
+    }
   }
+
+  void _switchTo(AppRole role) => _run((n) => n.switchRole(role));
 
   Future<void> _confirm(Account account) async {
     final role = _adding!;
@@ -98,15 +117,13 @@ class _RoleSwitchSheetState extends ConsumerState<RoleSwitchSheet> {
       setState(() => _businessError = context.l10n.businessNameRequired);
       return;
     }
-    final notifier = ref.read(accountProvider.notifier);
-    final navigator = Navigator.of(context);
-    setState(() => _busy = true);
-    await notifier.addRole(
-      role,
-      space: needsSpace ? _space : null,
-      businessName: role == AppRole.salonOwner ? business : null,
+    await _run(
+      (n) => n.addRole(
+        role,
+        space: needsSpace ? _space : null,
+        businessName: role == AppRole.salonOwner ? business : null,
+      ),
     );
-    if (mounted) navigator.pop();
   }
 
   @override
@@ -141,7 +158,11 @@ class _RoleSwitchSheetState extends ConsumerState<RoleSwitchSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          if (_failure != null) ...[
+            FailureBanner(message: _failure!),
+            const SizedBox(height: 16),
+          ] else
+            const SizedBox(height: 16),
           ...switch (_view) {
             _View.held => _held(l10n, account, canAdd),
             _View.pick => _pick(l10n, account),

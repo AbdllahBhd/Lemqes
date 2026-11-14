@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
@@ -75,5 +77,25 @@ void main() {
       textScale: 2,
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a rapid double tap writes the space once', (tester) async {
+    final h = await pumpHome(
+      tester,
+      home: const CustomerHomeScreen(account: testAccount),
+      account: testAccount,
+    );
+    final gate = Completer<void>();
+    when(() => h.account.setCustomerSpace(Space.women))
+        .thenAnswer((_) => gate.future);
+
+    await tester.tap(byKey('spaceSwitch_women'));
+    await tester.pump();
+    await tester.tap(byKey('spaceSwitch_women'));
+    await tester.pump();
+
+    verify(() => h.account.setCustomerSpace(Space.women)).called(1);
+    gate.complete();
+    await tester.pump();
   });
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/features/account/data/account.dart';
@@ -56,5 +57,26 @@ void main() {
     await pumpHome(tester, home: const HomeScreen(), account: pro);
     expect(find.byType(ProHomeScreen), findsOneWidget);
     expect(find.byType(CustomerHomeScreen), findsNothing);
+  });
+
+  testWidgets('a failed space switch keeps the home and says why', (
+    tester,
+  ) async {
+    final h = await pumpHome(
+      tester,
+      home: const HomeScreen(),
+      account: testAccount,
+    );
+    when(() => h.account.setCustomerSpace(any()))
+        .thenThrow(const NetworkAccountFailure());
+
+    await tester.tap(find.byKey(const Key('spaceSwitch_women')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(CustomerHomeScreen), findsOneWidget);
+    expect(find.byType(ErrorView), findsNothing);
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text(fr.errorNetwork), findsOneWidget);
   });
 }

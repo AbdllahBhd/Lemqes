@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/locale_controller.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account_providers.dart';
-import '../../account/data/account_repository.dart';
-import '../../auth/presentation/auth_widgets.dart';
+import '../../account/presentation/account_failure_listener.dart';
 import 'customer_home_screen.dart';
 import 'pro_home_screen.dart';
 
@@ -18,28 +17,28 @@ class HomeScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final state = ref.watch(accountProvider);
 
-    // Error first: a failed role or space change keeps the old value, and the
-    // user still needs the way to retry.
-    if (state.hasError) {
-      final failure = state.error;
-      return Scaffold(
-        body: SafeArea(
-          child: ErrorView(
-            message: failure is AccountFailure
-                ? accountFailureMessage(l10n, failure)
-                : l10n.errorGeneric,
-            retryLabel: l10n.actionRetry,
-            onRetry: () => ref.read(accountProvider.notifier).refresh(),
-          ),
-        ),
-      );
-    }
+    // The previous account stays on screen after a failed switch (the
+    // listener says so in a snackbar); the error view is for a first load
+    // that never produced an account.
     final account = state.value;
     if (account == null) {
+      if (state.hasError) {
+        return Scaffold(
+          body: SafeArea(
+            child: ErrorView(
+              message: accountErrorMessage(l10n, state.error),
+              retryLabel: l10n.actionRetry,
+              onRetry: () => ref.read(accountProvider.notifier).refresh(),
+            ),
+          ),
+        );
+      }
       return const Scaffold(body: SafeArea(child: LoadingView()));
     }
-    return account.activeRole.isPro
-        ? ProHomeScreen(account: account)
-        : CustomerHomeScreen(account: account);
+    return AccountFailureListener(
+      child: account.activeRole.isPro
+          ? ProHomeScreen(account: account)
+          : CustomerHomeScreen(account: account),
+    );
   }
 }

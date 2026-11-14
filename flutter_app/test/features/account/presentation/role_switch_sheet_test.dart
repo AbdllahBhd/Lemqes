@@ -1,3 +1,4 @@
+import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
@@ -132,6 +133,37 @@ void main() {
         businessName: 'Salon Nassim',
       ),
     ).called(1);
+  });
+
+  testWidgets('a failed addRole stays open and says why', (tester) async {
+    final h = await pump(tester, _withPro(Space.men));
+    when(
+      () => h.account.addRole(
+        any(),
+        space: any(named: 'space'),
+        businessName: any(named: 'businessName'),
+      ),
+    ).thenThrow(const NetworkAccountFailure());
+
+    await tapKey(tester, 'addRole');
+    await tapKey(tester, 'add_barber');
+    await tapKey(tester, 'confirmAddRole');
+    await tester.pump();
+
+    expect(find.text(fr.errorNetwork), findsWidgets);
+    expect(byKey('confirmAddRole'), findsOneWidget);
+  });
+
+  testWidgets('a failed switchRole stays open and says why', (tester) async {
+    final h = await pump(tester, pro);
+    when(() => h.account.setActiveRole(any()))
+        .thenThrow(const NetworkAccountFailure());
+
+    await tapKey(tester, 'role_customer');
+    await tester.pump();
+
+    expect(find.text(fr.errorNetwork), findsWidgets);
+    expect(byKey('role_barber'), findsOneWidget);
   });
 }
 

@@ -9,13 +9,32 @@ import '../../account/presentation/space_switch.dart';
 import 'home_header.dart';
 
 /// Customer home: the header band, then the search that M2 will bring.
-class CustomerHomeScreen extends ConsumerWidget {
+class CustomerHomeScreen extends ConsumerStatefulWidget {
   const CustomerHomeScreen({required this.account, super.key});
 
   final Account account;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
+}
+
+class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
+  bool _switching = false;
+
+  Future<void> _switchTo(Space space) async {
+    // One write at a time: a second tap mid-flight would race the first.
+    if (_switching) return;
+    setState(() => _switching = true);
+    try {
+      await ref.read(accountProvider.notifier).switchSpace(space);
+    } finally {
+      if (mounted) setState(() => _switching = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final account = widget.account;
     final l10n = context.l10n;
     final space = account.customerSpace;
     return Scaffold(
@@ -36,9 +55,7 @@ class CustomerHomeScreen extends ConsumerWidget {
               SpaceSwitch(
                 value: space,
                 onChanged: (s) {
-                  if (s != space) {
-                    ref.read(accountProvider.notifier).switchSpace(s);
-                  }
+                  if (s != space) _switchTo(s);
                 },
               ),
             ],
