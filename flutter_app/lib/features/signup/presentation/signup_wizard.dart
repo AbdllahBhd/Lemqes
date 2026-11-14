@@ -3,14 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/step_progress.dart';
 import '../../account/data/account.dart';
+import '../../pro/data/pro_models.dart';
 import '../data/signup_draft_store.dart';
 import 'steps/code_step.dart';
 import 'steps/credentials_step.dart';
 import 'steps/role_step.dart';
 import 'steps/space_step.dart';
 
-/// `/signup/:step`. Steps 4-5 for pros (profile, hours) arrive in M2; until
-/// then pros land on home after the code step.
+/// `/signup/:step`. A barber or home artist continues with the pro setup
+/// steps (profile, services, hours) after the code step.
 class SignupWizard extends StatelessWidget {
   const SignupWizard({required this.step, super.key});
 
@@ -32,6 +33,7 @@ class WizardStepScaffold extends ConsumerWidget {
     required this.step,
     required this.title,
     required this.children,
+    this.total,
     this.body,
     this.onBack,
     this.action,
@@ -39,6 +41,9 @@ class WizardStepScaffold extends ConsumerWidget {
   });
 
   final int step;
+
+  /// Defaults to the wizard's count for the drafted role.
+  final int? total;
   final String title;
   final String? body;
   final List<Widget> children;
@@ -49,7 +54,10 @@ class WizardStepScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final role = ref.watch(signupDraftProvider)?.role;
-    final total = role != null && role.isPro ? 5 : 4;
+    // Space, role, credentials, code; then profile, services and hours for
+    // the roles with a pro profile.
+    final total =
+        this.total ?? (role != null && ProKind.forRole(role) != null ? 7 : 4);
     final body = this.body;
     final action = this.action;
     final onBack = this.onBack;

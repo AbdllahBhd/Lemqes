@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart' show TimeOfDay;
 import 'package:lemqes/core/router/redirect.dart';
 import 'package:lemqes/features/account/data/account.dart';
+import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:lemqes/features/signup/data/signup_draft.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -81,6 +83,51 @@ Future<AsyncValue<Account?>> _failedSwitch() async {
   container.read(provider.notifier).fail();
   return container.read(provider);
 }
+
+Account _as(AppRole role) => Account(
+  id: 'u1',
+  fullName: 'Amine',
+  customerSpace: Space.men,
+  proSpace: role.isPro ? Space.men : null,
+  activeRole: role,
+  roles: {AppRole.customer, role},
+);
+
+ProProfile _pro({
+  int? localityId = 1601,
+  CustomerMix? mix = CustomerMix.adults,
+  bool service = true,
+  bool hours = true,
+}) => ProProfile(
+  id: 'p1',
+  kind: ProKind.barber,
+  space: Space.men,
+  displayName: 'Amine',
+  workplaceType: WorkplaceType.salon,
+  phoneVisibility: PhoneVisibility.hidden,
+  showPrices: true,
+  isVerified: false,
+  localityId: localityId,
+  customerMix: mix,
+  services: [
+    if (service)
+      const ProService(
+        id: 's1',
+        presetKey: 'men_cut',
+        category: ServiceCategory.hair,
+        priceDzd: 600,
+        durationMin: 30,
+      ),
+  ],
+  hours: [
+    if (hours)
+      const DayHours(
+        weekday: 6,
+        opens: TimeOfDay(hour: 9, minute: 0),
+        closes: TimeOfDay(hour: 19, minute: 0),
+      ),
+  ],
+);
 
 void main() {
   group('no session', () {
@@ -389,6 +436,124 @@ void main() {
         isFalse,
       );
       expect(resolveHasSession(AsyncValue.data(_session), () => null), isTrue);
+    });
+  });
+  group('pro setup', () {
+    test('a barber who just signed up goes to the profile step', () {
+      expect(
+        _go(account: AsyncData(_as(AppRole.barber)), location: '/signup/code'),
+        '/pro/setup/profile',
+      );
+    });
+
+    test('a home artist who just signed up goes to the profile step', () {
+      expect(
+        _go(
+          account: AsyncData(_as(AppRole.homeArtist)),
+          location: '/signup/code',
+        ),
+        '/pro/setup/profile',
+      );
+    });
+
+    test('a customer who just signed up goes home', () {
+      expect(_go(location: '/signup/code'), '/home');
+    });
+
+    test('a salon owner has no setup yet and goes home', () {
+      expect(
+        _go(
+          account: AsyncData(_as(AppRole.salonOwner)),
+          location: '/signup/code',
+        ),
+        '/home',
+      );
+    });
+
+    test('a pro opening home later is not forced into setup', () {
+      expect(
+        _go(account: AsyncData(_as(AppRole.barber)), location: '/home'),
+        isNull,
+      );
+    });
+
+    test('a pro may open a setup step', () {
+      expect(
+        _go(
+          account: AsyncData(_as(AppRole.barber)),
+          location: '/pro/setup/services',
+        ),
+        isNull,
+      );
+    });
+
+    test('a customer opening setup goes home', () {
+      expect(_go(location: '/pro/setup/profile'), '/home');
+      expect(_go(location: '/pro/setup'), '/home');
+    });
+  });
+
+  group('proSetupStepRedirect', () {
+    String? step(String s, AsyncValue<ProProfile?> pro) =>
+        proSetupStepRedirect(step: s, profile: pro);
+
+    test('an unknown step opens the profile step', () {
+      expect(step('photos', const AsyncData(null)), '/pro/setup/profile');
+    });
+
+    test('waits while the profile loads', () {
+      expect(step('hours', const AsyncLoading()), isNull);
+    });
+
+    test('without a profile only the profile step is open', () {
+      expect(step('profile', const AsyncData(null)), isNull);
+      expect(step('services', const AsyncData(null)), '/pro/setup/profile');
+      expect(step('hours', const AsyncData(null)), '/pro/setup/profile');
+    });
+
+    test('a profile missing its commune keeps the later steps closed', () {
+      expect(
+        step('services', AsyncData(_pro(localityId: null))),
+        '/pro/setup/profile',
+      );
+      expect(step('hours', AsyncData(_pro(mix: null))), '/pro/setup/profile');
+    });
+
+    test('no active service keeps the hours step closed', () {
+      expect(step('services', AsyncData(_pro(service: false))), isNull);
+      expect(
+        step('hours', AsyncData(_pro(service: false))),
+        '/pro/setup/services',
+      );
+    });
+
+    test('earlier steps stay open for going back', () {
+      expect(step('profile', AsyncData(_pro(hours: false))), isNull);
+      expect(step('hours', AsyncData(_pro(hours: false))), isNull);
+      expect(step('profile', AsyncData(_pro())), isNull);
+    });
+  });
+
+  group('proSetupEntry', () {
+    test('waits while the profile loads', () {
+      expect(proSetupEntry(const AsyncLoading()), isNull);
+    });
+
+    test('resumes at the first step with a gap', () {
+      expect(proSetupEntry(const AsyncData(null)), '/pro/setup/profile');
+      expect(
+        proSetupEntry(AsyncData(_pro(mix: null, service: false))),
+        '/pro/setup/profile',
+      );
+      expect(
+        proSetupEntry(AsyncData(_pro(service: false, hours: false))),
+        '/pro/setup/services',
+      );
+      expect(proSetupEntry(AsyncData(_pro(hours: false))), '/pro/setup/hours');
+    });
+
+    test('a complete profile goes home', () {
+      expect(proSetupEntry(AsyncData(_pro())), '/home');
     });
   });
 }

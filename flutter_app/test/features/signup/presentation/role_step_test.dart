@@ -90,7 +90,9 @@ void main() {
     expect(h.location, '/signup/credentials');
   });
 
-  testWidgets('a pro role counts five steps, a customer four', (tester) async {
+  testWidgets('a pro with a profile counts seven steps, others four', (
+    tester,
+  ) async {
     await pumpApp(
       tester,
       location: '/signup/role',
@@ -99,7 +101,14 @@ void main() {
     );
     expect(find.text('Étape 2 sur 4'), findsOneWidget);
 
+    // Space, role, credentials, code, then profile, services and hours.
+    await tapKey(tester, 'role_barber');
+    expect(find.text('Étape 2 sur 7'), findsOneWidget);
+    await tapKey(tester, 'role_home_artist');
+    expect(find.text('Étape 2 sur 7'), findsOneWidget);
+
+    // Salon setup comes with salons (M7): no extra steps yet.
     await tapKey(tester, 'role_salon_owner');
-    expect(find.text('Étape 2 sur 5'), findsOneWidget);
+    expect(find.text('Étape 2 sur 4'), findsOneWidget);
   });
 }

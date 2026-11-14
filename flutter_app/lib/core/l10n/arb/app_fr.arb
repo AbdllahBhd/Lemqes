@@ -536,5 +536,325 @@
   "photoUnavailable": "Photo indisponible",
   "@photoUnavailable": {
     "description": "Photo failed to load"
+  },
+  "serviceEditorNewTitle": "Nouveau service",
+  "@serviceEditorNewTitle": {
+    "description": "Service editor title for a custom service"
+  },
+  "serviceNameLabel": "Nom du service",
+  "@serviceNameLabel": {
+    "description": "Custom service name field"
+  },
+  "serviceNameRequired": "Donnez un nom au service.",
+  "@serviceNameRequired": {
+    "description": "Custom service without a name"
+  },
+  "serviceNameLength": "Entre 2 et 60 caractères.",
+  "@serviceNameLength": {
+    "description": "Custom service name too short or too long"
+  },
+  "serviceCategoryLabel": "Catégorie",
+  "@serviceCategoryLabel": {
+    "description": "Category chips of a custom service"
+  },
+  "serviceCategoryName": "{category, select, hair{Cheveux} beard{Barbe} coloring{Coloration} nails{Ongles} skincare{Soins du visage} makeup{Maquillage} spa{Spa} other{Autre}}",
+  "@serviceCategoryName": {
+    "description": "Service category name",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "servicePriceLabel": "Prix",
+  "@servicePriceLabel": {
+    "description": "Service price field"
+  },
+  "servicePriceRequired": "Indiquez un prix (0 pour un service offert).",
+  "@servicePriceRequired": {
+    "description": "Service price left empty"
+  },
+  "servicePriceInvalid": "Un prix en dinars, sans virgule, de 0 à 200 000 DA.",
+  "@servicePriceInvalid": {
+    "description": "Service price not a whole number in range"
+  },
+  "serviceDurationLabel": "Durée",
+  "@serviceDurationLabel": {
+    "description": "Service duration field"
+  },
+  "serviceDurationRequired": "Indiquez une durée en minutes.",
+  "@serviceDurationRequired": {
+    "description": "Service duration left empty"
+  },
+  "serviceDurationInvalid": "Une durée de 5 à 300 minutes.",
+  "@serviceDurationInvalid": {
+    "description": "Service duration out of range"
+  },
+  "serviceMinutesSuffix": "min",
+  "@serviceMinutesSuffix": {
+    "description": "Unit after the duration field"
+  },
+  "serviceDuration": "{minutes} min",
+  "@serviceDuration": {
+    "description": "Service duration in a list",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "serviceActiveLabel": "Proposé aux clients",
+  "@serviceActiveLabel": {
+    "description": "Switch: the service is offered"
+  },
+  "serviceActiveHint": "Désactivez-le pour le masquer sans le supprimer.",
+  "@serviceActiveHint": {
+    "description": "Help under the offered switch"
+  },
+  "servicePaused": "En pause",
+  "@servicePaused": {
+    "description": "Tag on a service that is switched off"
+  },
+  "serviceSave": "Enregistrer",
+  "@serviceSave": {
+    "description": "Save button of the service editor"
+  },
+  "serviceRemove": "Retirer ce service",
+  "@serviceRemove": {
+    "description": "Remove a service (archived, not deleted)"
+  },
+  "hoursOpens": "Ouverture",
+  "@hoursOpens": {
+    "description": "Opening time button label"
+  },
+  "hoursCloses": "Fermeture",
+  "@hoursCloses": {
+    "description": "Closing time button label"
+  },
+  "hoursBreakStart": "Début de la pause",
+  "@hoursBreakStart": {
+    "description": "Break start time button label"
+  },
+  "hoursBreakEnd": "Fin de la pause",
+  "@hoursBreakEnd": {
+    "description": "Break end time button label"
+  },
+  "hoursAddBreak": "Ajouter une pause",
+  "@hoursAddBreak": {
+    "description": "Add a break to a day"
+  },
+  "hoursRemoveBreak": "Retirer la pause",
+  "@hoursRemoveBreak": {
+    "description": "Remove the break of a day"
+  },
+  "hoursCopyAll": "Copier sur tous les jours",
+  "@hoursCopyAll": {
+    "description": "Copy one day's hours to every day"
+  },
+  "hoursPastMidnightNote": "Ferme le lendemain",
+  "@hoursPastMidnightNote": {
+    "description": "Note on a day that closes after midnight"
+  },
+  "hoursErrorSameTimes": "L'ouverture et la fermeture ne peuvent pas être à la même heure.",
+  "@hoursErrorSameTimes": {
+    "description": "Opening equals closing"
+  },
+  "hoursErrorLateClose": "Après minuit, fermez au plus tard à 06:00.",
+  "@hoursErrorLateClose": {
+    "description": "Past-midnight closing after 06:00"
+  },
+  "hoursErrorBreakOrder": "La fin de la pause doit venir après son début.",
+  "@hoursErrorBreakOrder": {
+    "description": "Break ends before it starts"
+  },
+  "hoursErrorBreakOutside": "La pause doit tomber pendant les heures d'ouverture.",
+  "@hoursErrorBreakOutside": {
+    "description": "Break not inside opening hours"
+  },
+  "hoursAllClosed": "Ouvrez au moins un jour pour publier votre profil.",
+  "@hoursAllClosed": {
+    "description": "Every day is switched off"
+  },
+  "hoursFixErrors": "Corrigez les horaires signalés pour continuer.",
+  "@hoursFixErrors": {
+    "description": "Some days have invalid hours"
+  },
+  "setupProfileTitle": "Votre profil",
+  "@setupProfileTitle": {
+    "description": "Setup step: profile"
+  },
+  "setupProfileBody": "{space, select, women{Ce que vos clientes verront en premier.} other{Ce que vos clients verront en premier.}}",
+  "@setupProfileBody": {
+    "description": "Setup profile step intro",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "setupAvatarAdd": "Ajouter une photo",
+  "@setupAvatarAdd": {
+    "description": "Pick a profile photo"
+  },
+  "setupAvatarChange": "Changer la photo",
+  "@setupAvatarChange": {
+    "description": "Replace the profile photo"
+  },
+  "setupDisplayNameLabel": "Nom affiché",
+  "@setupDisplayNameLabel": {
+    "description": "Name shown on the pro profile"
+  },
+  "setupDisplayNameRequired": "Indiquez le nom affiché sur votre profil.",
+  "@setupDisplayNameRequired": {
+    "description": "Display name left empty"
+  },
+  "setupDisplayNameLength": "Entre 2 et 60 caractères.",
+  "@setupDisplayNameLength": {
+    "description": "Display name too short or too long"
+  },
+  "setupExperienceLabel": "Expérience",
+  "@setupExperienceLabel": {
+    "description": "Years of experience chips"
+  },
+  "setupExperienceBand": "{band, select, b0{Moins de 2 ans} b1{2 à 5 ans} b2{5 à 10 ans} other{Plus de 10 ans}}",
+  "@setupExperienceBand": {
+    "description": "Experience chip: under 2, 2-5, 5-10, over 10 years",
+    "placeholders": {
+      "band": {
+        "type": "String"
+      }
+    }
+  },
+  "setupWorkplaceLabel": "Lieu de travail",
+  "@setupWorkplaceLabel": {
+    "description": "Workplace type choice"
+  },
+  "setupWorkplaceType": "{type, select, salon{En salon} own_studio{Mon propre espace} other{Je me déplace}}",
+  "@setupWorkplaceType": {
+    "description": "Workplace type option",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "setupWorkplaceNameLabel": "Nom du lieu (facultatif)",
+  "@setupWorkplaceNameLabel": {
+    "description": "Salon or studio name field"
+  },
+  "setupLocalityLabel": "Où travaillez-vous ?",
+  "@setupLocalityLabel": {
+    "description": "Where the pro works"
+  },
+  "setupLocalityRequired": "Choisissez votre wilaya et votre commune.",
+  "@setupLocalityRequired": {
+    "description": "No commune chosen"
+  },
+  "setupCustomersLabel": "Votre clientèle",
+  "@setupCustomersLabel": {
+    "description": "Accepted customers choice"
+  },
+  "setupCustomersRequired": "Choisissez qui vous accueillez.",
+  "@setupCustomersRequired": {
+    "description": "No customer mix chosen"
+  },
+  "customerMixAdults": "{space, select, women{Femmes} other{Hommes}}",
+  "@customerMixAdults": {
+    "description": "Customer mix: adults of the space",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "customerMixAdultsAndKids": "{space, select, women{Femmes et enfants} other{Hommes et enfants}}",
+  "@customerMixAdultsAndKids": {
+    "description": "Customer mix: adults and children",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "customerMixKidsOnly": "Enfants seulement",
+  "@customerMixKidsOnly": {
+    "description": "Customer mix: children only"
+  },
+  "setupRadiusLabel": "Distance de déplacement",
+  "@setupRadiusLabel": {
+    "description": "Home artist: how far they travel"
+  },
+  "setupRadiusKm": "{km} km",
+  "@setupRadiusKm": {
+    "description": "Travel distance chip",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "setupTravelFeeLabel": "Frais de déplacement",
+  "@setupTravelFeeLabel": {
+    "description": "Home artist: travel fee"
+  },
+  "setupTravelFeeFree": "Offert",
+  "@setupTravelFeeFree": {
+    "description": "Travel fee chip: no fee"
+  },
+  "setupServicesTitle": "Vos services",
+  "@setupServicesTitle": {
+    "description": "Setup step: services"
+  },
+  "setupServicesBody": "Touchez une suggestion pour l'ajouter, puis ajustez le prix et la durée.",
+  "@setupServicesBody": {
+    "description": "Setup services step intro"
+  },
+  "setupServicesSuggestions": "Suggestions",
+  "@setupServicesSuggestions": {
+    "description": "Preset chips heading"
+  },
+  "setupServicesAdded": "Vos services ajoutés",
+  "@setupServicesAdded": {
+    "description": "Heading of the services already added"
+  },
+  "setupServicesCustom": "Ajouter un service personnalisé",
+  "@setupServicesCustom": {
+    "description": "Add a service not in the suggestions"
+  },
+  "setupServicesNeedOne": "Ajoutez au moins un service pour continuer.",
+  "@setupServicesNeedOne": {
+    "description": "Continue disabled without a service"
+  },
+  "setupHoursTitle": "Vos horaires",
+  "@setupHoursTitle": {
+    "description": "Setup step: opening hours"
+  },
+  "setupHoursBody": "Les jours éteints apparaissent comme fermés.",
+  "@setupHoursBody": {
+    "description": "Setup hours step intro"
+  },
+  "setupPublish": "Publier mon profil",
+  "@setupPublish": {
+    "description": "Last setup button"
+  },
+  "setupIncomplete": "Il manque encore cette étape pour publier votre profil.",
+  "@setupIncomplete": {
+    "description": "Publishing was refused because this step is missing"
+  },
+  "proErrorTooManyServices": "Vous avez atteint la limite de 30 services.",
+  "@proErrorTooManyServices": {
+    "description": "Server refused a 31st service"
+  },
+  "proErrorInvalidHours": "Ces horaires ont été refusés. Vérifiez chaque jour.",
+  "@proErrorInvalidHours": {
+    "description": "Server refused the hours"
+  },
+  "proErrorImage": "Cette image n'est pas prise en charge. Choisissez une photo JPEG, PNG ou WebP.",
+  "@proErrorImage": {
+    "description": "Unsupported image type"
+  },
+  "proErrorImageTooLarge": "Cette photo dépasse 5 Mo.",
+  "@proErrorImageTooLarge": {
+    "description": "Image over the 5 MB limit"
   }
 }

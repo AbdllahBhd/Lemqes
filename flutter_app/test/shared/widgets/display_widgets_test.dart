@@ -64,6 +64,20 @@ void main() {
       expect(find.text('Pause'), findsOneWidget);
     });
 
+    testWidgets('reads each day as one item: name, then its hours', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(host(HoursTable(week: week)));
+      expect(
+        tester.getSemantics(find.text('Mercredi')),
+        matchesSemantics(
+          label: 'Mercredi\n09:00 – 19:00\nPause\n13:00 – 14:00',
+        ),
+      );
+      handle.dispose();
+    });
+
     testWidgets('lists Saturday first', (tester) async {
       await tester.pumpWidget(host(HoursTable(week: week)));
       final names = [

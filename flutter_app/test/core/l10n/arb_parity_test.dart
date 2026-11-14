@@ -11,9 +11,10 @@ Set<String> _keys(Map<String, dynamic> arb) =>
     arb.keys.where((k) => !k.startsWith('@')).toSet();
 
 // A placeholder is `{name}` or the head of `{name, plural|select, ...}`;
-// words opening an ICU branch (`other{Je suis}`) are translated text.
+// words opening an ICU branch (`other{Je suis}`) are translated text, and so
+// is a one-word branch body (`hair{Cheveux}`): its brace follows the keyword.
 Set<String> _placeholders(String message) =>
-    RegExp(r'\{(\w+)\s*(?:\}|,)')
+    RegExp(r'(?<!\w)\{(\w+)\s*(?:\}|,)')
         .allMatches(message)
         .map((m) => m.group(1)!)
         .toSet();
