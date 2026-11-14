@@ -153,6 +153,12 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 Future<void> _enter(WidgetTester tester, Key key, String text) async {
   final finder = find.byKey(key);
   await _waitFor(tester, finder);
+  // A route sliding in over one with the same field (login -> reset) keeps
+  // both onstage until the transition ends.
+  final deadline = DateTime.now().add(const Duration(seconds: 10));
+  while (finder.evaluate().length > 1 && DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
   await tester.ensureVisible(finder);
   await tester.enterText(finder, text);
   await tester.pump();
