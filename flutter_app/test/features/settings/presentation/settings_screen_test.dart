@@ -1,9 +1,9 @@
-import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/core/l10n/locale_controller.dart';
 import 'package:lemqes/core/theme/theme_mode_controller.dart';
+import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:lemqes/features/settings/presentation/settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
 

@@ -24,8 +24,9 @@ class AccountFailureListener extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen(accountProvider, (previous, next) {
-      final fresh = next.hasError && !(previous?.hasError ?? false);
-      if (!fresh || !next.hasValue) return;
+      // Every notification into an error is a new failure: the controller
+      // goes error -> error on repeated failures, never through loading.
+      if (!next.hasError || !next.hasValue) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(

@@ -79,4 +79,31 @@ void main() {
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.text(fr.errorNetwork), findsOneWidget);
   });
+
+  testWidgets('two consecutive failed switches each show the snackbar', (
+    tester,
+  ) async {
+    final h = await pumpHome(
+      tester,
+      home: const HomeScreen(),
+      account: testAccount,
+    );
+    when(() => h.account.setCustomerSpace(any()))
+        .thenThrow(const NetworkAccountFailure());
+
+    await tester.tap(find.byKey(const Key('spaceSwitch_women')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(fr.errorNetwork), findsOneWidget);
+
+    ScaffoldMessenger.of(tester.element(find.byType(CustomerHomeScreen)))
+        .clearSnackBars();
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsNothing);
+
+    await tester.tap(find.byKey(const Key('spaceSwitch_women')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(fr.errorNetwork), findsOneWidget);
+  });
 }
