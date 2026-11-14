@@ -39,14 +39,21 @@ String? authRedirect({
     return inAuth || inSignup ? null : '/auth';
   }
 
-  if (account.isLoading) {
-    // Verification just signed the user in and the account reloads (with or
-    // without a previous value): the code step shows its own progress while
-    // the profile is created, instead of a detour via home.
+  // A first load, or the reload that signing in starts from "no account":
+  // neither proves the profile is missing, so wait on home, not the wizard.
+  if (account.isLoading && account.value == null) {
+    // Verification just signed the user in: the code step shows its own
+    // progress while the profile is created, instead of a detour via home.
     if (location == '/signup/code') return null;
-    if (!account.hasValue) return location == '/home' ? null : '/home';
+    // A cold start mid sign-up goes straight back to the code step, which
+    // resumes the profile creation.
+    if (draft?.phone != null && draft?.fullName != null) return '/signup/code';
+    return location == '/home' ? null : '/home';
   }
-  if (account.hasError) {
+  if (account.isLoading && location == '/signup/code') return null;
+  // Only a failure with no account to show; a failed switch keeps the
+  // account and must leave settings and sign-out reachable.
+  if (account.hasError && account.value == null) {
     return location == '/home' ? null : '/home';
   }
 

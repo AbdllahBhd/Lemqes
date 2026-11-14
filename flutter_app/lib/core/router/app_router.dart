@@ -11,10 +11,13 @@ import '../../features/signup/data/signup_draft_store.dart';
 import '../../features/signup/presentation/signup_wizard.dart';
 import 'redirect.dart';
 
-/// Re-runs the router redirect whenever session, account or draft change.
+/// Re-runs the router redirect whenever account or draft change.
+///
+/// Not on session events: the account rebuilds on every sign-in and sign-out,
+/// and a session listener ran before that rebuild, showing the redirect a
+/// stale "signed in, no account" that opened the wizard for a frame.
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
-    ref.listen(sessionProvider, (_, _) => notifyListeners());
     ref.listen(accountProvider, (_, _) => notifyListeners());
     ref.listen(signupDraftProvider, (_, _) => notifyListeners());
   }
@@ -32,11 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       location: state.uri.path,
     ),
     routes: [
-      GoRoute(
-        path: '/',
-        redirect: (_, _) => null,
-        builder: (_, _) => const SizedBox.shrink(),
-      ),
+      GoRoute(path: '/', builder: (_, _) => const SizedBox.shrink()),
       GoRoute(path: '/auth', builder: (_, _) => const AuthScreen()),
       GoRoute(
         path: '/auth/reset',

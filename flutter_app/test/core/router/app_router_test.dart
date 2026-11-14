@@ -12,7 +12,9 @@ import 'package:lemqes/core/storage/shared_preferences_provider.dart';
 import 'package:lemqes/core/theme/lemqes_theme.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
+import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:lemqes/features/auth/presentation/auth_screen.dart';
+import 'package:lemqes/features/settings/presentation/settings_screen.dart';
 import 'package:lemqes/features/signup/data/signup_draft.dart';
 import 'package:lemqes/features/signup/data/signup_draft_store.dart';
 import 'package:mocktail/mocktail.dart';
@@ -123,6 +125,80 @@ void main() {
     await tester.pump();
 
     expect(_path(router), '/auth/reset');
+  });
+
+  testWidgets('signing in goes straight home, never through the wizard', (
+    tester,
+  ) async {
+    final sessions = StreamController<Session?>.broadcast();
+    addTearDown(sessions.close);
+    final auth = MockAuthRepository();
+    final account = MockAccountRepository();
+    var signedIn = false;
+    final profile = Completer<Account?>();
+    when(() => account.fetchMine())
+        .thenAnswer((_) => signedIn ? profile.future : Future.value(null));
+    final router = await _pumpRouter(
+      tester,
+      currentSession: null,
+      sessions: sessions.stream,
+      auth: auth,
+      account: account,
+    );
+    sessions.add(null);
+    await tester.pump();
+    expect(_path(router), '/auth');
+    final paths = <String>[_path(router)];
+    void listener() {
+      final p = _path(router);
+      if (paths.last != p) paths.add(p);
+    }
+
+    router.routerDelegate.addListener(listener);
+    addTearDown(() => router.routerDelegate.removeListener(listener));
+
+    signedIn = true;
+    when(() => auth.currentSession).thenReturn(testSession);
+    sessions.add(testSession);
+    await tester.pump();
+    await tester.pump();
+    profile.complete(testAccount);
+    await tester.pump();
+    await tester.pump();
+
+    expect(paths, ['/auth', '/home']);
+  });
+
+  testWidgets('a failed switch leaves settings reachable', (tester) async {
+    final sessions = StreamController<Session?>.broadcast();
+    addTearDown(sessions.close);
+    final account = MockAccountRepository();
+    when(() => account.fetchMine()).thenAnswer((_) async => testAccount);
+    when(() => account.setActiveRole(AppRole.barber))
+        .thenThrow(const NetworkAccountFailure());
+    late ProviderContainer container;
+    final router = await _pumpRouter(
+      tester,
+      currentSession: testSession,
+      sessions: sessions.stream,
+      account: account,
+      onContainer: (c) => container = c,
+    );
+    sessions.add(testSession);
+    await tester.pump();
+    await tester.pump();
+    expect(_path(router), '/home');
+
+    await container.read(accountProvider.notifier).switchRole(AppRole.barber);
+    await tester.pump();
+    expect(container.read(accountProvider).hasError, isTrue);
+    router.push('/settings');
+    await tester.pump();
+    await tester.pump();
+
+    // A push keeps the base location; the top route is the pushed one.
+    expect(router.state.uri.path, '/settings');
+    expect(find.byType(SettingsScreen), findsOneWidget);
   });
 
   group('sign-up completion through the real router', () {
@@ -241,7 +317,8 @@ void main() {
       sessions.add(testSession);
       await settle(tester);
 
-      expect(paths, ['/home', '/signup/code', '/home']);
+      // No detour via home: the code step resumes the profile creation.
+      expect(paths, ['/signup/code', '/home']);
       verifyNever(
         () => auth.verifySignUpCode(
           phone: any(named: 'phone'),

@@ -45,6 +45,43 @@ String? _go({
   location: location,
 );
 
+// Riverpod 3 keeps the previous value while rebuilding: when the session
+// arrives, accountProvider goes from AsyncData(null) to a loading state that
+// still has the value null. Produced by a real container, not hand-built, so
+// the tests track Riverpod's actual behaviour.
+Future<AsyncValue<Account?>> _reloadingFrom(Account? previous) async {
+  var builds = 0;
+  final provider = FutureProvider<Account?>(
+    (ref) =>
+        builds++ == 0 ? Future.value(previous) : Completer<Account?>().future,
+  );
+  final container = ProviderContainer();
+  addTearDown(container.dispose);
+  container.listen(provider, (_, _) {});
+  await container.read(provider.future);
+  container.invalidate(provider);
+  return container.read(provider);
+}
+
+class _Failing extends AsyncNotifier<Account?> {
+  @override
+  Future<Account?> build() async => _account;
+
+  void fail() =>
+      state = AsyncError<Account?>(Exception('boom'), StackTrace.empty);
+}
+
+/// The state a failed switch leaves, as the real notifier produces it.
+Future<AsyncValue<Account?>> _failedSwitch() async {
+  final provider = AsyncNotifierProvider<_Failing, Account?>(_Failing.new);
+  final container = ProviderContainer();
+  addTearDown(container.dispose);
+  container.listen(provider, (_, _) {});
+  await container.read(provider.future);
+  container.read(provider.notifier).fail();
+  return container.read(provider);
+}
+
 void main() {
   group('no session', () {
     test('draft with phone at / resumes the code step', () {
@@ -118,6 +155,71 @@ void main() {
     });
   });
 
+  group('session, account error that still holds the account', () {
+    late AsyncValue<Account?> failed;
+
+    setUp(() async {
+      failed = await _failedSwitch();
+      expect(failed.hasError, isTrue);
+      expect(failed.value, _account);
+    });
+
+    test('at /settings stays put', () {
+      expect(_go(account: failed, location: '/settings'), isNull);
+    });
+
+    test('at /home stays put', () {
+      expect(_go(account: failed, location: '/home'), isNull);
+    });
+
+    test('at /auth goes to /home', () {
+      expect(_go(account: failed, location: '/auth'), '/home');
+    });
+  });
+
+  group('sign-in: the account loads with a previous null value', () {
+    test('at /auth goes to /home, not the wizard', () async {
+      final reloading = await _reloadingFrom(null);
+      expect(_go(account: reloading, location: '/auth'), '/home');
+    });
+
+    test('at /home stays put', () async {
+      final reloading = await _reloadingFrom(null);
+      expect(_go(account: reloading, location: '/home'), isNull);
+    });
+  });
+
+  group('cold start with a session and a draft waiting for its code', () {
+    const pending = SignupDraft(
+      space: Space.men,
+      role: AppRole.customer,
+      fullName: 'Amine',
+      phone: '+213550000000',
+    );
+
+    test('a first load at / opens the code step, not home', () {
+      expect(
+        _go(account: _loading, draft: pending, location: '/'),
+        '/signup/code',
+      );
+    });
+
+    test('a draft without its name keeps waiting on home', () {
+      expect(
+        _go(
+          account: _loading,
+          draft: const SignupDraft(
+            space: Space.men,
+            role: AppRole.customer,
+            phone: '+213550000000',
+          ),
+          location: '/',
+        ),
+        '/home',
+      );
+    });
+  });
+
   group('session, no account', () {
     test('no draft at /home goes to the space step', () {
       expect(_go(account: _none, location: '/home'), '/signup/space');
@@ -181,24 +283,7 @@ void main() {
   });
 
   group('code step while the account loads after verification', () {
-    // Riverpod 3 keeps the previous value while rebuilding: when the session
-    // arrives, accountProvider goes from AsyncData(null) to a loading state
-    // that still has the value null. Produced by a real container, not
-    // hand-built, so the test tracks Riverpod's actual behaviour.
-    Future<AsyncValue<Account?>> reloadingFrom(Account? previous) async {
-      var builds = 0;
-      final provider = FutureProvider<Account?>(
-        (ref) => builds++ == 0
-            ? Future.value(previous)
-            : Completer<Account?>().future,
-      );
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      container.listen(provider, (_, _) {});
-      await container.read(provider.future);
-      container.invalidate(provider);
-      return container.read(provider);
-    }
+    final reloadingFrom = _reloadingFrom;
 
     test('the reloading state still has its previous null value', () async {
       final reloading = await reloadingFrom(null);
