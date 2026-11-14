@@ -456,5 +456,85 @@
   "actionCancel": "Annuler",
   "@actionCancel": {
     "description": "Dialog cancel button"
+  },
+  "localityRegionLabel": "Wilaya",
+  "@localityRegionLabel": {
+    "description": "Label of the wilaya field"
+  },
+  "localityCommuneLabel": "Commune",
+  "@localityCommuneLabel": {
+    "description": "Label of the commune field"
+  },
+  "localityRegionHint": "Choisir la wilaya",
+  "@localityRegionHint": {
+    "description": "Wilaya field placeholder"
+  },
+  "localityCommuneHint": "Choisir la commune",
+  "@localityCommuneHint": {
+    "description": "Commune field placeholder"
+  },
+  "localityCommuneDisabled": "Choisissez d'abord la wilaya",
+  "@localityCommuneDisabled": {
+    "description": "Commune field when no wilaya is chosen"
+  },
+  "localitySearchHint": "Rechercher",
+  "@localitySearchHint": {
+    "description": "Search field inside the wilaya and commune sheets"
+  },
+  "localityEmptyTitle": "Aucun résultat",
+  "@localityEmptyTitle": {
+    "description": "No wilaya or commune matches the search"
+  },
+  "localityEmptyBody": "Vérifiez l'orthographe ou essayez un autre nom.",
+  "@localityEmptyBody": {
+    "description": "Hint under the empty search result"
+  },
+  "weekdayMon": "Lundi",
+  "@weekdayMon": {
+    "description": "Weekday name in the opening hours table"
+  },
+  "weekdayTue": "Mardi",
+  "@weekdayTue": {
+    "description": "Weekday name in the opening hours table"
+  },
+  "weekdayWed": "Mercredi",
+  "@weekdayWed": {
+    "description": "Weekday name in the opening hours table"
+  },
+  "weekdayThu": "Jeudi",
+  "@weekdayThu": {
+    "description": "Weekday name in the opening hours table"
+  },
+  "weekdayFri": "Vendredi",
+  "@weekdayFri": {
+    "description": "Weekday name in the opening hours table"
+  },
+  "weekdaySat": "Samedi",
+  "@weekdaySat": {
+    "description": "Weekday name in the opening hours table"
+  },
+  "weekdaySun": "Dimanche",
+  "@weekdaySun": {
+    "description": "Weekday name in the opening hours table"
+  },
+  "hoursClosed": "Fermé",
+  "@hoursClosed": {
+    "description": "Opening hours: day without hours"
+  },
+  "hoursToday": "Aujourd'hui",
+  "@hoursToday": {
+    "description": "Opening hours: tag on the current day"
+  },
+  "hoursBreakLabel": "Pause",
+  "@hoursBreakLabel": {
+    "description": "Opening hours: label before the break range"
+  },
+  "photoRemove": "Retirer la photo",
+  "@photoRemove": {
+    "description": "Remove button on a photo tile"
+  },
+  "photoUnavailable": "Photo indisponible",
+  "@photoUnavailable": {
+    "description": "Photo failed to load"
   }
 }

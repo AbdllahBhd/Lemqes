@@ -184,5 +184,25 @@
   "actionCancel": "Sefsex",
   "@actionCancel": {
     "description": "Dialog cancel button"
-  }
+  },
+  "localityRegionLabel": "Tawilayt",
+  "localityCommuneLabel": "Taɣiwant",
+  "localityRegionHint": "Fren tawilayt",
+  "localityCommuneHint": "Fren taɣiwant",
+  "localityCommuneDisabled": "Fren tawilayt zik",
+  "localitySearchHint": "Nadi",
+  "localityEmptyTitle": "Ulac igmaḍ",
+  "localityEmptyBody": "Wali tira neɣ ɛreḍ isem nniḍen.",
+  "weekdayMon": "Letnayen",
+  "weekdayTue": "Tlata",
+  "weekdayWed": "Larbaɛa",
+  "weekdayThu": "Lexmis",
+  "weekdayFri": "Lǧemɛa",
+  "weekdaySat": "Sebt",
+  "weekdaySun": "Lḥedd",
+  "hoursClosed": "Imdel",
+  "hoursToday": "Ass-a",
+  "hoursBreakLabel": "Asenfar",
+  "photoRemove": "Kkes tawlaft",
+  "photoUnavailable": "Tawlaft ulac-itt"
 }

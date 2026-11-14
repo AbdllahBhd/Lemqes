@@ -184,5 +184,25 @@
   "actionCancel": "إلغاء",
   "@actionCancel": {
     "description": "Dialog cancel button"
-  }
+  },
+  "localityRegionLabel": "الولاية",
+  "localityCommuneLabel": "البلدية",
+  "localityRegionHint": "اختر الولاية",
+  "localityCommuneHint": "اختر البلدية",
+  "localityCommuneDisabled": "اختر الولاية أولاً",
+  "localitySearchHint": "ابحث",
+  "localityEmptyTitle": "لا توجد نتائج",
+  "localityEmptyBody": "تحقق من الكتابة أو جرّب اسماً آخر.",
+  "weekdayMon": "الاثنين",
+  "weekdayTue": "الثلاثاء",
+  "weekdayWed": "الأربعاء",
+  "weekdayThu": "الخميس",
+  "weekdayFri": "الجمعة",
+  "weekdaySat": "السبت",
+  "weekdaySun": "الأحد",
+  "hoursClosed": "مغلق",
+  "hoursToday": "اليوم",
+  "hoursBreakLabel": "استراحة",
+  "photoRemove": "إزالة الصورة",
+  "photoUnavailable": "الصورة غير متاحة"
 }
