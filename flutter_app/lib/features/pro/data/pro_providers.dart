@@ -70,9 +70,19 @@ class MyProController extends AsyncNotifier<ProProfile?> {
     (id) => ref.read(proRepositoryProvider).updateProfile(id, patch),
   );
 
-  Future<ProFailure?> upsertService(ProServiceDraft draft) => _runOnProfile(
-    (id) => ref.read(proRepositoryProvider).upsertService(id, draft),
-  );
+  /// A new service goes after the others: customers read them ordered by
+  /// `sort`, so ties would show in an arbitrary order.
+  Future<ProFailure?> upsertService(ProServiceDraft draft) {
+    final services = state.value?.services ?? const <ProService>[];
+    final placed = draft.id != null || draft.sort != null
+        ? draft
+        : draft.placedAt(
+            services.fold(-1, (top, s) => s.sort > top ? s.sort : top) + 1,
+          );
+    return _runOnProfile(
+      (id) => ref.read(proRepositoryProvider).upsertService(id, placed),
+    );
+  }
 
   Future<ProFailure?> archiveService(String serviceId) => _runOnProfile(
     (_) => ref.read(proRepositoryProvider).archiveService(serviceId),

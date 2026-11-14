@@ -33,8 +33,12 @@ Account _account(AppRole role) => Account(
   roles: {AppRole.customer, role},
 );
 
-ProProfile _profile({String name = 'Karim'}) => ProProfile(
+ProProfile _profile({
+  String name = 'Karim',
+  List<ProService> services = const [],
+}) => ProProfile(
   id: 'p1',
+  services: services,
   kind: ProKind.barber,
   space: Space.men,
   displayName: name,
@@ -65,6 +69,13 @@ void main() {
     registerFallbackValue(const ProProfilePatch());
     registerFallbackValue(ProKind.barber);
     registerFallbackValue(AppRole.barber);
+    registerFallbackValue(
+      const ProServiceDraft(
+        category: ServiceCategory.hair,
+        priceDzd: 0,
+        durationMin: 5,
+      ),
+    );
   });
 
   test('loads the profile of the active pro role', () async {
@@ -149,6 +160,62 @@ void main() {
     container = make(AppRole.customer);
     expect(await container.read(myProProvider.future), isNull);
     verifyNever(() => repo.mine(any(), activeRole: any(named: 'activeRole')));
+  });
+
+  test('a new service goes after the existing ones, an edit keeps its '
+      'place', () async {
+    // Customers read services ordered by `sort` (then id): without a place
+    // of its own each new service would land in a random order there.
+    when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .thenAnswer(
+          (_) async => _profile(
+            services: const [
+              ProService(
+                id: 's1',
+                category: ServiceCategory.hair,
+                priceDzd: 500,
+                durationMin: 30,
+              ),
+              ProService(
+                id: 's2',
+                category: ServiceCategory.beard,
+                priceDzd: 300,
+                durationMin: 15,
+                sort: 4,
+              ),
+            ],
+          ),
+        );
+    final drafts = <ProServiceDraft>[];
+    when(() => repo.upsertService('p1', any())).thenAnswer((i) async {
+      drafts.add(i.positionalArguments[1] as ProServiceDraft);
+      return const ProService(
+        id: 'x',
+        category: ServiceCategory.hair,
+        priceDzd: 1,
+        durationMin: 5,
+      );
+    });
+    container = make(AppRole.barber);
+    await container.read(myProProvider.future);
+    final pro = container.read(myProProvider.notifier);
+    const fresh = ProServiceDraft(
+      category: ServiceCategory.hair,
+      priceDzd: 450,
+      durationMin: 40,
+      customName: 'Henné',
+    );
+    await pro.upsertService(fresh);
+    await pro.upsertService(
+      const ProServiceDraft(
+        id: 's1',
+        category: ServiceCategory.hair,
+        priceDzd: 600,
+        durationMin: 30,
+      ),
+    );
+    expect(drafts.first.toDb()['sort'], 5);
+    expect(drafts.last.toDb().containsKey('sort'), isFalse);
   });
 
   test('updateProfile calls the repo then refetches', () async {

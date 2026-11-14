@@ -193,6 +193,7 @@ class ProServiceDraft {
     this.presetKey,
     this.customName,
     this.active = true,
+    this.sort,
   });
 
   final String? id;
@@ -203,6 +204,20 @@ class ProServiceDraft {
   final int durationMin;
   final bool active;
 
+  /// The place in the list; null keeps the stored one.
+  final int? sort;
+
+  ProServiceDraft placedAt(int sort) => ProServiceDraft(
+    id: id,
+    presetKey: presetKey,
+    customName: customName,
+    category: category,
+    priceDzd: priceDzd,
+    durationMin: durationMin,
+    active: active,
+    sort: sort,
+  );
+
   Map<String, Object?> toDb() => {
     'preset_key': presetKey,
     'name': customName,
@@ -210,6 +225,7 @@ class ProServiceDraft {
     'price_dzd': priceDzd,
     'duration_min': durationMin,
     'active': active,
+    'sort': ?sort,
   };
 }
 
