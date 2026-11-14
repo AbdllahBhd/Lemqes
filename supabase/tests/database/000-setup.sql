@@ -44,6 +44,20 @@ begin
 end;
 $$;
 
+create or replace function tests.authenticate_as_anon()
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+  set local role anon;
+end;
+$$;
+
+-- Test-only schema (never shipped): tests switch to these roles and must still reach the helpers.
+grant usage on schema tests to anon, authenticated;
+grant execute on all functions in schema tests to anon, authenticated;
+
 select plan(1);
 select has_schema('tests');
 select * from finish();

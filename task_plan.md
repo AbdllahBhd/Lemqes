@@ -367,12 +367,12 @@ Behaviour (layout per the direction contract; header band with wordmark on the a
 
 | Call | HTTP status | error_code / msg / identities |
 |---|---|---|
-| (a) signup new number | | |
-| (b) verify wrong code | | |
-| (c) verify right code | | |
-| (d) signup confirmed number | | |
-| (e) otp, create_user false | | |
-| SMS provider block needed? | | |
+| (a) signup new number | 200 (400 without provider) | user returned, `identities` length 1, no session; phone stored without `+` (`213550000009`). Without a provider: 400 `phone_provider_disabled` "Phone signups are disabled" |
+| (b) verify wrong code | 403 | `otp_expired` "Token has expired or is invalid" |
+| (c) verify right code | 200 | session (access + refresh token), `phone_confirmed_at` set |
+| (d) signup confirmed number | 422 | `user_already_exists` "User already registered" (error, not an empty `identities` list) |
+| (e) otp, create_user false | 200 (429 within 5 s) | `{"message_id":"test-otp"}`; within `max_frequency` of (a): 429 `over_sms_send_rate_limit` "...only request this after 4 seconds". Unknown number: 422 `otp_disabled` "Signups not allowed for otp" |
+| SMS provider block needed? | yes | CLI warns "no SMS provider is enabled. Disabling phone login"; dummy `[auth.sms.twilio] enabled = true` (`auth_token = "env(TWILIO_DUMMY)"`) fixes it; only `test_otp` numbers work locally |
 
 ## Risks & open questions
 
