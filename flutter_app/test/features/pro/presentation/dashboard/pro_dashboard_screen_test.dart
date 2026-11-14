@@ -8,6 +8,7 @@ import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
+import 'package:lemqes/features/pro/data/pro_providers.dart';
 import 'package:lemqes/features/pro/presentation/dashboard/pro_dashboard_screen.dart';
 import 'package:lemqes/features/pro/presentation/edit/service_editor.dart';
 import 'package:lemqes/features/pro/presentation/setup/profile_step.dart';
@@ -160,6 +161,55 @@ void main() {
     expect(h.router.state.uri.path, '/home');
     expect(find.byType(ProDashboardScreen), findsOneWidget);
     expect(h.pros.calls, isNot(contains('updateProfile')));
+  });
+
+  testWidgets('a failed profile save then a retry that works leaves no '
+      'snackbar on the dashboard', (tester) async {
+    final h = await pumpDashboard(tester, profile: publishedBarber());
+    await scrollAndTap(tester, 'dashEditProfile');
+    await tester.enterText(byKey('displayNameField'), 'Amine B.');
+    h.pros.nextFailure = const ProNetworkFailure();
+    await tapAndSettle(tester, 'setupContinue');
+    // Said in place, on the edit page.
+    expect(h.router.state.uri.path, '/pro/setup/profile');
+    expect(find.text(fr.errorNetwork), findsOneWidget);
+
+    await tapAndSettle(tester, 'setupContinue');
+    expect(h.router.state.uri.path, '/home');
+    expect(h.pros.profile!.displayName, 'Amine B.');
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text(fr.errorNetwork), findsNothing);
+  });
+
+  testWidgets('leaving the profile edit after a failure it reported does '
+      'not repeat it on the dashboard', (tester) async {
+    final h = await pumpDashboard(tester, profile: publishedBarber());
+    await scrollAndTap(tester, 'dashEditProfile');
+    await tester.enterText(byKey('displayNameField'), 'Amine B.');
+    h.pros.nextFailure = const ProNetworkFailure();
+    await tapAndSettle(tester, 'setupContinue');
+    expect(find.text(fr.errorNetwork), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Retour'));
+    await settle(tester);
+    expect(h.router.state.uri.path, '/home');
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('a failure under a sheet is still said once back on top', (
+    tester,
+  ) async {
+    final h = await pumpDashboard(tester, profile: publishedBarber());
+    await scrollAndTap(tester, 'dashEditProfile');
+    // A write that fails while the edit page covers the dashboard, not
+    // reported by that page.
+    h.pros.nextFailure = const ProNetworkFailure();
+    await h.container
+        .read(myProProvider.notifier)
+        .updateProfile(const ProProfilePatch(bio: 'x'));
+    await tester.tap(find.byTooltip('Retour'));
+    await settle(tester);
+    expect(find.widgetWithText(SnackBar, fr.errorNetwork), findsOneWidget);
   });
 
   testWidgets('the header photo changes the avatar', (tester) async {

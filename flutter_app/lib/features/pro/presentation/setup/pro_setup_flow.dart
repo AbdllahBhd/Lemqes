@@ -207,8 +207,14 @@ class _EditScaffold extends StatelessWidget {
 
 /// Runs a [MyProController] action and returns the write's failure, or null
 /// when it went through (a failed reload afterwards is the controller's to
-/// report).
+/// report). The setup steps say a failure in place, so it is marked as
+/// reported: the dashboard under an edit does not repeat it.
 Future<ProFailure?> runPro(
   WidgetRef ref,
   Future<ProFailure?> Function(MyProController pro) action,
-) => action(ref.read(myProProvider.notifier));
+) async {
+  final pro = ref.read(myProProvider.notifier);
+  final failure = await action(pro);
+  if (failure != null && ref.context.mounted) pro.reportedInPlace();
+  return failure;
+}

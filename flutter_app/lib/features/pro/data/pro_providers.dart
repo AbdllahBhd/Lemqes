@@ -41,6 +41,15 @@ final myProProvider = AsyncNotifierProvider<MyProController, ProProfile?>(
 );
 
 class MyProController extends AsyncNotifier<ProProfile?> {
+  Object? _reportedInPlace;
+
+  /// The failure in [state] was already said on the screen that made the
+  /// write, so `ProFailureListener` must not say it again.
+  void reportedInPlace() => _reportedInPlace = state.error;
+
+  bool wasReportedInPlace(Object? error) =>
+      error != null && identical(error, _reportedInPlace);
+
   @override
   Future<ProProfile?> build() async {
     // Awaited so the profile stays loading (not null) until the account is
