@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(26);
 
 -- storage.objects RLS checked at SQL level, writing rows directly as `authenticated` the way the
 -- Storage API does on the caller's behalf. MIME and size limits are enforced by the Storage API
@@ -51,6 +51,42 @@ select throws_ok(
   $$ insert into storage.objects (bucket_id, name, owner)
      values ('work-photos', 'not-a-uuid/x.jpg', auth.uid()) $$,
   '42501', null, 'a folder that is not a pro id is refused');
+
+-- Exactly `<pro id>/<name>.<jpg|png|webp>`, the shape PhotoUploader writes.
+select throws_ok(
+  $$ insert into storage.objects (bucket_id, name, owner)
+     values ('work-photos', current_setting('t.pa') || '/sub/x.jpg', auth.uid()) $$,
+  '42501', null, 'a nested folder under my pro folder is refused');
+select throws_ok(
+  $$ insert into storage.objects (bucket_id, name, owner)
+     values ('work-photos', current_setting('t.pa') || '/../x.jpg', auth.uid()) $$,
+  '42501', null, 'a path with .. is refused');
+select throws_ok(
+  $$ insert into storage.objects (bucket_id, name, owner)
+     values ('avatars', current_setting('t.pa') || '/x..jpg', auth.uid()) $$,
+  '42501', null, 'a name with dots before the extension is refused');
+select throws_ok(
+  $$ insert into storage.objects (bucket_id, name, owner)
+     values ('work-photos', current_setting('t.pa') || '/x.svg', auth.uid()) $$,
+  '42501', null, 'an extension other than jpg, png or webp is refused');
+select throws_ok(
+  $$ update storage.objects set name = current_setting('t.pa') || '/sub/x.jpg'
+      where name = current_setting('t.pa') || '/x.jpg' $$,
+  '42501', null, 'the owner cannot move its object into a nested folder');
+select lives_ok(
+  $$ insert into storage.objects (bucket_id, name, owner)
+     values ('work-photos',
+             current_setting('t.pa') || '/0b6f1a52-6a4e-4b7e-9d1c-2f1f6c1f0a11.webp', auth.uid()) $$,
+  'an uploader-shaped name (uuid.webp) is accepted');
+select is(
+  (select count(*)::int from storage.objects where name like current_setting('t.pa') || '/%'),
+  3, 'none of the refused names was stored');
+do $$
+begin
+  perform set_config('storage.allow_delete_query', 'true', true);
+  delete from storage.objects where name like current_setting('t.pa') || '/0b6f1a52-%';
+end;
+$$;
 do $$ begin perform tests.clear_auth(); end; $$;
 
 -- Another pro --------------------------------------------------------------------------------------
@@ -102,6 +138,17 @@ begin
 end;
 $$;
 select is(current_setting('t.deleted_by_a'), '2', 'the owner deletes its own objects');
+
+-- Row paths take the same shape as the objects ---------------------------------------------------
+
+select throws_ok(
+  $$ insert into public.pro_photos (pro_id, path)
+     values (current_setting('t.pa')::uuid, current_setting('t.pa') || '/..') $$,
+  '23514', null, 'a photo row path of .. is refused');
+select throws_ok(
+  $$ update public.pro_profiles set avatar_path = current_setting('t.pa') || '/a.gif'
+      where id = current_setting('t.pa')::uuid $$,
+  '23514', null, 'an avatar_path with another extension is refused');
 
 -- At most 9 work-photo rows per pro ------------------------------------------------------------------
 
