@@ -396,6 +396,7 @@ M2 barber profile, photos (Storage), services, wizard steps 4–5, accepted cust
 
 | Commit | lint | typecheck | flutter test | supabase test db | integration | Notes |
 |---|---|---|---|---|---|---|
+| 5c821cd (merge gate) | ✅ no issues | ✅ no issues | ✅ 256 passed | ✅ 4 files, 65 tests PASS | ✅ passed twice in a row | Final one-line fix (stale sign-up password) reviewed. |
 | 3fd2b9f (after final fix wave) | ✅ no issues | ✅ no issues | ✅ 255 passed | ✅ 4 files, 65 tests PASS | ✅ passed twice in a row | Surface brief: `.impeccable/surfaces/flutter-app-lib.md`. Per-task evidence + rulings in the SDD ledger; security audit 0 Critical/High; whole-branch review fixes landed. |
 
 ## Plan review (2026-11-14, LLM council) — what changed
