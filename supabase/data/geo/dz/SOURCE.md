@@ -13,8 +13,19 @@ Never edit the seed by hand: change `patches.json` (or re-vendor the dataset) an
 | File | `json/algeria_cities.json` → `algeria_cities.json` (unchanged) |
 | sha256 | `7930b4e467a4ca948e6afae7cf7b0fdb3c677acf0fedbee9a407cb925863b255` |
 | Retrieved | 2026-11-14 |
-| License | MIT, as stated in the repository README ("## 📜 License — MIT License"). The repository has **no LICENSE file** at the pinned commit, so there is no copyright line to reproduce; credit: ihahachi/algeria-cities contributors. |
+| License | See "Licensing" below: MIT per the README only; no LICENSE file upstream. |
 | Contents | 1,541 rows, 69 wilaya codes, no empty names, `code_commune` unique |
+
+### Licensing
+
+- Upstream `ihahachi/algeria-cities` has **no LICENSE file** at the pinned commit
+  `de62dc6229504d6066164ecbabe0c2f0224b29bf` (tree listed on 2026-11-14 via the GitHub API).
+- The MIT grant appears **only in its README**, retrieved 2026-11-14 at that same commit, under
+  the heading `## 📜 License` with the single line: "MIT License".
+- **No copyright holder line exists** anywhere in the repository, so none can be reproduced here;
+  credit goes to the ihahachi/algeria-cities contributors.
+- Follow-up: ask upstream to add a LICENSE file / maintainer confirmation; the facts can be
+  rebuilt from the JO texts if needed (Law 26-06 and Law 19-12 list every wilaya's communes).
 
 ### Field mapping
 
@@ -117,6 +128,20 @@ a value makes the build fail instead of being overwritten silently.
 - **locality** 812 Tabelbala 08 → 52 (Law 19-12 art. 52 bis 3: Béni Abbès has 10 communes).
 - **expected**: 69 / 1,541, plus the per-wilaya counts for the 21 wilayas Law 26-06 lists and for
   08 / 52 (Law 19-12). The build fails if any differs.
+
+## Human spot-check before M5
+
+Open `https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026025.pdf` (JORA n° 25 du 5 avril 2026,
+Loi n° 26-06, p. 4-9) and confirm each commune appears in the named article:
+
+| Code | Commune (dataset name) | Moved | Article of Law 26-06 |
+|---|---|---|---|
+| 0310 | Gueltat Sidi Saad | 03 → 59 Aflou | art. 52 bis 10, item 2 |
+| 1335 | Sebdou | 63 → 13 Tlemcen | art. 17 (amended), item 33 |
+| 2625 | Boghar | 26 → 67 Ksar El Boukhari | art. 52 bis 18, item 10 |
+| 2633 | Souagui | 67 → 26 Médéa | art. 30 (amended), item 22 |
+| 2827 | El Hamel | 28 → 68 Bou Saâda | art. 52 bis 19, item 10 |
+| 3214 | Chellala | 32 → 69 El Abiodh Sidi Cheikh | art. 52 bis 20, item 5 |
 
 ## Open questions
 
