@@ -274,6 +274,36 @@ A white card with a 48 dp mist icon disc, title, muted description, optional tag
 - **Error (`ErrorView`):** a muted cloud-off icon, the message, and a primary retry pill.
 - **Loading (`LoadingView`):** a teal spinner with a spoken label.
 
+### Pro card (`ProCardTile`)
+One explore result as a single 20 px card that opens the public profile: a 56 dp avatar disc (`ProAvatar`: photo, else up to two initials on Pill Mist, one for Arabic-script names), the name in title weight, the workplace and "Commune · Wilaya" lines in Muted Ink (a commune that names its wilaya appears once), "From 450 DA" with the amount in `PriceText`, the "Kids welcome" tag when it applies, and a trailing chevron. Announced as one button.
+
+### Price text (`PriceText`)
+Dinar amounts in semibold `lemqesNumeric`: Latin tabular digits, the locale's grouping ("1 500 DA" in French, "1.500 DA" in Arabic) and always LTR inside Arabic. Hidden prices read "Prix au salon" / "Prix sur demande" in Muted Ink instead.
+
+### Hours table (`HoursTable`)
+The week from Saturday, one 48 dp row per day: the day name at the start, "09:00 – 19:00" in `lemqesNumeric` at the end with the break ("Pause 13:00 – 14:00") muted under it, "Closed" in the closed status colour. Today sits on a Pill Mist row with a "Today" line, so it never relies on colour alone. Times are LTR islands in Arabic.
+
+### Locality picker (`LocalityPicker`)
+Two stacked white field cards, wilaya then commune (the commune disabled until a wilaya is chosen), each with a floating label and a chevron; the wilaya shows its code. Each opens a tall modal sheet with a search field (folds Latin accents, matches the code) and a list of 48 dp rows, the selected one on Pill Mist; picking a wilaya opens the commune sheet straight away.
+
+### Photo tile (`PhotoTile`)
+A square photo with a 16 px radius on a container-high placeholder, a small spinner while it loads and a muted broken-image icon when it cannot. An optional remove control is a 32 dp Deep Sea scrim disc with a white close glyph inside a 48 dp target at the top end.
+
+### Service editor (`ServiceEditor`)
+A bottom sheet for one service: preset name fixed (custom: name field and category chips), price (DA) and duration (min) fields side by side that accept Eastern Arabic digits and spaces and write back Latin digits, an active switch, the primary save pill, and "Remove" as an error-colour text button for an existing service. Errors are inline under the field.
+
+### Hours editor (`HoursEditor`)
+One block per day from Saturday, hairline dividers between them: day name and an open switch ("Closed" muted when off); opening and closing times as 48 dp outlined pills in `lemqesNumeric` (LTR), a "copy to every day" icon button, an optional break row with its own pills and a remove icon, a moon note for a past-midnight close, and the day's error in the error colour as a live region.
+
+### Photo gallery editor (`PhotoGalleryEditor`)
+A three-across grid of `PhotoTile`s (up to 9) ending in a Pill Mist add tile (camera-plus icon and label, faded when the gallery is full); each upload shows in its own tile under a scrim with a spinner, a failed one offers retry and discard. Removal asks first.
+
+### Privacy section (`PrivacySection`)
+Two groups inside a dashboard card: who sees the phone (single-choice rows: public, hidden, and "followers" tagged "soon" and not selectable) and a "show prices" switch row. Each change saves only its own field.
+
+### Visibility card (dashboard)
+The first dashboard card says whether customers can see the profile: a 48 dp Pill Mist disc with an eye (published) or crossed eye (hidden) icon, "Publié" / "Masqué" as the title, a muted line naming the space, and, when something is missing, a list of gaps with error-colour icons and the "Compléter mon profil" or "Publier mon profil" pill.
+
 ## Do's and Don'ts
 
 ### Do:

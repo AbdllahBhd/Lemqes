@@ -1,0 +1,546 @@
+{
+  "country": {
+    "code": "DZ",
+    "name_ar": "الجزائر",
+    "name_fr": "Algérie",
+    "name_en": "Algeria",
+    "timezone": "Africa/Algiers",
+    "currency": "DZD"
+  },
+  "expected": {
+    "regions": 69,
+    "localities": 1541,
+    "localities_per_region": {
+      "03": 12,
+      "05": 53,
+      "07": 22,
+      "12": 24,
+      "13": 49,
+      "14": 36,
+      "17": 18,
+      "26": 43,
+      "28": 24,
+      "32": 15,
+      "59": 12,
+      "60": 8,
+      "61": 5,
+      "62": 4,
+      "63": 4,
+      "64": 6,
+      "65": 10,
+      "66": 8,
+      "67": 21,
+      "68": 23,
+      "69": 7,
+      "08": 11,
+      "52": 10
+    },
+    "localities_per_region_source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026 (art. 3 totals: 69 wilayas, 1541 communes; per-wilaya lists in the amended articles); 08 and 52 from Loi n° 19-12, JORA n° 78 du 18 décembre 2019"
+  },
+  "patches": [
+    {
+      "target": "record",
+      "key": "5501",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5503",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5504",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5505",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5506",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5507",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5508",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5510",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5511",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5512",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "5513",
+      "field": "wilaya_code",
+      "from": 30,
+      "to": 55,
+      "source": "Dataset inconsistency: row carries wilaya_name Touggourt and a 55xx code but wilaya_code 30; Loi n° 19-12, JORA n° 78 du 18 décembre 2019, art. 52 bis 6 places it in Touggourt; geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "record",
+      "key": "7003",
+      "field": "code_commune",
+      "from": 7003,
+      "to": 703,
+      "source": "Typo: Branis is commune 0703 of Biskra (only 70xx code in the dataset; 0703 otherwise missing; geoalgeria 2.4.1 code 703)"
+    },
+    {
+      "target": "region",
+      "key": "65",
+      "field": "name_fr",
+      "from": "Ain Oussera",
+      "to": "Aïn Ouessara",
+      "source": "Décret présidentiel n° 26-206 du 25 mai 2026, JORA n° 40 du 3 juin 2026 (FR p. 5, AR p. 6-7), item 65"
+    },
+    {
+      "target": "region",
+      "key": "68",
+      "field": "name_fr",
+      "from": "Boussaâda",
+      "to": "Bou Saâda",
+      "source": "Décret présidentiel n° 26-206 du 25 mai 2026, JORA n° 40 du 3 juin 2026 (FR p. 5, AR p. 6-7), item 68"
+    },
+    {
+      "target": "region",
+      "key": "59",
+      "field": "parent_code",
+      "from": null,
+      "to": "03",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 10 takes its communes from the wilaya of art. 7 (wilaya 03)"
+    },
+    {
+      "target": "region",
+      "key": "60",
+      "field": "parent_code",
+      "from": null,
+      "to": "05",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 11 takes its communes from the wilaya of art. 9 (wilaya 05)"
+    },
+    {
+      "target": "region",
+      "key": "61",
+      "field": "parent_code",
+      "from": null,
+      "to": "07",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 12 takes its communes from the wilaya of art. 11 (wilaya 07)"
+    },
+    {
+      "target": "region",
+      "key": "62",
+      "field": "parent_code",
+      "from": null,
+      "to": "12",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 13 takes its communes from the wilaya of art. 16 (wilaya 12)"
+    },
+    {
+      "target": "region",
+      "key": "63",
+      "field": "parent_code",
+      "from": null,
+      "to": "13",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 14 takes its communes from the wilaya of art. 17 (wilaya 13)"
+    },
+    {
+      "target": "region",
+      "key": "64",
+      "field": "parent_code",
+      "from": null,
+      "to": "14",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 15 takes its communes from the wilaya of art. 18 (wilaya 14)"
+    },
+    {
+      "target": "region",
+      "key": "65",
+      "field": "parent_code",
+      "from": null,
+      "to": "17",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 16 takes its communes from the wilaya of art. 21 (wilaya 17)"
+    },
+    {
+      "target": "region",
+      "key": "66",
+      "field": "parent_code",
+      "from": null,
+      "to": "17",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 17 takes its communes from the wilaya of art. 21 (wilaya 17)"
+    },
+    {
+      "target": "region",
+      "key": "67",
+      "field": "parent_code",
+      "from": null,
+      "to": "26",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 18 takes its communes from the wilaya of art. 30 (wilaya 26)"
+    },
+    {
+      "target": "region",
+      "key": "68",
+      "field": "parent_code",
+      "from": null,
+      "to": "28",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 19 takes its communes from the wilaya of art. 32 (wilaya 28)"
+    },
+    {
+      "target": "region",
+      "key": "69",
+      "field": "parent_code",
+      "from": null,
+      "to": "32",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026: art. 52 bis 20 takes its communes from the wilaya of art. 36 (wilaya 32)"
+    },
+    {
+      "target": "locality",
+      "key": "812",
+      "field": "region_code",
+      "from": "08",
+      "to": "52",
+      "source": "Loi n° 19-12 du 11 décembre 2019, JORA n° 78 du 18 décembre 2019, art. 52 bis 3 lists Tabelbala in Béni Abbès (10 communes); geoalgeria 2.4.1 agrees"
+    },
+    {
+      "target": "locality",
+      "key": "310",
+      "field": "region_code",
+      "from": "03",
+      "to": "59",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 10 lists this commune in wilaya 59"
+    },
+    {
+      "target": "locality",
+      "key": "311",
+      "field": "region_code",
+      "from": "03",
+      "to": "59",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 10 lists this commune in wilaya 59"
+    },
+    {
+      "target": "locality",
+      "key": "312",
+      "field": "region_code",
+      "from": "03",
+      "to": "59",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 10 lists this commune in wilaya 59"
+    },
+    {
+      "target": "locality",
+      "key": "1317",
+      "field": "region_code",
+      "from": "63",
+      "to": "13",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 17 lists this commune in wilaya 13"
+    },
+    {
+      "target": "locality",
+      "key": "1321",
+      "field": "region_code",
+      "from": "63",
+      "to": "13",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 17 lists this commune in wilaya 13"
+    },
+    {
+      "target": "locality",
+      "key": "1335",
+      "field": "region_code",
+      "from": "63",
+      "to": "13",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 17 lists this commune in wilaya 13"
+    },
+    {
+      "target": "locality",
+      "key": "1342",
+      "field": "region_code",
+      "from": "63",
+      "to": "13",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 17 lists this commune in wilaya 13"
+    },
+    {
+      "target": "locality",
+      "key": "2603",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2604",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2617",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2618",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2622",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2623",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2625",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2631",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2640",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2641",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2657",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2658",
+      "field": "region_code",
+      "from": "26",
+      "to": "67",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 18 lists this commune in wilaya 67"
+    },
+    {
+      "target": "locality",
+      "key": "2614",
+      "field": "region_code",
+      "from": "67",
+      "to": "26",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 30 lists this commune in wilaya 26"
+    },
+    {
+      "target": "locality",
+      "key": "2628",
+      "field": "region_code",
+      "from": "67",
+      "to": "26",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 30 lists this commune in wilaya 26"
+    },
+    {
+      "target": "locality",
+      "key": "2633",
+      "field": "region_code",
+      "from": "67",
+      "to": "26",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 30 lists this commune in wilaya 26"
+    },
+    {
+      "target": "locality",
+      "key": "2637",
+      "field": "region_code",
+      "from": "67",
+      "to": "26",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 30 lists this commune in wilaya 26"
+    },
+    {
+      "target": "locality",
+      "key": "2827",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "2836",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "2837",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "2838",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "2839",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "2841",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "2842",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "2844",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "2846",
+      "field": "region_code",
+      "from": "28",
+      "to": "68",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 19 lists this commune in wilaya 68"
+    },
+    {
+      "target": "locality",
+      "key": "3214",
+      "field": "region_code",
+      "from": "32",
+      "to": "69",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 20 lists this commune in wilaya 69"
+    },
+    {
+      "target": "locality",
+      "key": "3219",
+      "field": "region_code",
+      "from": "32",
+      "to": "69",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 52 bis 20 lists this commune in wilaya 69"
+    },
+    {
+      "target": "locality",
+      "key": "3204",
+      "field": "region_code",
+      "from": "69",
+      "to": "32",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 36 lists this commune in wilaya 32"
+    },
+    {
+      "target": "locality",
+      "key": "3205",
+      "field": "region_code",
+      "from": "69",
+      "to": "32",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 36 lists this commune in wilaya 32"
+    },
+    {
+      "target": "locality",
+      "key": "3215",
+      "field": "region_code",
+      "from": "69",
+      "to": "32",
+      "source": "Loi n° 26-06 du 4 avril 2026, JORA n° 25 du 5 avril 2026, art. 36 lists this commune in wilaya 32"
+    }
+  ]
+}

@@ -2,10 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/account/data/account.dart';
+import '../../features/pro/data/pro_models.dart';
 import '../../features/signup/data/signup_draft.dart';
 
 /// The wizard steps in order; their names are the `/signup/:step` paths.
 const signupSteps = ['space', 'role', 'credentials', 'code'];
+
+/// The pro setup steps in order; their names are the `/pro/setup/:step` paths.
+const proSetupSteps = ['profile', 'services', 'hours'];
 
 /// Whether the user is signed in. Until the session stream emits (cold start),
 /// the stored session answers synchronously, so a signed-in user never sees
@@ -61,7 +65,54 @@ String? authRedirect({
     return inSignup ? null : '/signup/${draft?.resumeStep ?? 'space'}';
   }
 
+  final hasProProfile = ProKind.forRole(account.value!.activeRole) != null;
+  // Setup follows sign-up for the roles that have a profile; afterwards it is
+  // only offered (dashboard, role sheet), never imposed on /home.
+  if (inSignup && hasProProfile) return '/pro/setup/profile';
+  if (location.startsWith('/pro/setup') && !hasProProfile) return '/home';
   if (inAuth || inSignup || location == '/') return '/home';
+  return null;
+}
+
+/// The first setup step that [gaps] point to, or null when there are none.
+String? setupStepForGaps(Set<ProfileGap> gaps) {
+  if (gaps.contains(ProfileGap.locality) ||
+      gaps.contains(ProfileGap.customerMix)) {
+    return 'profile';
+  }
+  if (gaps.contains(ProfileGap.services)) return 'services';
+  if (gaps.contains(ProfileGap.hours)) return 'hours';
+  return null;
+}
+
+String? _firstGapStep(ProProfile? profile) =>
+    profile == null ? 'profile' : setupStepForGaps(profile.gaps);
+
+/// What the setup redirects read from the pro profile: whether it has
+/// loaded and its first step with a gap. The router refreshes only when this
+/// changes, since a refresh re-runs routing and undoes a same-frame pop.
+(bool, String?) proRoutingKey(AsyncValue<ProProfile?> profile) =>
+    (profile.hasValue, profile.hasValue ? _firstGapStep(profile.value) : null);
+
+/// `/pro/setup` resumes at the first step with a gap; a complete profile has
+/// nothing to set up. Null while the profile loads.
+String? proSetupEntry(AsyncValue<ProProfile?> profile) {
+  if (!profile.hasValue) return null;
+  final step = _firstGapStep(profile.value);
+  return step == null ? '/home' : '/pro/setup/$step';
+}
+
+/// Keeps setup from opening a step whose earlier steps are unfinished;
+/// returns the step to open instead, or null to stay.
+String? proSetupStepRedirect({
+  required String step,
+  required AsyncValue<ProProfile?> profile,
+}) {
+  final index = proSetupSteps.indexOf(step);
+  if (index < 0) return '/pro/setup/profile';
+  if (!profile.hasValue) return null;
+  final reachable = _firstGapStep(profile.value) ?? proSetupSteps.last;
+  if (index > proSetupSteps.indexOf(reachable)) return '/pro/setup/$reachable';
   return null;
 }
 

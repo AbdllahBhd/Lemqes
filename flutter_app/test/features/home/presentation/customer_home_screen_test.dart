@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/features/account/data/account.dart';
@@ -21,6 +21,7 @@ void main() {
     await pumpHome(
       tester,
       home: const CustomerHomeScreen(account: testAccount),
+      account: testAccount,
     );
     expect(find.text(fr.homeCustomerEmptyTitle('men')), findsOneWidget);
     expect(find.text(fr.homeSpaceLabel('men')), findsOneWidget);

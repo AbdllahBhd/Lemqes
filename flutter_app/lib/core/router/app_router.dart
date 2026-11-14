@@ -4,14 +4,19 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/account/data/account_providers.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/explore/presentation/pro_public_profile_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/pro/data/pro_providers.dart';
+import '../../features/pro/presentation/dashboard/pro_profile_preview_screen.dart';
+import '../../features/pro/presentation/setup/pro_setup_flow.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/signup/data/signup_draft_store.dart';
 import '../../features/signup/presentation/signup_wizard.dart';
 import 'redirect.dart';
 
-/// Re-runs the router redirect whenever account or draft change.
+/// Re-runs the router redirect whenever the account, the draft or the pro
+/// profile's setup routing ([proRoutingKey]) change.
 ///
 /// Not on session events: the account rebuilds on every sign-in and sign-out,
 /// and a session listener ran before that rebuild, showing the redirect a
@@ -20,11 +25,25 @@ class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     ref.listen(accountProvider, (_, _) => notifyListeners());
     ref.listen(signupDraftProvider, (_, _) => notifyListeners());
+    // Setup steps open once the profile has loaded and as its gaps close;
+    // other profile writes leave routing alone.
+    ref.listen(
+      myProProvider.select(proRoutingKey),
+      (_, _) => notifyListeners(),
+    );
   }
 }
 
-final routerProvider = Provider<GoRouter>((ref) {
+/// What makes the router re-run its redirects; read by tests to check when
+/// it fires.
+final routerRefreshProvider = Provider<Listenable>((ref) {
   final refresh = _RouterRefresh(ref);
+  ref.onDispose(refresh.dispose);
+  return refresh;
+});
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final refresh = ref.watch(routerRefreshProvider);
   final router = GoRouter(
     initialLocation: '/',
     refreshListenable: refresh,
@@ -53,12 +72,39 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      GoRoute(
+        path: '/pro/setup',
+        redirect: (context, state) => proSetupEntry(ref.read(myProProvider)),
+        builder: (_, _) => const ProSetupEntryScreen(),
+      ),
+      GoRoute(
+        path: '/pro/setup/:step',
+        redirect: (context, state) => proSetupStepRedirect(
+          step: state.pathParameters['step']!,
+          profile: ref.read(myProProvider),
+        ),
+        builder: (context, state) => ProSetupScreen(
+          step: state.pathParameters['step']!,
+          incomplete: state.uri.queryParameters['incomplete'] == '1',
+          edit: state.uri.queryParameters['edit'] == '1',
+        ),
+      ),
+      // Three segments, so neither `/pro/:id` nor `/pro/setup/:step` can
+      // read it; declared before `/pro/:id` all the same.
+      GoRoute(
+        path: '/pro/me/preview',
+        builder: (_, _) => const ProProfilePreviewScreen(),
+      ),
+      // After the setup routes: go_router matches in order, and `setup`
+      // would otherwise be read as a profile id.
+      GoRoute(
+        path: '/pro/:id',
+        builder: (context, state) =>
+            ProPublicProfileScreen(proId: state.pathParameters['id']!),
+      ),
     ],
   );
-  ref.onDispose(() {
-    router.dispose();
-    refresh.dispose();
-  });
+  ref.onDispose(router.dispose);
   return router;
 });
 

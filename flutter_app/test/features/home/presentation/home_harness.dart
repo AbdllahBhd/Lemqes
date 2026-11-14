@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -11,11 +11,20 @@ import 'package:lemqes/core/theme/lemqes_theme.dart';
 import 'package:lemqes/core/theme/theme_mode_controller.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
+import 'package:lemqes/features/explore/data/explore_providers.dart';
+import 'package:lemqes/features/geo/data/geo_providers.dart';
+import 'package:lemqes/features/pro/data/pro_providers.dart';
 import 'package:lemqes/features/settings/presentation/settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/presentation/harness.dart';
+import '../../explore/presentation/explore_harness.dart'
+    show
+        FakeExploreRepository,
+        FakeGeoRepository,
+        FakePhotoUploader,
+        PublicProRepository;
 
 export '../../auth/presentation/harness.dart'
     show MockAccountRepository, MockAuthRepository, registerHarnessFallbacks;
@@ -40,6 +49,7 @@ class HomeHarness {
 /// Pumps [home] with a real accountProvider over a mocked repository.
 ///
 /// [fetch] answers `fetchMine`; the default returns [account] every time.
+/// The customer home's explore list searches an empty fake backend.
 Future<HomeHarness> pumpHome(
   WidgetTester tester, {
   required Widget home,
@@ -84,6 +94,11 @@ Future<HomeHarness> pumpHome(
       authRepositoryProvider.overrideWithValue(auth),
       accountRepositoryProvider.overrideWithValue(repo),
       sessionProvider.overrideWith((ref) => Stream.value(testSession)),
+      exploreRepositoryProvider.overrideWithValue(FakeExploreRepository()),
+      exploreDebounceProvider.overrideWithValue(Duration.zero),
+      proRepositoryProvider.overrideWithValue(PublicProRepository()),
+      photoUploaderProvider.overrideWithValue(FakePhotoUploader()),
+      geoRepositoryProvider.overrideWithValue(FakeGeoRepository()),
     ],
   );
   addTearDown(container.dispose);

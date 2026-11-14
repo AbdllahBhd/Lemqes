@@ -1,15 +1,16 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/locale_controller.dart';
 import '../../../shared/widgets/lemqes_wordmark.dart';
-import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account.dart';
 import '../../account/data/account_providers.dart';
 import '../../account/presentation/space_switch.dart';
+import '../../explore/presentation/explore_screen.dart';
 import 'home_header.dart';
 
-/// Customer home: the header band, then the search that M2 will bring.
+/// Customer home: the header band with the search on its edge, then the
+/// pros of the customer's space.
 class CustomerHomeScreen extends ConsumerStatefulWidget {
   const CustomerHomeScreen({required this.account, super.key});
 
@@ -39,36 +40,29 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     final l10n = context.l10n;
     final space = account.customerSpace;
     return Scaffold(
-      body: Column(
-        children: [
-          HomeHeader(
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const LemqesWordmark(),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: BandTag(label: l10n.homeSpaceLabel(space.toDb())),
-                ),
-              ],
-            ),
+      body: ExploreScreen(
+        space: space,
+        header: (search) => HomeHeader(
+          overlap: search,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              SpaceSwitch(
-                value: space,
-                onChanged: (s) {
-                  if (s != space) _switchTo(s);
-                },
+              const LemqesWordmark(),
+              const SizedBox(width: 12),
+              Flexible(
+                child: BandTag(label: l10n.homeSpaceLabel(space.toDb())),
               ),
             ],
           ),
-          Expanded(
-            child: EmptyView(
-              icon: Icons.storefront_outlined,
-              title: l10n.homeCustomerEmptyTitle(space.toDb()),
-              body: l10n.homeCustomerEmptyBody,
+          children: [
+            SpaceSwitch(
+              value: space,
+              onChanged: (s) {
+                if (s != space) _switchTo(s);
+              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

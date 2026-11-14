@@ -3,3 +3,4 @@ template-arb-file: app_fr.arb
 output-dir: lib/core/l10n/gen
 output-localization-file: app_localizations.dart
 nullable-getter: false
+header: "// ignore_for_file: deprecated_member_use"

@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/gen/app_localizations.dart';
 import '../../../core/l10n/locale_controller.dart';
@@ -7,6 +8,7 @@ import '../../../core/theme/lemqes_tokens.dart';
 import '../../../shared/widgets/choice_card.dart';
 import '../../../shared/widgets/lemqes_primary_button.dart';
 import '../../auth/presentation/auth_widgets.dart';
+import '../../pro/data/pro_models.dart';
 import '../../signup/presentation/signup_wizard.dart' show SignupRoleIcon;
 import '../data/account.dart';
 import '../data/account_providers.dart';
@@ -85,11 +87,16 @@ class _RoleSwitchSheetState extends ConsumerState<RoleSwitchSheet> {
     _ => _go(_View.held),
   };
 
-  /// Runs [action]; closes the sheet on success, else stays open and says why.
-  Future<void> _run(Future<void> Function(AccountController) action) async {
+  /// Runs [action]; closes the sheet on success (then goes to [then], if
+  /// any), else stays open and says why.
+  Future<void> _run(
+    Future<void> Function(AccountController) action, {
+    String? then,
+  }) async {
     if (_busy) return;
     final notifier = ref.read(accountProvider.notifier);
     final navigator = Navigator.of(context);
+    final router = GoRouter.maybeOf(context);
     setState(() {
       _busy = true;
       _failure = null;
@@ -104,6 +111,7 @@ class _RoleSwitchSheetState extends ConsumerState<RoleSwitchSheet> {
       });
     } else {
       navigator.pop();
+      if (then != null) router?.go(then);
     }
   }
 
@@ -117,13 +125,19 @@ class _RoleSwitchSheetState extends ConsumerState<RoleSwitchSheet> {
       setState(() => _businessError = context.l10n.businessNameRequired);
       return;
     }
-    await _run(
-      (n) => n.addRole(
+    // A role with a pro profile becomes the active one and goes straight to
+    // its setup: the profile is created while acting as that role.
+    final setup = ProKind.forRole(role) != null;
+    await _run((n) async {
+      await n.addRole(
         role,
         space: needsSpace ? _space : null,
         businessName: role == AppRole.salonOwner ? business : null,
-      ),
-    );
+      );
+      if (setup && !ref.read(accountProvider).hasError) {
+        await n.switchRole(role);
+      }
+    }, then: setup ? '/pro/setup/profile' : null);
   }
 
   @override

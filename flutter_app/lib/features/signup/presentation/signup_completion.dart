@@ -4,6 +4,7 @@ import '../../../core/router/redirect.dart';
 import '../../account/data/account.dart';
 import '../../account/data/account_providers.dart';
 import '../../account/data/account_repository.dart';
+import '../../pro/data/pro_models.dart';
 import '../data/signup_draft_store.dart';
 
 /// Whether the user is signed in right now. While the session stream has not
@@ -43,6 +44,20 @@ class SignupPassword extends Notifier<String?> {
   void set(String password) => state = password;
 
   void clear() => state = null;
+}
+
+/// True once sign-up finished for a role with a pro profile, so the setup
+/// steps carry on the wizard's count (5-7 of 7). In memory only: after a
+/// restart setup counts its own three steps.
+final signupJustCompletedProvider = NotifierProvider<SignupJustCompleted, bool>(
+  SignupJustCompleted.new,
+);
+
+class SignupJustCompleted extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
 }
 
 final signupCompletionProvider = NotifierProvider<SignupCompletion, void>(
@@ -94,6 +109,9 @@ class SignupCompletion extends Notifier<void> {
           );
     } on ProfileExists {
       // A retry after a lost response: the profile is already there.
+    }
+    if (ProKind.forRole(role) != null) {
+      ref.read(signupJustCompletedProvider.notifier).set(true);
     }
     ref.invalidate(accountProvider);
     // Listened, not just read: an unlistened provider would not rebuild when

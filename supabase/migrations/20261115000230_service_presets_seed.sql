@@ -1,0 +1,81 @@
+-- Service presets, from the prototype catalogue (presetServiceCatalogFor: men/women x salon/home).
+-- Defaults follow the prototype's MockRepository.buildServiceItemFromLabel, i = position in its
+-- list: men salon 600 + 200 i DZD, women salon 1500 + 400 i, men home 1500 + 400 i, women home
+-- 2200 + 400 i; 25 min for men salon, 45 min otherwise; category from the same keyword rules
+-- (so "Serviette Chaude" stays 'hair', as in the prototype).
+-- name_fr is the prototype text; name_ar, name_en and name_kab (Kabyle, Latin script) are
+-- translations awaiting native review.
+
+insert into public.service_presets
+  (key, space, home, category, name_ar, name_fr, name_en, name_kab,
+   default_price_dzd, default_duration_min, sort)
+values
+  ('men_salon_degrade', 'men', false, 'hair',
+   'ديغرادي أمريكي', 'Dégradé Américain', 'American fade', 'Dégradé amarikan', 600, 25, 0),
+  ('men_salon_classic_cut', 'men', false, 'hair',
+   'قصة كلاسيكية', 'Coupe Classique', 'Classic haircut', 'Tukksa n ucebbub taklasikit', 800, 25, 1),
+  ('men_salon_beard_trim', 'men', false, 'beard',
+   'تهذيب اللحية', 'Taille Barbe', 'Beard trim', 'Asegzem n tmart', 1000, 25, 2),
+  ('men_salon_hot_towel', 'men', false, 'hair',
+   'منشفة ساخنة', 'Serviette Chaude', 'Hot towel', 'Tabeckirt teḥman', 1200, 25, 3),
+  ('men_salon_steam_mask', 'men', false, 'skincare',
+   'عناية بالبخار وقناع', 'Soin Vapeur & Masque', 'Steam care & mask', 'Aḥareb s waggu d tmaskt', 1400, 25, 4),
+  ('men_salon_kids_cut', 'men', false, 'hair',
+   'قصة للأطفال', 'Coupe Enfant', 'Kids haircut', 'Tukksa n ucebbub i yigerdan', 1600, 25, 5),
+
+  ('men_home_cut_fade', 'men', true, 'hair',
+   'قص وديغرادي في المنزل', 'Coupe & Dégradé à domicile', 'Haircut & fade at home',
+   'Tukksa n ucebbub d dégradé deg uxxam', 1500, 45, 0),
+  ('men_home_beard_hot_towel', 'men', true, 'beard',
+   'لحية ومنشفة ساخنة', 'Barbe & Serviette Chaude', 'Beard & hot towel',
+   'Tamart d tbeckirt teḥman', 1900, 45, 1),
+  ('men_home_groom_vip', 'men', true, 'hair',
+   'باقة العريس / مناسبات VIP', 'Pack Marié / Événements VIP', 'Groom package / VIP events',
+   'Akemmus n wesli / tidyanin VIP', 2300, 45, 2),
+  ('men_home_kids_cut', 'men', true, 'hair',
+   'قصة للأطفال في المنزل', 'Coupe Enfant à domicile', 'Kids haircut at home',
+   'Tukksa n ucebbub i yigerdan deg uxxam', 2700, 45, 3),
+  ('men_home_express_facial', 'men', true, 'skincare',
+   'عناية سريعة بالوجه', 'Soin Visage Express', 'Express facial',
+   'Aḥareb arurad n wudem', 3100, 45, 4),
+
+  ('women_salon_cut_blowdry', 'women', false, 'hair',
+   'قص وبراشينغ', 'Coupe & Brushing', 'Haircut & blow-dry',
+   'Tukksa n ucebbub d brushing', 1500, 45, 0),
+  ('women_salon_keratin', 'women', false, 'coloring',
+   'تمليس بالكيراتين والبروتين', 'Lissage Kératine & Protéine', 'Keratin & protein smoothing',
+   'Asemles s kératine d protéine', 1900, 45, 1),
+  ('women_salon_balayage_color', 'women', false, 'coloring',
+   'بالاياج وصبغ', 'Balayage & Coloration', 'Balayage & colouring',
+   'Balayage d usebɣ', 2300, 45, 2),
+  ('women_salon_russian_manicure', 'women', false, 'nails',
+   'مانيكير روسي', 'Manucure Russe', 'Russian manicure',
+   'Manucure tarusit', 2700, 45, 3),
+  ('women_salon_spa_pedicure', 'women', false, 'nails',
+   'باديكير سبا بالنيو', 'Pédicure Spa Balnéo', 'Spa balneo pedicure',
+   'Pédicure spa balnéo', 3100, 45, 4),
+  ('women_salon_hydrafacial', 'women', false, 'skincare',
+   'عناية بالوجه هيدرافيشل', 'Soin Visage Hydrafacial', 'Hydrafacial facial',
+   'Aḥareb n wudem Hydrafacial', 3500, 45, 5),
+  ('women_salon_makeup_waxing', 'women', false, 'makeup',
+   'مكياج وإزالة الشعر', 'Maquillage & Épilation', 'Makeup & waxing',
+   'Maquillage d tukksa n ucebbub', 3900, 45, 6),
+
+  ('women_home_blowdry', 'women', true, 'hair',
+   'تسريحة وبراشينغ في المنزل', 'Coiffure & Brushing à domicile', 'Hairstyling & blow-dry at home',
+   'Asefsi n ucebbub d brushing deg uxxam', 2200, 45, 0),
+  ('women_home_russian_gel_manicure', 'women', true, 'nails',
+   'مانيكير روسي وجل', 'Manucure Russe & Gel', 'Russian manicure & gel',
+   'Manucure tarusit d gel', 2600, 45, 1),
+  ('women_home_mobile_spa_pedicure', 'women', true, 'nails',
+   'باديكير سبا متنقل', 'Pédicure Spa Mobile', 'Mobile spa pedicure',
+   'Pédicure spa s wemsiwel', 3000, 45, 2),
+  ('women_home_event_bridal_makeup', 'women', true, 'makeup',
+   'مكياج سهرة / عروس', 'Maquillage Soirée / Mariée', 'Evening / bridal makeup',
+   'Maquillage n tmeddit / n tislit', 3400, 45, 3),
+  ('women_home_hydrafacial', 'women', true, 'skincare',
+   'عناية بالوجه وهيدرافيشل', 'Soin Visage & Hydrafacial', 'Facial & Hydrafacial',
+   'Aḥareb n wudem d Hydrafacial', 3800, 45, 4),
+  ('women_home_keratin', 'women', true, 'coloring',
+   'تمليس بالكيراتين والبروتين', 'Lissage Kératine & Protéine', 'Keratin & protein smoothing',
+   'Asemles s kératine d protéine', 4200, 45, 5);

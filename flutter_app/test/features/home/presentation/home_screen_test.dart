@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
@@ -7,7 +7,7 @@ import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:lemqes/features/home/presentation/customer_home_screen.dart';
 import 'package:lemqes/features/home/presentation/home_screen.dart';
-import 'package:lemqes/features/home/presentation/pro_home_screen.dart';
+import 'package:lemqes/features/pro/presentation/dashboard/pro_dashboard_screen.dart';
 import 'package:lemqes/shared/widgets/state_views.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -52,12 +52,12 @@ void main() {
   testWidgets('a customer sees the customer home', (tester) async {
     await pumpHome(tester, home: const HomeScreen(), account: testAccount);
     expect(find.byType(CustomerHomeScreen), findsOneWidget);
-    expect(find.byType(ProHomeScreen), findsNothing);
+    expect(find.byType(ProDashboardScreen), findsNothing);
   });
 
-  testWidgets('a pro sees the pro home', (tester) async {
+  testWidgets('a pro sees the pro dashboard', (tester) async {
     await pumpHome(tester, home: const HomeScreen(), account: pro);
-    expect(find.byType(ProHomeScreen), findsOneWidget);
+    expect(find.byType(ProDashboardScreen), findsOneWidget);
     expect(find.byType(CustomerHomeScreen), findsNothing);
   });
 
