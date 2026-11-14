@@ -1,6 +1,10 @@
 begin;
 select plan(31);
 
+-- Search results are compared whole, so pros left in the local database (an integration run
+-- publishes one) must not count; the transaction rolls this back.
+delete from public.pro_profiles;
+
 -- Fixture: three published men pros, one unpublished men pro, one published women pro.
 --   m1 'Salon Dégradé'  Alger (16/1601)  adults           + preset men_salon_beard_trim, phone public
 --   m2 'Barber Oran'    Oran  (31/3101)  adults_and_kids  + custom 'Coupe Spéciale Zarzis',
