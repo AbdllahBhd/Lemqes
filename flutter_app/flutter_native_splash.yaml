@@ -1,0 +1,9 @@
+# Regenerate with: scripts/sdk dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#062A35"
+  image: assets/brand/splash_mark.png
+  android_12:
+    color: "#062A35"
+    image: assets/brand/splash_mark.png
+    icon_background_color: "#062A35"
+  web: false

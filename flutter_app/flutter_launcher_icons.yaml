@@ -1,0 +1,12 @@
+# Regenerate with: scripts/sdk dart run flutter_launcher_icons
+# Sources are rendered from assets/brand/icon_master.svg.
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/brand/icon_master.png"
+  adaptive_icon_background: "assets/brand/icon_background.png"
+  adaptive_icon_foreground: "assets/brand/icon_foreground.png"
+  adaptive_icon_monochrome: "assets/brand/icon_monochrome.png"
+  # The layer art is already sized for the 108dp canvas (mark ~48dp); the default 16% inset would shrink it again.
+  adaptive_icon_foreground_inset: 0
+  remove_alpha_ios: true

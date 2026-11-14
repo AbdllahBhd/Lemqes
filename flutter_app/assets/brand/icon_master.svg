@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- LEMQES launcher master, 1024 grid. Two scissor blades opened to 90 degrees on one
+       pivot form the L; the hole is the pivot screw. Background: Lagoon 160deg gradient
+       with a 20% white bloom top-trailing. Full tile: mark at scale 1.1 (54% of the tile).
+       Adaptive foreground/monochrome layers: same mark at scale 0.9 (44% of the 108dp
+       layer, about 48dp, well inside the 66dp safe zone). -->
+  <defs>
+    <linearGradient id="lagoon" gradientUnits="userSpaceOnUse" x1="287.6" y1="-104.6" x2="736.4" y2="1128.6">
+      <stop offset="0" stop-color="#062A35"/>
+      <stop offset="0.58" stop-color="#0F6E7A"/>
+      <stop offset="1" stop-color="#1F6FD1"/>
+    </linearGradient>
+    <radialGradient id="bloom" gradientUnits="userSpaceOnUse" cx="1024" cy="0" r="921.6" gradientTransform="translate(1024 0) scale(1 0.7778) translate(-1024 0)">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.20"/>
+      <stop offset="0.6" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="parting" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#FFFFFF"/>
+      <path d="M440 596 L390 650" stroke="#000000" stroke-width="10"/>
+    </mask>
+  </defs>
+  <g id="background">
+    <rect width="1024" height="1024" fill="url(#lagoon)"/>
+    <rect width="1024" height="1024" fill="url(#bloom)"/>
+  </g>
+  <g id="mark" transform="translate(512 512) scale(1.1) translate(-526 -502)">
+    <path fill="#FFFFFF" fill-rule="evenodd" mask="url(#parting)" d="M436 288 L436 600 L752 600 C690 660 572 700 440 700 L392 700 A52 52 0 0 1 340 648 L340 596 C340 466 378 348 436 288 Z M390 650 m-22 0 a22 22 0 1 0 44 0 a22 22 0 1 0 -44 0 Z"/>
+  </g>
+</svg>
