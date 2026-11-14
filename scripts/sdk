@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Runs the pinned Flutter/Dart SDK (from flutter_app/.fvmrc) inside flutter_app/.
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+app="$root/flutter_app"
+tool="${1:-}"
+if [[ "$tool" != "flutter" && "$tool" != "dart" ]]; then
+  echo "usage: scripts/sdk <flutter|dart> [args...]" >&2
+  exit 1
+fi
+shift
+version="$(sed -n 's/.*"flutter"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$app/.fvmrc")"
+sdk_bin="${FVM_HOME:-$HOME/fvm}/versions/$version/bin/$tool"
+if [[ -z "$version" || ! -x "$sdk_bin" ]]; then
+  echo "Flutter SDK '$version' not found at $sdk_bin" >&2
+  exit 1
+fi
+cd "$app"
+exec "$sdk_bin" "$@"

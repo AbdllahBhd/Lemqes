@@ -1,0 +1,188 @@
+{
+  "@@locale": "ar",
+  "appName": "LEMQES",
+  "spaceMen": "الرجال",
+  "spaceWomen": "النساء",
+  "languageName_ar": "العربية",
+  "languageName_fr": "Français",
+  "languageName_en": "English",
+  "languageName_kab": "Taqbaylit",
+  "themeSystem": "النظام",
+  "themeLight": "فاتح",
+  "themeDark": "داكن",
+  "actionRetry": "إعادة المحاولة",
+  "errorGeneric": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+  "errorNetwork": "تعذّر الاتصال. تحقق من الشبكة.",
+  "loading": "جارٍ التحميل…",
+  "actionSignIn": "تسجيل الدخول",
+  "actionCreateAccount": "إنشاء حساب",
+  "actionContinue": "متابعة",
+  "actionResetPassword": "إعادة تعيين كلمة المرور",
+  "authTabsLabel": "الدخول أو التسجيل",
+  "languageChooserLabel": "اللغة",
+  "themeToDark": "التبديل إلى المظهر الداكن",
+  "themeToLight": "التبديل إلى المظهر الفاتح",
+  "phoneLabel": "رقم الهاتف",
+  "phoneHint": "0550 12 34 56",
+  "phoneRequired": "أدخل رقم هاتفك.",
+  "phoneInvalid": "أدخل رقم هاتف جوال جزائري صحيح (05 أو 06 أو 07).",
+  "passwordLabel": "كلمة المرور",
+  "passwordRequired": "أدخل كلمة المرور.",
+  "passwordShow": "إظهار كلمة المرور",
+  "passwordHide": "إخفاء كلمة المرور",
+  "passwordHelper": "8 أحرف على الأقل",
+  "passwordTooShort": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.",
+  "passwordWeak": "كلمة المرور ضعيفة جدًا. امزج بين الحروف والأرقام.",
+  "confirmLabel": "تأكيد كلمة المرور",
+  "passwordsMatch": "كلمتا المرور متطابقتان.",
+  "passwordsMismatch": "كلمتا المرور غير متطابقتين.",
+  "forgotPassword": "نسيت كلمة المرور؟",
+  "errorInvalidCredentials": "الرقم أو كلمة المرور غير صحيحة.",
+  "errorRateLimited": "محاولات كثيرة جدًا. أعد المحاولة بعد {seconds} ث.",
+  "errorRateLimitedLater": "محاولات كثيرة جدًا. أعد المحاولة بعد بضع دقائق.",
+  "stepProgress": "الخطوة {step} من {total}",
+  "spaceStepTitle": "اختر فضاءك",
+  "spaceStepBody": "يفصل LEMQES بين فضاء الرجال وفضاء النساء، لراحتك وخصوصيتك.",
+  "spaceMenBody": "حلاقون ومصففو شعر وخدمات للرجال.",
+  "spaceWomenBody": "صالونات ومعاهد تجميل وعناية للنساء.",
+  "roleStepTitle": "{space, select, women{ملفك في فضاء النساء} other{ملفك في فضاء الرجال}}",
+  "roleCustomerTitle": "{space, select, women{أنا زبونة} other{أنا زبون}}",
+  "roleCustomerBody": "{space, select, women{اعثري على الصالونات والكوافيرات والعناية في المنزل قربك.} other{اعثر على الحلاقين والصالونات والخدمات في المنزل قربك.}}",
+  "roleBarberTitle": "{space, select, women{كوافيرة / أخصائية تجميل} other{حلاق / مصفف شعر}}",
+  "roleBarberBody": "{space, select, women{ملفك وزبوناتك يتبعونك من صالون إلى آخر.} other{ملفك وزبائنك يتبعونك من صالون إلى آخر.}}",
+  "roleHomeArtistTitle": "{space, select, women{تجميل في المنزل} other{حلاق في المنزل}}",
+  "roleHomeArtistBody": "{space, select, women{تتنقلين إلى زبوناتك: تصفيف، أظافر، عناية ومكياج.} other{تتنقل إلى زبائنك: قص، تدرج، لحية وباقة العريس.}}",
+  "roleSalonOwnerTitle": "{space, select, women{صاحبة معهد أو صالون} other{صاحب صالون حلاقة}}",
+  "roleSalonOwnerBody": "{space, select, women{أديري طابورك ومحطاتك وفريقك.} other{أدر طابورك وكراسيك وفريقك.}}",
+  "badgeFree": "مجاني",
+  "credentialsStepTitle": "معلوماتك",
+  "credentialsStepBody": "رقمك هو وسيلة دخولك. سنرسل إليه رمز تحقق.",
+  "credentialsProfileBody": "تم التحقق من رقمك. لم يبقَ سوى اسمك.",
+  "businessNameLabel": "{space, select, women{اسم المعهد أو الصالون} other{اسم صالون الحلاقة}}",
+  "businessNameRequired": "أدخل اسم مؤسستك.",
+  "fullNameLabel": "الاسم الكامل",
+  "fullNameRequired": "أدخل اسمك الكامل.",
+  "credentialsSubmit": "استلام الرمز",
+  "profileSubmit": "إنشاء حسابي",
+  "phoneAlreadyRegistered": "هذا الرقم لديه حساب LEMQES بالفعل. سجّل الدخول أو أعد تعيين كلمة المرور.",
+  "codeStepTitle": "أدخل الرمز المستلم عبر الرسائل",
+  "codeSentTo": "أرسلنا رمزًا من 6 أرقام إلى",
+  "codeLabel": "رمز التحقق",
+  "codeInvalid": "الرمز غير صحيح أو منتهي الصلاحية. تحقق منه أو اطلب رمزًا جديدًا.",
+  "codeResend": "إعادة إرسال الرمز",
+  "codeResendIn": "إعادة إرسال الرمز بعد {seconds} ث",
+  "codeResent": "تم إرسال رمز جديد.",
+  "codeVerifying": "جارٍ التحقق من الرمز…",
+  "backToLogin": "العودة إلى تسجيل الدخول",
+  "signupFinishing": "جارٍ إنشاء حسابك…",
+  "resetPhoneBody": "أدخل رقمك وسنرسل إليك رمزًا عبر الرسائل.",
+  "resetSendCode": "إرسال الرمز",
+  "resetNoAccount": "لا يوجد حساب مرتبط بهذا الرقم.",
+  "resetNewPasswordTitle": "اختر كلمة مرور جديدة",
+  "newPasswordLabel": "كلمة المرور الجديدة",
+  "resetSave": "حفظ كلمة المرور",
+  "resetDone": "تم تغيير كلمة المرور.",
+  "homeSpaceLabel": "{space, select, women{فضاء النساء} other{فضاء الرجال}}",
+  "@homeSpaceLabel": {
+    "description": "Current space name in the home header; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "spaceSwitchLabel": "تبديل الفضاء",
+  "@spaceSwitchLabel": {
+    "description": "Accessibility label of the Men/Women switch"
+  },
+  "homeCustomerEmptyTitle": "{space, select, women{الصالونات قادمة قريباً} other{الحلاقون قادمون قريباً}}",
+  "@homeCustomerEmptyTitle": {
+    "description": "Customer home, before search exists",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCustomerEmptyBody": "قريباً سترى هنا من هو مفتوح وكم شخصاً ينتظر.",
+  "@homeCustomerEmptyBody": {
+    "description": "Customer home empty state body"
+  },
+  "homeProEmptyTitle": "أكمل ملفك الشخصي",
+  "@homeProEmptyTitle": {
+    "description": "Pro home empty state title"
+  },
+  "homeProEmptyBody": "أضف خدماتك وساعات عملك لتظهر للزبائن. هذه الخطوة قادمة قريباً.",
+  "@homeProEmptyBody": {
+    "description": "Pro home empty state body"
+  },
+  "homeProEmptyAction": "إكمال ملفي الشخصي",
+  "@homeProEmptyAction": {
+    "description": "Disabled button until profile setup exists"
+  },
+  "proSpaceFixedHint": "فضاء الحساب المهني ثابت ولا يمكن تغييره.",
+  "@proSpaceFixedHint": {
+    "description": "Tooltip on the pro space tag"
+  },
+  "roleSwitchTitle": "تبديل الدور",
+  "@roleSwitchTitle": {
+    "description": "Role switch sheet title, action tooltip and settings entry"
+  },
+  "rolesHeldTitle": "أدوارك",
+  "@rolesHeldTitle": {
+    "description": "Heading above the roles the user holds"
+  },
+  "roleActive": "نشط",
+  "@roleActive": {
+    "description": "Status word on the active role"
+  },
+  "roleAddAction": "إضافة دور",
+  "@roleAddAction": {
+    "description": "Opens the add-a-role list and titles it"
+  },
+  "roleAddNone": "لديك بالفعل جميع الأدوار المتاحة.",
+  "@roleAddNone": {
+    "description": "Shown when every role is held"
+  },
+  "roleSpaceLockedNote": "{space, select, women{فضاؤك المهني هو فضاء النساء، وهو ثابت.} other{فضاؤك المهني هو فضاء الرجال، وهو ثابت.}}",
+  "@roleSpaceLockedNote": {
+    "description": "Pro space already fixed; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleChooseSpace": "اختر فضاء ملفك المهني. هذا الاختيار نهائي لجميع أدوارك المهنية.",
+  "@roleChooseSpace": {
+    "description": "Asks for the pro space when none is set"
+  },
+  "roleAddConfirm": "إضافة هذا الدور",
+  "@roleAddConfirm": {
+    "description": "Confirms adding the chosen role"
+  },
+  "settingsTitle": "الإعدادات",
+  "@settingsTitle": {
+    "description": "Settings screen title and header action tooltip"
+  },
+  "settingsThemeTitle": "المظهر",
+  "@settingsThemeTitle": {
+    "description": "Settings theme group"
+  },
+  "settingsSignOut": "تسجيل الخروج",
+  "@settingsSignOut": {
+    "description": "Sign out button"
+  },
+  "signOutConfirmTitle": "تسجيل الخروج؟",
+  "@signOutConfirmTitle": {
+    "description": "Sign-out dialog title"
+  },
+  "signOutConfirmBody": "ستحتاج إلى تسجيل الدخول مجدداً برقمك وكلمة المرور.",
+  "@signOutConfirmBody": {
+    "description": "Sign-out dialog body"
+  },
+  "actionCancel": "إلغاء",
+  "@actionCancel": {
+    "description": "Dialog cancel button"
+  }
+}

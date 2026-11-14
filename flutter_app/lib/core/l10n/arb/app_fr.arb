@@ -1,0 +1,460 @@
+{
+  "@@locale": "fr",
+  "appName": "LEMQES",
+  "spaceMen": "Hommes",
+  "spaceWomen": "Femmes",
+  "languageName_ar": "العربية",
+  "languageName_fr": "Français",
+  "languageName_en": "English",
+  "languageName_kab": "Taqbaylit",
+  "themeSystem": "Système",
+  "themeLight": "Clair",
+  "themeDark": "Sombre",
+  "actionRetry": "Réessayer",
+  "errorGeneric": "Une erreur est survenue. Veuillez réessayer.",
+  "errorNetwork": "Connexion impossible. Vérifiez votre réseau.",
+  "loading": "Chargement…",
+  "actionSignIn": "Se connecter",
+  "@actionSignIn": {
+    "description": "Sign-in tab and button"
+  },
+  "actionCreateAccount": "Créer un compte",
+  "@actionCreateAccount": {
+    "description": "Sign-up tab and link"
+  },
+  "actionContinue": "Continuer",
+  "@actionContinue": {
+    "description": "Wizard next button"
+  },
+  "actionResetPassword": "Réinitialiser le mot de passe",
+  "@actionResetPassword": {
+    "description": "Reset password action and screen title"
+  },
+  "authTabsLabel": "Connexion ou inscription",
+  "@authTabsLabel": {
+    "description": "Accessibility label of the auth tabs"
+  },
+  "languageChooserLabel": "Langue",
+  "@languageChooserLabel": {
+    "description": "Accessibility label of the language chips"
+  },
+  "themeToDark": "Passer au thème sombre",
+  "@themeToDark": {
+    "description": "Theme toggle tooltip"
+  },
+  "themeToLight": "Passer au thème clair",
+  "@themeToLight": {
+    "description": "Theme toggle tooltip"
+  },
+  "phoneLabel": "Numéro de téléphone",
+  "@phoneLabel": {
+    "description": "Phone field label"
+  },
+  "phoneHint": "0550 12 34 56",
+  "@phoneHint": {
+    "description": "Phone field hint; keep Latin digits"
+  },
+  "phoneRequired": "Veuillez saisir votre numéro de téléphone.",
+  "@phoneRequired": {
+    "description": "Phone field empty"
+  },
+  "phoneInvalid": "Entrez un numéro mobile algérien valide (05, 06 ou 07).",
+  "@phoneInvalid": {
+    "description": "Phone field invalid"
+  },
+  "passwordLabel": "Mot de passe",
+  "@passwordLabel": {
+    "description": "Password field label"
+  },
+  "passwordRequired": "Veuillez saisir votre mot de passe.",
+  "@passwordRequired": {
+    "description": "Password empty"
+  },
+  "passwordShow": "Afficher le mot de passe",
+  "@passwordShow": {
+    "description": "Visibility toggle tooltip"
+  },
+  "passwordHide": "Masquer le mot de passe",
+  "@passwordHide": {
+    "description": "Visibility toggle tooltip"
+  },
+  "passwordHelper": "8 caractères minimum",
+  "@passwordHelper": {
+    "description": "Password field helper"
+  },
+  "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+  "@passwordTooShort": {
+    "description": "Password too short"
+  },
+  "passwordWeak": "Mot de passe trop faible. Mélangez lettres et chiffres.",
+  "@passwordWeak": {
+    "description": "Server refused the password"
+  },
+  "confirmLabel": "Confirmer le mot de passe",
+  "@confirmLabel": {
+    "description": "Confirm field label"
+  },
+  "passwordsMatch": "Les mots de passe correspondent.",
+  "@passwordsMatch": {
+    "description": "Live confirm hint, match"
+  },
+  "passwordsMismatch": "Les mots de passe ne correspondent pas.",
+  "@passwordsMismatch": {
+    "description": "Live confirm hint, mismatch"
+  },
+  "forgotPassword": "Mot de passe oublié ?",
+  "@forgotPassword": {
+    "description": "Link to the reset screen"
+  },
+  "errorInvalidCredentials": "Numéro ou mot de passe incorrect.",
+  "@errorInvalidCredentials": {
+    "description": "Sign-in refused"
+  },
+  "errorRateLimited": "Trop de tentatives. Réessayez dans {seconds} s.",
+  "@errorRateLimited": {
+    "description": "Rate limited with a known wait",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "errorRateLimitedLater": "Trop de tentatives. Réessayez dans quelques minutes.",
+  "@errorRateLimitedLater": {
+    "description": "Rate limited, wait unknown"
+  },
+  "stepProgress": "Étape {step} sur {total}",
+  "@stepProgress": {
+    "description": "Wizard progress",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "spaceStepTitle": "Choisissez votre espace",
+  "@spaceStepTitle": {
+    "description": "Wizard step 1 title"
+  },
+  "spaceStepBody": "LEMQES sépare l’espace Hommes et l’espace Femmes, pour votre confort et votre confidentialité.",
+  "@spaceStepBody": {
+    "description": "Wizard step 1 body"
+  },
+  "spaceMenBody": "Barbiers, coiffeurs et prestations pour hommes.",
+  "@spaceMenBody": {
+    "description": "Men space card subtitle"
+  },
+  "spaceWomenBody": "Salons, instituts et soins pour femmes.",
+  "@spaceWomenBody": {
+    "description": "Women space card subtitle"
+  },
+  "roleStepTitle": "{space, select, women{Votre profil dans l’espace Femmes} other{Votre profil dans l’espace Hommes}}",
+  "@roleStepTitle": {
+    "description": "Wizard step 2 title; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleCustomerTitle": "{space, select, women{Je suis cliente} other{Je suis client}}",
+  "@roleCustomerTitle": {
+    "description": "Role card title",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleCustomerBody": "{space, select, women{Trouvez les salons, coiffeuses et soins à domicile près de vous.} other{Trouvez les barbiers, salons et prestations à domicile près de vous.}}",
+  "@roleCustomerBody": {
+    "description": "Role card subtitle",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleBarberTitle": "{space, select, women{Coiffeuse / Esthéticienne} other{Coiffeur / Barbier}}",
+  "@roleBarberTitle": {
+    "description": "Role card title",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleBarberBody": "{space, select, women{Votre profil beauté et vos clientes vous suivent d’un salon à l’autre.} other{Votre profil barbier et vos clients vous suivent d’un salon à l’autre.}}",
+  "@roleBarberBody": {
+    "description": "Role card subtitle",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleHomeArtistTitle": "{space, select, women{Beauté à domicile} other{Barbier à domicile}}",
+  "@roleHomeArtistTitle": {
+    "description": "Role card title",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleHomeArtistBody": "{space, select, women{Vous vous déplacez chez vos clientes : coiffure, ongles, soins et maquillage.} other{Vous vous déplacez chez vos clients : coupe, dégradé, barbe et pack marié.}}",
+  "@roleHomeArtistBody": {
+    "description": "Role card subtitle",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleSalonOwnerTitle": "{space, select, women{Propriétaire d’institut ou de salon} other{Propriétaire de barber shop}}",
+  "@roleSalonOwnerTitle": {
+    "description": "Role card title",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleSalonOwnerBody": "{space, select, women{Gérez votre file, vos postes et votre équipe.} other{Gérez votre file, vos chaises et votre équipe.}}",
+  "@roleSalonOwnerBody": {
+    "description": "Role card subtitle",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "badgeFree": "Gratuit",
+  "@badgeFree": {
+    "description": "Badge on the customer role card"
+  },
+  "credentialsStepTitle": "Vos informations",
+  "@credentialsStepTitle": {
+    "description": "Wizard step 3 title"
+  },
+  "credentialsStepBody": "Votre numéro sert à vous connecter. Nous y envoyons un code de vérification.",
+  "@credentialsStepBody": {
+    "description": "Wizard step 3 body, no session"
+  },
+  "credentialsProfileBody": "Votre numéro est vérifié. Il ne manque que votre nom.",
+  "@credentialsProfileBody": {
+    "description": "Wizard step 3 body, signed in"
+  },
+  "businessNameLabel": "{space, select, women{Nom de l’institut ou du salon} other{Nom du barber shop}}",
+  "@businessNameLabel": {
+    "description": "Business name label",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "businessNameRequired": "Veuillez saisir le nom de votre établissement.",
+  "@businessNameRequired": {
+    "description": "Business name empty"
+  },
+  "fullNameLabel": "Nom complet",
+  "@fullNameLabel": {
+    "description": "Full name label"
+  },
+  "fullNameRequired": "Veuillez saisir votre nom complet.",
+  "@fullNameRequired": {
+    "description": "Full name empty"
+  },
+  "credentialsSubmit": "Recevoir le code",
+  "@credentialsSubmit": {
+    "description": "Step 3 primary, sends the SMS"
+  },
+  "profileSubmit": "Créer mon compte",
+  "@profileSubmit": {
+    "description": "Step 3 primary when signed in"
+  },
+  "phoneAlreadyRegistered": "Ce numéro a déjà un compte LEMQES. Connectez-vous ou réinitialisez votre mot de passe.",
+  "@phoneAlreadyRegistered": {
+    "description": "Sign-up with a known number"
+  },
+  "codeStepTitle": "Entrez le code reçu par SMS",
+  "@codeStepTitle": {
+    "description": "Code step title"
+  },
+  "codeSentTo": "Nous avons envoyé un code à 6 chiffres au",
+  "@codeSentTo": {
+    "description": "Followed by the phone number on its own line"
+  },
+  "codeLabel": "Code de vérification",
+  "@codeLabel": {
+    "description": "Code field accessibility label"
+  },
+  "codeInvalid": "Code incorrect ou expiré. Vérifiez-le ou demandez un nouveau code.",
+  "@codeInvalid": {
+    "description": "Code refused"
+  },
+  "codeResend": "Renvoyer le code",
+  "@codeResend": {
+    "description": "Resend button"
+  },
+  "codeResendIn": "Renvoyer le code dans {seconds} s",
+  "@codeResendIn": {
+    "description": "Resend countdown",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "codeResent": "Nouveau code envoyé.",
+  "@codeResent": {
+    "description": "Snackbar after resend"
+  },
+  "codeVerifying": "Vérification du code…",
+  "@codeVerifying": {
+    "description": "While verifying"
+  },
+  "backToLogin": "Retour à la connexion",
+  "@backToLogin": {
+    "description": "Leaves sign-up, clears the draft"
+  },
+  "signupFinishing": "Création de votre compte…",
+  "@signupFinishing": {
+    "description": "While completeSignup runs"
+  },
+  "resetPhoneBody": "Entrez votre numéro : nous vous enverrons un code par SMS.",
+  "@resetPhoneBody": {
+    "description": "Reset step 1 body"
+  },
+  "resetSendCode": "Envoyer le code",
+  "@resetSendCode": {
+    "description": "Reset step 1 primary"
+  },
+  "resetNoAccount": "Aucun compte n’est associé à ce numéro.",
+  "@resetNoAccount": {
+    "description": "Reset on an unknown number"
+  },
+  "resetNewPasswordTitle": "Choisissez un nouveau mot de passe",
+  "@resetNewPasswordTitle": {
+    "description": "Reset step 3 title"
+  },
+  "newPasswordLabel": "Nouveau mot de passe",
+  "@newPasswordLabel": {
+    "description": "Reset new password label"
+  },
+  "resetSave": "Enregistrer le mot de passe",
+  "@resetSave": {
+    "description": "Reset step 3 primary"
+  },
+  "resetDone": "Mot de passe modifié.",
+  "@resetDone": {
+    "description": "Snackbar after reset"
+  },
+  "homeSpaceLabel": "{space, select, women{Espace Femmes} other{Espace Hommes}}",
+  "@homeSpaceLabel": {
+    "description": "Current space name in the home header; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "spaceSwitchLabel": "Changer d’espace",
+  "@spaceSwitchLabel": {
+    "description": "Accessibility label of the Men/Women switch"
+  },
+  "homeCustomerEmptyTitle": "{space, select, women{Les salons arrivent bientôt} other{Les barbiers arrivent bientôt}}",
+  "@homeCustomerEmptyTitle": {
+    "description": "Customer home, before search exists",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCustomerEmptyBody": "Vous verrez bientôt ici qui est ouvert et combien de personnes attendent.",
+  "@homeCustomerEmptyBody": {
+    "description": "Customer home empty state body"
+  },
+  "homeProEmptyTitle": "Complétez votre profil",
+  "@homeProEmptyTitle": {
+    "description": "Pro home empty state title"
+  },
+  "homeProEmptyBody": "Ajoutez vos services et vos horaires pour apparaître auprès des clients. Cette étape arrive bientôt.",
+  "@homeProEmptyBody": {
+    "description": "Pro home empty state body"
+  },
+  "homeProEmptyAction": "Compléter mon profil",
+  "@homeProEmptyAction": {
+    "description": "Disabled button until profile setup exists"
+  },
+  "proSpaceFixedHint": "L’espace d’un compte professionnel est fixe : il ne peut pas être changé.",
+  "@proSpaceFixedHint": {
+    "description": "Tooltip on the pro space tag"
+  },
+  "roleSwitchTitle": "Changer de rôle",
+  "@roleSwitchTitle": {
+    "description": "Role switch sheet title, action tooltip and settings entry"
+  },
+  "rolesHeldTitle": "Vos rôles",
+  "@rolesHeldTitle": {
+    "description": "Heading above the roles the user holds"
+  },
+  "roleActive": "Actif",
+  "@roleActive": {
+    "description": "Status word on the active role"
+  },
+  "roleAddAction": "Ajouter un rôle",
+  "@roleAddAction": {
+    "description": "Opens the add-a-role list and titles it"
+  },
+  "roleAddNone": "Vous avez déjà tous les rôles disponibles.",
+  "@roleAddNone": {
+    "description": "Shown when every role is held"
+  },
+  "roleSpaceLockedNote": "{space, select, women{Votre espace professionnel est l’espace Femmes. Il est déjà fixé.} other{Votre espace professionnel est l’espace Hommes. Il est déjà fixé.}}",
+  "@roleSpaceLockedNote": {
+    "description": "Pro space already fixed; space is men or women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "roleChooseSpace": "Choisissez l’espace de votre profil professionnel. Ce choix est définitif pour tous vos rôles professionnels.",
+  "@roleChooseSpace": {
+    "description": "Asks for the pro space when none is set"
+  },
+  "roleAddConfirm": "Ajouter ce rôle",
+  "@roleAddConfirm": {
+    "description": "Confirms adding the chosen role"
+  },
+  "settingsTitle": "Réglages",
+  "@settingsTitle": {
+    "description": "Settings screen title and header action tooltip"
+  },
+  "settingsThemeTitle": "Thème",
+  "@settingsThemeTitle": {
+    "description": "Settings theme group"
+  },
+  "settingsSignOut": "Se déconnecter",
+  "@settingsSignOut": {
+    "description": "Sign out button"
+  },
+  "signOutConfirmTitle": "Se déconnecter ?",
+  "@signOutConfirmTitle": {
+    "description": "Sign-out dialog title"
+  },
+  "signOutConfirmBody": "Vous devrez vous reconnecter avec votre numéro et votre mot de passe.",
+  "@signOutConfirmBody": {
+    "description": "Sign-out dialog body"
+  },
+  "actionCancel": "Annuler",
+  "@actionCancel": {
+    "description": "Dialog cancel button"
+  }
+}
