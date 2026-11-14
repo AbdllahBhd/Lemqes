@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
@@ -127,9 +129,15 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
     final generation = ++_generation;
     final query = ref.watch(exploreQueryProvider);
     // Results are per space (the server filters by the caller's space).
-    // Awaited so the first build does not run twice (before and after the
-    // account loads).
-    await ref.watch(accountProvider.selectAsync((a) => a?.currentSpace));
+    // Selected from the last known account, not awaited from its future: a
+    // failed space switch keeps the account on screen in an error state, and
+    // must keep this list too instead of turning it into an error.
+    final space = ref.watch(
+      accountProvider.select((a) => a.value?.currentSpace),
+    );
+    // Stays loading until the account is known, so the first build does not
+    // search twice (before and after the account loads).
+    if (space == null) return Completer<ExploreResults>().future;
     final debounce = ref.read(exploreDebounceProvider);
 
     if (query.text != _lastText && debounce > Duration.zero) {

@@ -104,10 +104,6 @@
       }
     }
   },
-  "homeCustomerEmptyBody": "Ad twaliḍ da qrib anwa i d yeldin d acḥal n medden i yettṛaǧun.",
-  "@homeCustomerEmptyBody": {
-    "description": "Customer home empty state body"
-  },
   "homeProEmptyTitle": "Fak amaɣnu-ik",
   "@homeProEmptyTitle": {
     "description": "Pro home empty state title"
@@ -274,5 +270,33 @@
   "proErrorTooManyServices": "Tewwḍeḍ ɣer tlisa n 30 n yimeẓla.",
   "proErrorInvalidHours": "Akud-a yettwagi. Senqed yal ass.",
   "proErrorImage": "Tugna-a ur tettwasefrak ara. Fren tawlaft JPEG, PNG neɣ WebP.",
-  "proErrorImageTooLarge": "Tawlaft-a tɛedda 5 MB."
+  "proErrorImageTooLarge": "Tawlaft-a tɛedda 5 MB.",
+  "exploreSearchHint": "Isem, asalun neɣ ameẓlu",
+  "exploreSearchClear": "Sfeḍ anadi",
+  "explorePlaceAny": "Tawilayt / taɣiwant",
+  "explorePlaceTitle": "Anda ara tnadiḍ?",
+  "explorePlaceClear": "Nadi deg yal amkan",
+  "exploreKids": "Arrac",
+  "exploreNoMatchTitle": "{space, select, women{Ulac asalun i yemṣadan} other{Ulac aḥeffaf i yemṣadan}}",
+  "exploreNoMatchBody": "Ɛreḍ awal nniḍen neɣ kkes kra n yimsizdigen.",
+  "exploreClearFilters": "Sfeḍ imsizdigen",
+  "exploreEmptyBody": "Imaɣnuten imezwura ad d-banen da mi ara d-ttwasuffɣen.",
+  "exploreLoadMoreFailed": "Ur d-ittwasali ara wugar.",
+  "exploreFromPrice": "Seg",
+  "exploreKidsWelcome": "Arrac ttwaqeblen",
+  "exploreWorkplaceType": "{type, select, salon{Asalun} own_studio{Adeg uslig} other{Deg uxxam}}",
+  "proPriceHidden": "{type, select, mobile{Ssuma s usuter} other{Ssuma deg usalun}}",
+  "proVerified": "Amaɣnu yettwasenqed",
+  "proPublicExperience": "{band, select, b0{Ddaw 2 n yiseggasen n tirmit} b1{2 ar 5 n yiseggasen n tirmit} b2{5 ar 10 n yiseggasen n tirmit} other{Ugar n 10 n yiseggasen n tirmit}}",
+  "proPublicAbout": "Ɣef-as",
+  "proPublicCustomers": "Imsaɣen",
+  "proPublicServices": "Imeẓla",
+  "proPublicHours": "Isragen n uxeddim",
+  "proPublicPhotos": "Tiwlafin",
+  "proPublicCall": "Siwel",
+  "proPublicCallFailed": "Ur tezmireḍ ara ad tessiwleḍ seg yibenk-a.",
+  "proUnavailableTitle": "Amaɣnu ulac-it",
+  "proUnavailableBody": "Amaɣnu-a ulac-it neɣ ur d-yettban ara deg tamnaṭ-ik.",
+  "proUnavailableBack": "Uɣal ɣer usebter agejdan",
+  "photoViewerPosition": "Tawlaft {index} seg {total}"
 }

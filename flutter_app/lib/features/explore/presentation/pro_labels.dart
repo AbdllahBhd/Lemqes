@@ -1,0 +1,71 @@
+import 'package:material_ui/material_ui.dart';
+
+import '../../../core/l10n/gen/app_localizations.dart';
+import '../../../core/l10n/locale_controller.dart';
+import '../../pro/data/pro_models.dart';
+
+/// "Salon · Salon El Bahdja", or the workplace word alone.
+String workplaceLine(AppLocalizations l10n, WorkplaceType type, String? name) {
+  final word = l10n.exploreWorkplaceType(type.toDb());
+  final n = name?.trim();
+  return n == null || n.isEmpty ? word : '$word · $n';
+}
+
+/// "Commune · Wilaya"; null when neither is known.
+String? placeLine(String? locality, String? region) {
+  final parts = [
+    for (final p in [locality, region])
+      if (p != null && p.isNotEmpty) p,
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
+}
+
+/// The kids tag of a customer mix; null for adults only.
+String? kidsTagOf(AppLocalizations l10n, CustomerMix? mix) => switch (mix) {
+  CustomerMix.adultsAndKids => l10n.exploreKidsWelcome,
+  CustomerMix.kidsOnly => l10n.customerMixKidsOnly,
+  _ => null,
+};
+
+/// The verified tick after a pro's name; screen readers say what it means.
+class VerifiedTick extends StatelessWidget {
+  const VerifiedTick({this.size = 18, super.key});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Icon(
+    Icons.verified_outlined,
+    size: size,
+    color: Theme.of(context).colorScheme.primary,
+    semanticLabel: context.l10n.proVerified,
+  );
+}
+
+/// A mist tag ("Enfants acceptés").
+class MistTag extends StatelessWidget {
+  const MistTag(this.label, {super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: scheme.onSecondaryContainer,
+          ),
+        ),
+      ),
+    );
+  }
+}

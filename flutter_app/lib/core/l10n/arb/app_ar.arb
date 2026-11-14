@@ -104,10 +104,6 @@
       }
     }
   },
-  "homeCustomerEmptyBody": "قريباً سترى هنا من هو مفتوح وكم شخصاً ينتظر.",
-  "@homeCustomerEmptyBody": {
-    "description": "Customer home empty state body"
-  },
   "homeProEmptyTitle": "أكمل ملفك الشخصي",
   "@homeProEmptyTitle": {
     "description": "Pro home empty state title"
@@ -274,5 +270,33 @@
   "proErrorTooManyServices": "بلغت الحد الأقصى وهو 30 خدمة.",
   "proErrorInvalidHours": "رُفضت هذه الأوقات. تحقق من كل يوم.",
   "proErrorImage": "هذه الصورة غير مدعومة. اختر صورة JPEG أو PNG أو WebP.",
-  "proErrorImageTooLarge": "هذه الصورة تتجاوز 5 ميغابايت."
+  "proErrorImageTooLarge": "هذه الصورة تتجاوز 5 ميغابايت.",
+  "exploreSearchHint": "اسم أو صالون أو خدمة",
+  "exploreSearchClear": "مسح البحث",
+  "explorePlaceAny": "الولاية / البلدية",
+  "explorePlaceTitle": "أين تبحث؟",
+  "explorePlaceClear": "البحث في كل مكان",
+  "exploreKids": "أطفال",
+  "exploreNoMatchTitle": "{space, select, women{لا يوجد صالون مطابق} other{لا يوجد حلاق مطابق}}",
+  "exploreNoMatchBody": "جرّب كلمة أخرى أو أزل بعض عوامل التصفية.",
+  "exploreClearFilters": "مسح عوامل التصفية",
+  "exploreEmptyBody": "ستظهر هنا أولى الملفات فور نشرها.",
+  "exploreLoadMoreFailed": "تعذّر تحميل المزيد.",
+  "exploreFromPrice": "ابتداءً من",
+  "exploreKidsWelcome": "يستقبل الأطفال",
+  "exploreWorkplaceType": "{type, select, salon{صالون} own_studio{فضاء خاص} other{في المنزل}}",
+  "proPriceHidden": "{type, select, mobile{السعر عند الطلب} other{السعر في الصالون}}",
+  "proVerified": "ملف موثّق",
+  "proPublicExperience": "{band, select, b0{خبرة أقل من سنتين} b1{خبرة من 2 إلى 5 سنوات} b2{خبرة من 5 إلى 10 سنوات} other{خبرة أكثر من 10 سنوات}}",
+  "proPublicAbout": "نبذة",
+  "proPublicCustomers": "الزبائن",
+  "proPublicServices": "الخدمات",
+  "proPublicHours": "أوقات العمل",
+  "proPublicPhotos": "الصور",
+  "proPublicCall": "اتصال",
+  "proPublicCallFailed": "تعذّر إجراء المكالمة من هذا الجهاز.",
+  "proUnavailableTitle": "الملف غير متاح",
+  "proUnavailableBody": "هذا الملف غير موجود أو لم يعد ظاهراً في فضائك.",
+  "proUnavailableBack": "العودة إلى الرئيسية",
+  "photoViewerPosition": "الصورة {index} من {total}"
 }

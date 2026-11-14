@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/account/data/account_providers.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/explore/presentation/pro_public_profile_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/pro/data/pro_providers.dart';
 import '../../features/pro/presentation/setup/pro_setup_flow.dart';
@@ -72,6 +73,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           step: state.pathParameters['step']!,
           incomplete: state.uri.queryParameters['incomplete'] == '1',
         ),
+      ),
+      // After the setup routes: go_router matches in order, and `setup`
+      // would otherwise be read as a profile id.
+      GoRoute(
+        path: '/pro/:id',
+        builder: (context, state) =>
+            ProPublicProfileScreen(proId: state.pathParameters['id']!),
       ),
     ],
   );

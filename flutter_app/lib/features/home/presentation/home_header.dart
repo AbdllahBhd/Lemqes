@@ -18,6 +18,7 @@ class HomeHeader extends StatelessWidget {
     required this.children,
     this.extraRows = 1,
     this.title,
+    this.overlap,
     super.key,
   });
 
@@ -27,16 +28,25 @@ class HomeHeader extends StatelessWidget {
   /// Replaces the wordmark in the action row (a pro's name).
   final Widget? title;
 
+  /// Straddles the band's lower edge (the explore search field).
+  final Widget? overlap;
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final rowHeight = math.max(48.0, media.textScaler.scale(26) + 8);
     final height =
-        media.padding.top + 8 + rowHeight + extraRows * (rowHeight + 8) + 20;
+        media.padding.top +
+        8 +
+        rowHeight +
+        extraRows * (rowHeight + 8) +
+        20 +
+        (overlap == null ? 0 : LagoonHeaderBand.overlapRise);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: LagoonHeaderBand(
         height: height,
+        overlap: overlap,
         child: Padding(
           padding: EdgeInsetsDirectional.fromSTEB(
             16,

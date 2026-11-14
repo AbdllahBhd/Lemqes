@@ -104,10 +104,6 @@
       }
     }
   },
-  "homeCustomerEmptyBody": "Soon you will see here who is open and how many people are waiting.",
-  "@homeCustomerEmptyBody": {
-    "description": "Customer home empty state body"
-  },
   "homeProEmptyTitle": "Complete your profile",
   "@homeProEmptyTitle": {
     "description": "Pro home empty state title"
@@ -274,5 +270,33 @@
   "proErrorTooManyServices": "You've reached the 30-service limit.",
   "proErrorInvalidHours": "These hours were refused. Check each day.",
   "proErrorImage": "This image isn't supported. Choose a JPEG, PNG or WebP photo.",
-  "proErrorImageTooLarge": "This photo is over 5 MB."
+  "proErrorImageTooLarge": "This photo is over 5 MB.",
+  "exploreSearchHint": "Name, salon or service",
+  "exploreSearchClear": "Clear search",
+  "explorePlaceAny": "Province / commune",
+  "explorePlaceTitle": "Where to look?",
+  "explorePlaceClear": "Search everywhere",
+  "exploreKids": "Children",
+  "exploreNoMatchTitle": "{space, select, women{No salon matches} other{No barber matches}}",
+  "exploreNoMatchBody": "Try another word or remove some filters.",
+  "exploreClearFilters": "Clear filters",
+  "exploreEmptyBody": "The first profiles will appear here as soon as they are published.",
+  "exploreLoadMoreFailed": "Could not load more.",
+  "exploreFromPrice": "From",
+  "exploreKidsWelcome": "Children welcome",
+  "exploreWorkplaceType": "{type, select, salon{Salon} own_studio{Private studio} other{Home visits}}",
+  "proPriceHidden": "{type, select, mobile{Price on request} other{Price at the salon}}",
+  "proVerified": "Verified profile",
+  "proPublicExperience": "{band, select, b0{Under 2 years’ experience} b1{2 to 5 years’ experience} b2{5 to 10 years’ experience} other{Over 10 years’ experience}}",
+  "proPublicAbout": "About",
+  "proPublicCustomers": "Customers",
+  "proPublicServices": "Services",
+  "proPublicHours": "Opening hours",
+  "proPublicPhotos": "Photos",
+  "proPublicCall": "Call",
+  "proPublicCallFailed": "This device cannot place the call.",
+  "proUnavailableTitle": "Profile unavailable",
+  "proUnavailableBody": "This profile does not exist or is no longer visible in your space.",
+  "proUnavailableBack": "Back to home",
+  "photoViewerPosition": "Photo {index} of {total}"
 }

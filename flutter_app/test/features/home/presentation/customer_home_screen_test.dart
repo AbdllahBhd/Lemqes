@@ -21,6 +21,7 @@ void main() {
     await pumpHome(
       tester,
       home: const CustomerHomeScreen(account: testAccount),
+      account: testAccount,
     );
     expect(find.text(fr.homeCustomerEmptyTitle('men')), findsOneWidget);
     expect(find.text(fr.homeSpaceLabel('men')), findsOneWidget);

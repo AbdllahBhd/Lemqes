@@ -376,10 +376,6 @@
       }
     }
   },
-  "homeCustomerEmptyBody": "Vous verrez bientôt ici qui est ouvert et combien de personnes attendent.",
-  "@homeCustomerEmptyBody": {
-    "description": "Customer home empty state body"
-  },
   "homeProEmptyTitle": "Complétez votre profil",
   "@homeProEmptyTitle": {
     "description": "Pro home empty state title"
@@ -856,5 +852,145 @@
   "proErrorImageTooLarge": "Cette photo dépasse 5 Mo.",
   "@proErrorImageTooLarge": {
     "description": "Image over the 5 MB limit"
+  },
+  "exploreSearchHint": "Nom, salon ou service",
+  "@exploreSearchHint": {
+    "description": "Explore search field hint"
+  },
+  "exploreSearchClear": "Effacer la recherche",
+  "@exploreSearchClear": {
+    "description": "Explore search clear button tooltip"
+  },
+  "explorePlaceAny": "Wilaya / commune",
+  "@explorePlaceAny": {
+    "description": "Explore place filter chip with no place chosen"
+  },
+  "explorePlaceTitle": "Où chercher ?",
+  "@explorePlaceTitle": {
+    "description": "Title of the explore place filter sheet"
+  },
+  "explorePlaceClear": "Chercher partout",
+  "@explorePlaceClear": {
+    "description": "Removes the explore place filter"
+  },
+  "exploreKids": "Enfants",
+  "@exploreKids": {
+    "description": "Explore filter chip: pros who accept children"
+  },
+  "exploreNoMatchTitle": "{space, select, women{Aucun salon ne correspond} other{Aucun barbier ne correspond}}",
+  "@exploreNoMatchTitle": {
+    "description": "Explore list empty under the current search or filters",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreNoMatchBody": "Essayez un autre mot ou retirez des filtres.",
+  "@exploreNoMatchBody": {
+    "description": "Explore no-match explanation"
+  },
+  "exploreClearFilters": "Effacer les filtres",
+  "@exploreClearFilters": {
+    "description": "Explore no-match action: reset search and filters"
+  },
+  "exploreEmptyBody": "Les premiers profils apparaîtront ici dès leur publication.",
+  "@exploreEmptyBody": {
+    "description": "Explore list when the space has no published pro yet"
+  },
+  "exploreLoadMoreFailed": "Impossible de charger la suite.",
+  "@exploreLoadMoreFailed": {
+    "description": "Explore list footer when the next page failed"
+  },
+  "exploreFromPrice": "À partir de",
+  "@exploreFromPrice": {
+    "description": "Before the lowest service price on a pro card"
+  },
+  "exploreKidsWelcome": "Enfants acceptés",
+  "@exploreKidsWelcome": {
+    "description": "Tag on a pro who serves adults and children"
+  },
+  "exploreWorkplaceType": "{type, select, salon{Salon} own_studio{Espace privé} other{À domicile}}",
+  "@exploreWorkplaceType": {
+    "description": "Where a pro works, as customers read it",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "proPriceHidden": "{type, select, mobile{Prix sur demande} other{Prix au salon}}",
+  "@proPriceHidden": {
+    "description": "In place of a price when the pro hides prices; by workplace type",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "proVerified": "Profil vérifié",
+  "@proVerified": {
+    "description": "Spoken label of the verified tick"
+  },
+  "proPublicExperience": "{band, select, b0{Moins de 2 ans d’expérience} b1{2 à 5 ans d’expérience} b2{5 à 10 ans d’expérience} other{Plus de 10 ans d’expérience}}",
+  "@proPublicExperience": {
+    "description": "Experience on a public profile (bands b0..b3)",
+    "placeholders": {
+      "band": {
+        "type": "String"
+      }
+    }
+  },
+  "proPublicAbout": "À propos",
+  "@proPublicAbout": {
+    "description": "Public profile section: the bio"
+  },
+  "proPublicCustomers": "Clientèle",
+  "@proPublicCustomers": {
+    "description": "Public profile section: who the pro serves"
+  },
+  "proPublicServices": "Services",
+  "@proPublicServices": {
+    "description": "Public profile section: services"
+  },
+  "proPublicHours": "Horaires",
+  "@proPublicHours": {
+    "description": "Public profile section: weekly hours"
+  },
+  "proPublicPhotos": "Photos",
+  "@proPublicPhotos": {
+    "description": "Public profile section: work photos"
+  },
+  "proPublicCall": "Appeler",
+  "@proPublicCall": {
+    "description": "Public profile primary action: phone the pro"
+  },
+  "proPublicCallFailed": "Impossible de lancer l’appel depuis cet appareil.",
+  "@proPublicCallFailed": {
+    "description": "Snackbar when the dialer cannot open"
+  },
+  "proUnavailableTitle": "Profil indisponible",
+  "@proUnavailableTitle": {
+    "description": "Public profile that does not exist or is not visible"
+  },
+  "proUnavailableBody": "Ce profil n’existe pas ou n’est plus visible dans votre espace.",
+  "@proUnavailableBody": {
+    "description": "Explains the unavailable profile"
+  },
+  "proUnavailableBack": "Retour à l’accueil",
+  "@proUnavailableBack": {
+    "description": "Action on the unavailable profile"
+  },
+  "photoViewerPosition": "Photo {index} sur {total}",
+  "@photoViewerPosition": {
+    "description": "Spoken position of a work photo",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   }
 }
