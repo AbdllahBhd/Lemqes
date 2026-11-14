@@ -67,6 +67,21 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Bundled OFL fonts (licences beside them); never fetched at runtime.
+  fonts:
+    - family: Alexandria
+      fonts:
+        - asset: assets/fonts/Alexandria-Variable.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Variable.ttf
+    - family: NotoSansTifinagh
+      fonts:
+        - asset: assets/fonts/NotoSansTifinagh-Regular.ttf
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

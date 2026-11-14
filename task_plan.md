@@ -395,7 +395,7 @@ M2 barber profile, photos (Storage), services, wizard steps 4–5, accepted cust
 
 | Commit | lint | typecheck | flutter test | supabase test db | integration | Notes |
 |---|---|---|---|---|---|---|
-| — | — | — | — | — | — | |
+| — | — | — | — | — | — | T2 surface brief: `.impeccable/surfaces/flutter-app-lib.md` |
 
 ## Plan review (2026-11-14, LLM council) — what changed
 
