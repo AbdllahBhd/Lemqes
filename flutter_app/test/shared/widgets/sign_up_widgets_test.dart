@@ -35,6 +35,24 @@ void main() {
       expect(codes, ['123456']);
     });
 
+    testWidgets('screen readers reach the field by its label', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _host(CodeField(onCompleted: (_) {}, semanticsLabel: 'Code reçu')),
+      );
+
+      expect(
+        find.semantics.byPredicate(
+          (node) =>
+              node.flagsCollection.isTextField &&
+              node.label.contains('Code reçu'),
+          describeMatch: (_) => 'a text field labelled "Code reçu"',
+        ),
+        findsOne,
+      );
+      semantics.dispose();
+    });
+
     testWidgets('stays LTR, numeric and autofillable inside RTL', (
       tester,
     ) async {

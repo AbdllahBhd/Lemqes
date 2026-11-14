@@ -3,7 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/core/l10n/locale_controller.dart';
 import 'package:lemqes/core/theme/theme_mode_controller.dart';
+import 'package:lemqes/features/account/data/account.dart';
+import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/account/data/account_repository.dart';
+import 'package:lemqes/features/account/presentation/role_switch_sheet.dart';
 import 'package:lemqes/features/settings/presentation/settings_screen.dart';
 import 'package:lemqes/features/signup/data/signup_draft_store.dart';
 import 'package:lemqes/features/signup/presentation/signup_completion.dart';
@@ -104,7 +107,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a failed role switch shows the snackbar', (tester) async {
+  testWidgets('a failed role switch is told once, inside the sheet', (
+    tester,
+  ) async {
     final h = await pump(tester);
     when(() => h.account.setActiveRole(any()))
         .thenThrow(const NetworkAccountFailure());
@@ -115,7 +120,30 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    // The open sheet owns the message: no snackbar underneath it too.
+    expect(find.byType(RoleSwitchSheet), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text(fr.errorNetwork), findsOneWidget);
+  });
+
+  testWidgets('after the sheet closes, a failure shows the snackbar again', (
+    tester,
+  ) async {
+    final h = await pump(tester);
+    await tester.ensureVisible(byKey('roleSwitch'));
+    await tester.tap(byKey('roleSwitch'));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    expect(find.byType(RoleSwitchSheet), findsNothing);
+
+    when(() => h.account.setActiveRole(any()))
+        .thenThrow(const NetworkAccountFailure());
+    await h.container
+        .read(accountProvider.notifier)
+        .switchRole(AppRole.customer);
+    await tester.pump();
+
     expect(find.byType(SnackBar), findsOneWidget);
-    expect(find.text(fr.errorNetwork), findsWidgets);
   });
 }

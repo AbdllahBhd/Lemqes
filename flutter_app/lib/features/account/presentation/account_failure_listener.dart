@@ -16,6 +16,9 @@ String accountErrorMessage(AppLocalizations l10n, Object? error) =>
 /// Shows a snackbar when an account action fails while the account is still
 /// known (a role, space or add-role change). A failed first load has no
 /// account to keep on screen, so it is left to the screen's error view.
+///
+/// While a sheet or dialog covers the screen, that route says why in place
+/// (the role sheet's banner), so the snackbar is skipped.
 class AccountFailureListener extends ConsumerWidget {
   const AccountFailureListener({required this.child, super.key});
 
@@ -27,6 +30,9 @@ class AccountFailureListener extends ConsumerWidget {
       // Every notification into an error is a new failure: the controller
       // goes error -> error on repeated failures, never through loading.
       if (!next.hasError || !next.hasValue) return;
+      // A reload keeps the previous error; only a settled failure is new.
+      if (next.isLoading) return;
+      if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(

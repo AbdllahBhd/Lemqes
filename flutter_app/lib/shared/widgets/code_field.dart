@@ -101,10 +101,12 @@ class _CodeFieldState extends State<CodeField> {
           ExcludeSemantics(
             child: FittedBox(child: Ltr(child: boxes)),
           ),
-          // The real input sits over the boxes, invisible, taking the taps.
+          // The real input sits over the boxes, invisible, taking the taps;
+          // still in the semantics tree, or screen readers could not type.
           Positioned.fill(
             child: Opacity(
               opacity: 0,
+              alwaysIncludeSemantics: true,
               child: TextField(
                 controller: _controller,
                 focusNode: _focus,
