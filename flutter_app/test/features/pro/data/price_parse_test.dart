@@ -11,6 +11,7 @@ void main() {
       expect(parsePriceDzd('1 500'), 1500);
       expect(parsePriceDzd('١٥٠٠'), 1500);
       expect(parsePriceDzd('۱۵۰۰'), 1500);
+      expect(parsePriceDzd('١٬٥٠٠'), 1500);
     });
     test('rejects empty, non-integer and out of range', () {
       expect(parsePriceDzd(''), isNull);

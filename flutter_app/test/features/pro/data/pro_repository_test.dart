@@ -191,7 +191,7 @@ void main() {
         ],
       ),
     );
-    final p = (await repo.mine(ProKind.barber))!;
+    final p = (await repo.mine(ProKind.barber, activeRole: AppRole.barber))!;
     expect(p.ownerId, isNull);
     expect(p.services.map((s) => s.id), ['s1']);
     expect(p.hours.map((h) => h.weekday), [1, 7]);
@@ -203,9 +203,51 @@ void main() {
     expect(p.publishedAt, DateTime.utc(2026, 11, 15, 10));
   });
 
+  test('mine never queries unless acting as that kind\'s pro role', () async {
+    for (final role in [
+      AppRole.customer,
+      AppRole.salonOwner,
+      AppRole.homeArtist,
+    ]) {
+      expect(await repo.mine(ProKind.barber, activeRole: role), isNull);
+    }
+    verifyNever(() => api.selectMine(any()));
+  });
+
+  test('services are sorted by sort', () async {
+    when(() => api.selectMine('barber')).thenAnswer(
+      (_) async => _row(
+        services: [
+          {..._service(), 'id': 'b', 'sort': 2},
+          {..._service(), 'id': 'a', 'sort': 1},
+        ],
+      ),
+    );
+    final p = (await repo.mine(ProKind.barber, activeRole: AppRole.barber))!;
+    expect(p.services.map((s) => s.id), ['a', 'b']);
+  });
+
+  test('storage errors map to typed failures', () async {
+    final cases = {
+      '413': isA<PhotoTooLarge>(),
+      '415': isA<UnsupportedImage>(),
+      '403': isA<NotOwner>(),
+      '500': isA<UnknownProFailure>(),
+    };
+    for (final e in cases.entries) {
+      await expectLater(
+        guardPro<void>(() => throw StorageException('x', statusCode: e.key)),
+        throwsA(e.value),
+      );
+    }
+  });
+
   test('mine is null when there is no profile', () async {
     when(() => api.selectMine(any())).thenAnswer((_) async => null);
-    expect(await repo.mine(ProKind.homeArtist), isNull);
+    expect(
+      await repo.mine(ProKind.homeArtist, activeRole: AppRole.homeArtist),
+      isNull,
+    );
   });
 
   test('gaps list what blocks publishing', () async {
@@ -217,7 +259,7 @@ void main() {
         'published_at': null,
       },
     );
-    final p = (await repo.mine(ProKind.barber))!;
+    final p = (await repo.mine(ProKind.barber, activeRole: AppRole.barber))!;
     expect(p.gaps, ProfileGap.values.toSet());
   });
 

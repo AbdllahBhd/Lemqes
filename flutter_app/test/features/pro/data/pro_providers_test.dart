@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/account/data/account.dart';
@@ -15,6 +17,11 @@ class _FakeAccount extends AccountController {
   final Account _account;
   @override
   Future<Account?> build() async => _account;
+}
+
+class _PendingAccount extends AccountController {
+  @override
+  Future<Account?> build() => Completer<Account?>().future;
 }
 
 Account _account(AppRole role) => Account(
@@ -57,31 +64,72 @@ void main() {
     repo = _MockRepo();
     registerFallbackValue(const ProProfilePatch());
     registerFallbackValue(ProKind.barber);
+    registerFallbackValue(AppRole.barber);
   });
 
   test('loads the profile of the active pro role', () async {
-    when(() => repo.mine(ProKind.barber)).thenAnswer((_) async => _profile());
+    when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .thenAnswer((_) async => _profile());
     container = make(AppRole.barber);
     expect((await container.read(myProProvider.future))?.id, 'p1');
-    verify(() => repo.mine(ProKind.barber)).called(1);
+    verify(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .called(1);
   });
 
+  test('stays loading (not null) while the account is loading', () async {
+    final c = ProviderContainer(
+      overrides: [
+        proRepositoryProvider.overrideWithValue(repo),
+        accountProvider.overrideWith(_PendingAccount.new),
+      ],
+    );
+    addTearDown(c.dispose);
+    c.listen(myProProvider, (_, _) {});
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(myProProvider).isLoading, isTrue);
+    verifyNever(() => repo.mine(any(), activeRole: any(named: 'activeRole')));
+  });
+
+  test(
+    'a role switch during a mutation never queries in customer mode',
+    () async {
+      when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+          .thenAnswer((_) async => _profile());
+      container = make(AppRole.barber);
+      await container.read(myProProvider.future);
+      when(() => repo.publish('p1')).thenAnswer((_) async {
+        container.read(accountProvider.notifier).state = AsyncData(
+          _account(AppRole.customer),
+        );
+        return DateTime.utc(2026);
+      });
+      await container.read(myProProvider.notifier).publish();
+      await container.pump();
+      expect(container.read(myProProvider).value, isNull);
+      verify(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+          .called(1);
+      verifyNever(() => repo.mine(any(), activeRole: AppRole.customer));
+    },
+  );
+
   test('home artist role loads the home_artist kind', () async {
-    when(() => repo.mine(ProKind.homeArtist)).thenAnswer((_) async => null);
+    when(() => repo.mine(ProKind.homeArtist, activeRole: AppRole.homeArtist))
+        .thenAnswer((_) async => null);
     container = make(AppRole.homeArtist);
     expect(await container.read(myProProvider.future), isNull);
-    verify(() => repo.mine(ProKind.homeArtist)).called(1);
+    verify(() => repo.mine(ProKind.homeArtist, activeRole: AppRole.homeArtist))
+        .called(1);
   });
 
   test('a non-pro role has no profile and no query', () async {
     container = make(AppRole.customer);
     expect(await container.read(myProProvider.future), isNull);
-    verifyNever(() => repo.mine(any()));
+    verifyNever(() => repo.mine(any(), activeRole: any(named: 'activeRole')));
   });
 
   test('updateProfile calls the repo then refetches', () async {
     var name = 'Karim';
-    when(() => repo.mine(ProKind.barber))
+    when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
         .thenAnswer((_) async => _profile(name: name));
     when(() => repo.updateProfile('p1', any())).thenAnswer((_) async {
       name = 'Karim B';
@@ -92,14 +140,16 @@ void main() {
         .read(myProProvider.notifier)
         .updateProfile(const ProProfilePatch(displayName: 'Karim B'));
     verify(() => repo.updateProfile('p1', any())).called(1);
-    verify(() => repo.mine(ProKind.barber)).called(2);
+    verify(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .called(2);
     expect(container.read(myProProvider).value?.displayName, 'Karim B');
   });
 
   test(
     'a failed mutation keeps the previous value and exposes the error',
     () async {
-      when(() => repo.mine(ProKind.barber)).thenAnswer((_) async => _profile());
+      when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+          .thenAnswer((_) async => _profile());
       when(() => repo.publish('p1'))
           .thenThrow(const ProfileIncomplete({ProfileGap.hours}));
       container = make(AppRole.barber);
@@ -109,13 +159,15 @@ void main() {
       expect(s.hasError, isTrue);
       expect(s.error, isA<ProfileIncomplete>());
       expect(s.value?.id, 'p1');
-      verify(() => repo.mine(ProKind.barber)).called(1);
+      verify(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+          .called(1);
     },
   );
 
   test('create refetches', () async {
     ProProfile? stored;
-    when(() => repo.mine(ProKind.barber)).thenAnswer((_) async => stored);
+    when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .thenAnswer((_) async => stored);
     when(
       () => repo.create(
         ProKind.barber,
@@ -132,7 +184,8 @@ void main() {
   });
 
   test('mutations without a profile are a no-op', () async {
-    when(() => repo.mine(ProKind.barber)).thenAnswer((_) async => null);
+    when(() => repo.mine(ProKind.barber, activeRole: AppRole.barber))
+        .thenAnswer((_) async => null);
     container = make(AppRole.barber);
     await container.read(myProProvider.future);
     await container.read(myProProvider.notifier).publish();

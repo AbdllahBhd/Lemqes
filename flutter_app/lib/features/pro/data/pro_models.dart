@@ -150,6 +150,7 @@ class ProService {
     this.presetKey,
     this.customName,
     this.active = true,
+    this.sort = 0,
   });
 
   factory ProService.fromRow(Map<String, Object?> r) => ProService(
@@ -161,6 +162,7 @@ class ProService {
     durationMin: r['duration_min']! as int,
     // The customer RPC only returns active services and omits the flag.
     active: r['active'] as bool? ?? true,
+    sort: r['sort'] as int? ?? 0,
   );
 
   final String id;
@@ -172,6 +174,7 @@ class ProService {
   final int? priceDzd;
   final int durationMin;
   final bool active;
+  final int sort;
 
   String displayName(Locale l, Map<String, ServicePreset> presets) {
     final custom = customName;
@@ -333,10 +336,11 @@ class ProProfile {
       publishedAt: published == null ? null : DateTime.parse(published).toUtc(),
       services:
           services ??
-          [
-            for (final s in children('pro_services'))
-              if (s['archived_at'] == null) ProService.fromRow(s),
-          ],
+                [
+                  for (final s in children('pro_services'))
+                    if (s['archived_at'] == null) ProService.fromRow(s),
+                ]
+            ..sort((a, b) => a.sort.compareTo(b.sort)),
       hours: [for (final h in children('pro_hours')) DayHours.fromRow(h)]
         ..sort((a, b) => a.weekday.compareTo(b.weekday)),
       photos: [for (final p in children('pro_photos')) ProPhoto.fromRow(p)]

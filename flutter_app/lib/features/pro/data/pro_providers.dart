@@ -40,10 +40,14 @@ final myProProvider = AsyncNotifierProvider<MyProController, ProProfile?>(
 class MyProController extends AsyncNotifier<ProProfile?> {
   @override
   Future<ProProfile?> build() async {
-    final role = ref.watch(accountProvider.select((a) => a.value?.activeRole));
+    // Awaited so the profile stays loading (not null) until the account is
+    // known.
+    final role = await ref.watch(
+      accountProvider.selectAsync((a) => a?.activeRole),
+    );
     final kind = role == null ? null : ProKind.forRole(role);
-    if (kind == null) return null;
-    return ref.read(proRepositoryProvider).mine(kind);
+    if (role == null || kind == null) return null;
+    return ref.read(proRepositoryProvider).mine(kind, activeRole: role);
   }
 
   Future<void> create({
@@ -105,10 +109,13 @@ class MyProController extends AsyncNotifier<ProProfile?> {
   Future<void> _run(Future<Object?> Function() action) async {
     try {
       await action();
-      final kind = _kind;
-      final fresh = kind == null
+      // Re-read the role: it may have changed while the action ran, and
+      // `mine` must only be queried while acting as the pro role.
+      final role = ref.read(accountProvider).value?.activeRole;
+      final kind = role == null ? null : ProKind.forRole(role);
+      final fresh = role == null || kind == null
           ? null
-          : await ref.read(proRepositoryProvider).mine(kind);
+          : await ref.read(proRepositoryProvider).mine(kind, activeRole: role);
       if (!ref.mounted) return;
       state = AsyncData(fresh);
     } on Object catch (e, st) {

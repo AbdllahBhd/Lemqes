@@ -8,10 +8,15 @@ class ProRepository {
 
   final ProApi _api;
 
-  Future<ProProfile?> mine(ProKind kind) => guardPro(() async {
-    final row = await _api.selectMine(kind.toDb());
-    return row == null ? null : ProProfile.fromRow(row);
-  });
+  /// The caller's own profile of [kind]. [activeRole] must be that kind's pro
+  /// role: acting as anything else, the database would also return other
+  /// pros' listable profiles, so no query is made and the result is null.
+  Future<ProProfile?> mine(ProKind kind, {required AppRole activeRole}) =>
+      guardPro(() async {
+        if (ProKind.forRole(activeRole) != kind) return null;
+        final row = await _api.selectMine(kind.toDb());
+        return row == null ? null : ProProfile.fromRow(row);
+      });
 
   Future<ProProfile> create(
     ProKind kind, {

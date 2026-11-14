@@ -3,7 +3,12 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class MediaStorage {
-  Future<void> upload(String bucket, String path, Uint8List bytes);
+  Future<void> upload(
+    String bucket,
+    String path,
+    Uint8List bytes,
+    String contentType,
+  );
   Future<void> remove(String bucket, List<String> paths);
   String publicUrl(String bucket, String path);
 }
@@ -14,13 +19,17 @@ class SupabaseMediaStorage implements MediaStorage {
   final SupabaseClient _client;
 
   @override
-  Future<void> upload(String bucket, String path, Uint8List bytes) => _client
-      .storage
+  Future<void> upload(
+    String bucket,
+    String path,
+    Uint8List bytes,
+    String contentType,
+  ) => _client.storage
       .from(bucket)
       .uploadBinary(
         path,
         bytes,
-        fileOptions: const FileOptions(contentType: 'image/jpeg'),
+        fileOptions: FileOptions(contentType: contentType),
       );
 
   @override

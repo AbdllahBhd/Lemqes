@@ -55,6 +55,14 @@ class PresetSpaceMismatch extends ProFailure {
   const PresetSpaceMismatch();
 }
 
+class UnsupportedImage extends ProFailure {
+  const UnsupportedImage();
+}
+
+class PhotoTooLarge extends ProFailure {
+  const PhotoTooLarge();
+}
+
 class ProNetworkFailure extends ProFailure {
   const ProNetworkFailure();
 }
@@ -72,6 +80,8 @@ Future<T> guardPro<T>(Future<T> Function() body) async {
     rethrow;
   } on PostgrestException catch (e) {
     throw _map(e);
+  } on StorageException catch (e) {
+    throw _mapStorage(e);
   } on SocketException {
     throw const ProNetworkFailure();
   } on TimeoutException {
@@ -84,6 +94,19 @@ Future<T> guardPro<T>(Future<T> Function() body) async {
     }
     throw UnknownProFailure(e.toString());
   }
+}
+
+ProFailure _mapStorage(StorageException e) {
+  final status = e.statusCode;
+  final m = e.message.toLowerCase();
+  if (status == '413' || m.contains('too large') || m.contains('exceeded')) {
+    return const PhotoTooLarge();
+  }
+  if (status == '415' || m.contains('mime')) return const UnsupportedImage();
+  if (status == '403' || m.contains('row-level security')) {
+    return const NotOwner();
+  }
+  return UnknownProFailure(e.message);
 }
 
 ProFailure _map(PostgrestException e) {

@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 
@@ -11,7 +12,7 @@ import 'pro_models.dart';
 const avatarsBucket = 'avatars';
 const workPhotosBucket = 'work-photos';
 
-/// Object names are `<proId>/<uuid>.jpg` (never the account id: the path
+/// Object names are `<proId>/<uuid>.<jpg|png|webp>` (never the account id: the path
 /// reaches customers) and the stored row path equals the object name.
 class PhotoUploader {
   PhotoUploader(this._api, this._storage, {String Function()? newId})
@@ -59,8 +60,11 @@ class PhotoUploader {
       _storage.publicUrl(bucket, path);
 
   Future<String> _upload(String bucket, String proId, XFile file) async {
-    final path = '$proId/${_newId()}.jpg';
-    await _storage.upload(bucket, path, await file.readAsBytes());
+    final bytes = await file.readAsBytes();
+    final type = _sniff(bytes);
+    if (type == null) throw const UnsupportedImage();
+    final path = '$proId/${_newId()}.${type.ext}';
+    await _storage.upload(bucket, path, bytes, type.mime);
     return path;
   }
 
@@ -76,6 +80,18 @@ class PhotoUploader {
       );
     }
   }
+}
+
+({String ext, String mime})? _sniff(Uint8List b) {
+  bool at(int i, List<int> m) =>
+      b.length >= i + m.length &&
+      [for (var k = 0; k < m.length; k++) b[i + k] == m[k]].every((x) => x);
+  if (at(0, [0xFF, 0xD8])) return (ext: 'jpg', mime: 'image/jpeg');
+  if (at(0, [0x89, 0x50, 0x4E, 0x47])) return (ext: 'png', mime: 'image/png');
+  if (at(0, [0x52, 0x49, 0x46, 0x46]) && at(8, [0x57, 0x45, 0x42, 0x50])) {
+    return (ext: 'webp', mime: 'image/webp');
+  }
+  return null;
 }
 
 String _uuidV4() {

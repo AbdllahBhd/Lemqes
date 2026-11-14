@@ -19,7 +19,8 @@ String _latinDigits(String input) {
 }
 
 int? _parseInt(String input, int min, int max) {
-  final s = _latinDigits(input).replaceAll(RegExp(r'[\s  ]'), '');
+  final s = _latinDigits(input)
+      .replaceAll(RegExp(r'[\s\u00A0\u202F\u066C]'), '');
   if (!RegExp(r'^[0-9]{1,9}$').hasMatch(s)) return null;
   final v = int.parse(s);
   return v < min || v > max ? null : v;

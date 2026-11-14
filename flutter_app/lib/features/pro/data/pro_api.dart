@@ -8,6 +8,10 @@ abstract interface class ProApi {
 
   /// The caller's own profile of [kind] with embedded `pro_services`,
   /// `pro_hours` and `pro_photos`; null when there is none.
+  ///
+  /// Precondition: the caller acts as that pro role. RLS then limits the
+  /// result to the own row; acting as a customer it would also expose other
+  /// pros' listable profiles. Go through `ProRepository.mine`, which checks.
   Future<Map<String, Object?>?> selectMine(String kind);
 
   /// A listable profile with embedded `pro_hours` and `pro_photos` (services
