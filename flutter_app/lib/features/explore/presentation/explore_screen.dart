@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -36,22 +34,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   late final TextEditingController _search = TextEditingController(
     text: ref.read(exploreQueryProvider).text,
   );
-
-  @override
-  void didUpdateWidget(ExploreScreen old) {
-    super.didUpdateWidget(old);
-    // Categories differ between spaces (no beard in Femmes): a category
-    // chosen in the other space must not silently empty this one. Deferred
-    // because providers cannot change while widgets build.
-    if (old.space != widget.space &&
-        ref.read(exploreQueryProvider).category != null) {
-      scheduleMicrotask(() {
-        if (mounted) {
-          ref.read(exploreQueryProvider.notifier).setCategory(null);
-        }
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -108,7 +90,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     ExploreQuery query,
   ) {
     final l10n = context.l10n;
-    final value = results.value;
+    // A list searched in the other space is never shown, not even while the
+    // new space loads: that would put Hommes pros under the Femmes band.
+    final value = results.value?.space == widget.space ? results.value : null;
     if (results.hasError && !results.isLoading) {
       return [
         SliverFillRemaining(

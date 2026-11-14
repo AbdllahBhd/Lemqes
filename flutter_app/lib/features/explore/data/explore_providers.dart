@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
+import '../../account/data/account.dart';
 import '../../account/data/account_providers.dart';
 import '../../pro/data/pro_models.dart';
 import 'explore_api.dart';
@@ -28,7 +30,24 @@ final exploreQueryProvider =
 
 class ExploreQueryController extends Notifier<ExploreQuery> {
   @override
-  ExploreQuery build() => const ExploreQuery();
+  ExploreQuery build() {
+    // Each signed-in user starts from an empty search: never the previous
+    // user's text or filters.
+    ref.watch(sessionProvider.select((s) => s.value?.user.id));
+    // Categories differ between spaces (no beard in Femmes), so a switch
+    // drops the category and keeps the rest. Done here, in the same
+    // notification as the space change, so the results rebuild once with
+    // both instead of searching the new space with the old category.
+    ref.listen(accountProvider.select((a) => a.value?.currentSpace), (
+      previous,
+      next,
+    ) {
+      if (previous != null && next != previous && state.category != null) {
+        setCategory(null);
+      }
+    });
+    return const ExploreQuery();
+  }
 
   void setText(String text) {
     final t = text.trim();
@@ -88,11 +107,16 @@ class ExploreResults {
   const ExploreResults({
     required this.items,
     required this.hasMore,
+    this.space,
     this.loadingMore = false,
     this.loadMoreFailed = false,
   });
 
   final List<ProCard> items;
+
+  /// The space the items were searched in; a list from another space must
+  /// never be shown, even while the new one loads.
+  final Space? space;
   final bool hasMore;
   final bool loadingMore;
   final bool loadMoreFailed;
@@ -104,6 +128,7 @@ class ExploreResults {
     bool? loadMoreFailed,
   }) => ExploreResults(
     items: items ?? this.items,
+    space: space,
     hasMore: hasMore ?? this.hasMore,
     loadingMore: loadingMore ?? this.loadingMore,
     loadMoreFailed: loadMoreFailed ?? this.loadMoreFailed,
@@ -123,6 +148,10 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
   // hit the network after the debounce.
   var _generation = 0;
   String? _lastText;
+
+  // What the current list was searched with: further pages must continue
+  // that search, not whatever the query has become since.
+  ExploreQuery? _listQuery;
 
   @override
   Future<ExploreResults> build() async {
@@ -149,8 +178,10 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
     final page = await ref
         .read(exploreRepositoryProvider)
         .search(query, offset: 0, limit: exploreRepositoryPageSize);
+    if (generation == _generation) _listQuery = query;
     return ExploreResults(
       items: page,
+      space: space,
       hasMore: page.length == exploreRepositoryPageSize,
     );
   }
@@ -158,8 +189,16 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
   static const _empty = ExploreResults(items: [], hasMore: false);
 
   Future<void> loadMore() async {
+    // While a new search loads, the list on screen belongs to the old one.
+    if (state.isLoading) return;
     final current = state.value;
-    if (current == null || !current.hasMore || current.loadingMore) return;
+    final query = _listQuery;
+    if (current == null ||
+        query == null ||
+        !current.hasMore ||
+        current.loadingMore) {
+      return;
+    }
     final generation = _generation;
     state = AsyncData(
       current.copyWith(loadingMore: true, loadMoreFailed: false),
@@ -168,7 +207,7 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
       final page = await ref
           .read(exploreRepositoryProvider)
           .search(
-            ref.read(exploreQueryProvider),
+            query,
             offset: current.items.length,
             limit: exploreRepositoryPageSize,
           );
@@ -176,10 +215,13 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
       state = AsyncData(
         ExploreResults(
           items: [...current.items, ...page],
+          space: current.space,
           hasMore: page.length == exploreRepositoryPageSize,
         ),
       );
-    } on Object {
+    } on Object catch (e, st) {
+      // The footer offers the retry; the cause goes to the log.
+      developer.log('explore next page failed', error: e, stackTrace: st);
       if (!ref.mounted || generation != _generation) return;
       state = AsyncData(
         current.copyWith(loadingMore: false, loadMoreFailed: true),

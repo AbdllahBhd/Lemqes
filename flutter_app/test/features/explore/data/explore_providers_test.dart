@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/account/data/account.dart';
@@ -7,6 +9,7 @@ import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/data/explore_repository.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MockRepo extends Mock implements ExploreRepository {}
 
@@ -39,6 +42,7 @@ List<ProCard> _page(int from, int n) => [
 void main() {
   late _MockRepo repo;
   late ProviderContainer container;
+  late StreamController<Session?> sessions;
 
   setUpAll(() => registerFallbackValue(const ExploreQuery()));
 
@@ -48,6 +52,7 @@ void main() {
         exploreRepositoryProvider.overrideWithValue(repo),
         exploreDebounceProvider.overrideWithValue(debounce),
         accountProvider.overrideWith(_FakeAccount.new),
+        sessionProvider.overrideWith((ref) => sessions.stream),
       ],
     );
     addTearDown(c.dispose);
@@ -56,6 +61,8 @@ void main() {
   }
 
   setUp(() {
+    sessions = StreamController<Session?>.broadcast();
+    addTearDown(sessions.close);
     repo = _MockRepo();
     when(
       () => repo.search(
@@ -182,4 +189,117 @@ void main() {
     expect(r.loadMoreFailed, isTrue);
     expect(r.loadingMore, isFalse);
   });
+
+  test('a new signed-in user starts from an empty query', () async {
+    container = make();
+    container.listen(exploreQueryProvider, (_, _) {});
+    sessions.add(_session('u1'));
+    await container.pump();
+    container.read(exploreQueryProvider.notifier)
+      ..setText('salon')
+      ..setKidsOnly(true);
+    expect(container.read(exploreQueryProvider).text, 'salon');
+
+    sessions.add(null);
+    await container.pump();
+    sessions.add(_session('u2'));
+    await container.pump();
+
+    expect(container.read(exploreQueryProvider), const ExploreQuery());
+  });
+
+  test(
+    'a space switch drops the category and searches once without it',
+    () async {
+      container = make();
+      await container.read(exploreResultsProvider.future);
+      container.read(exploreQueryProvider.notifier)
+        ..setText('coupe')
+        ..setCategory(ServiceCategory.beard);
+      await container.read(exploreResultsProvider.future);
+      clearInteractions(repo);
+
+      container.read(accountProvider.notifier).state = AsyncData(
+        _account(Space.women),
+      );
+      await container.pump();
+      await container.read(exploreResultsProvider.future);
+
+      expect(container.read(exploreQueryProvider).category, isNull);
+      expect(container.read(exploreQueryProvider).text, 'coupe');
+      verify(
+        () => repo.search(
+          const ExploreQuery(text: 'coupe'),
+          offset: 0,
+          limit: 30,
+        ),
+      ).called(1);
+      verifyNoMoreInteractions(repo);
+    },
+  );
+
+  test('results remember the space they were fetched for', () async {
+    container = make();
+    expect(
+      (await container.read(exploreResultsProvider.future)).space,
+      Space.men,
+    );
+    container.read(accountProvider.notifier).state = AsyncData(
+      _account(Space.women),
+    );
+    await container.pump();
+    expect(
+      (await container.read(exploreResultsProvider.future)).space,
+      Space.women,
+    );
+  });
+
+  test('loadMore waits while a new query loads', () async {
+    container = make();
+    await container.read(exploreResultsProvider.future);
+    final gate = Completer<List<ProCard>>();
+    when(
+      () =>
+          repo.search(const ExploreQuery(kidsOnly: true), offset: 0, limit: 30),
+    ).thenAnswer((_) => gate.future);
+    container.read(exploreQueryProvider.notifier).setKidsOnly(true);
+    container.read(exploreResultsProvider);
+    await container.pump();
+    expect(container.read(exploreResultsProvider).isLoading, isTrue);
+
+    await container.read(exploreResultsProvider.notifier).loadMore();
+
+    verifyNever(
+      () => repo.search(any(), offset: 30, limit: any(named: 'limit')),
+    );
+    gate.complete(_page(0, 30));
+  });
+
+  test('loadMore pages the query its list came from', () async {
+    container = make();
+    await container.read(exploreResultsProvider.future);
+    // The query changes but the results have not rebuilt yet.
+    container.read(exploreQueryProvider.notifier).setKidsOnly(true);
+    await container.read(exploreResultsProvider.notifier).loadMore();
+
+    verifyNever(
+      () => repo.search(
+        const ExploreQuery(kidsOnly: true),
+        offset: 30,
+        limit: any(named: 'limit'),
+      ),
+    );
+  });
 }
+
+Session _session(String userId) => Session(
+  accessToken: 't',
+  tokenType: 'bearer',
+  user: User(
+    id: userId,
+    appMetadata: const {},
+    userMetadata: const {},
+    aud: 'authenticated',
+    createdAt: '2026-01-01T00:00:00Z',
+  ),
+);

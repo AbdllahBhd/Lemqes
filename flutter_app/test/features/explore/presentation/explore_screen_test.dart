@@ -54,16 +54,72 @@ void main() {
   });
 
   testWidgets('tapping a card opens its public profile', (tester) async {
+    final id = cardId(1);
     final h = await pumpExplore(
       tester,
       explore: FakeExploreRepository(cards: threeCards()),
+      pros: PublicProRepository(listed: {id: publicBarber(id: id)}),
     );
 
-    await tester.tap(byKey('proCard_p1'));
+    await tester.tap(byKey('proCard_$id'));
     await settle(tester);
 
-    expect(h.location, '/pro/p1');
+    expect(h.location, '/pro/$id');
     expect(find.byType(ProPublicProfileScreen), findsOneWidget);
+    expect(byKey('proUnavailable'), findsNothing);
+    expect(find.textContaining('Barbier depuis 2016'), findsOneWidget);
+  });
+
+  testWidgets('switching space hides the old cards while the new space loads', (
+    tester,
+  ) async {
+    var account = customer();
+    final womenGate = Completer<List<ProCard>>();
+    final explore = _SpaceExplore(menCards: threeCards(), women: womenGate);
+    final h = await pumpExplore(
+      tester,
+      explore: explore,
+      fetch: () async => account,
+    );
+    when(() => h.accounts.setCustomerSpace(Space.women)).thenAnswer((_) async {
+      account = customer(space: Space.women);
+      explore.inWomen = true;
+    });
+    expect(find.text('Amine Benali'), findsOneWidget);
+
+    await tester.tap(byKey('spaceSwitch_women'));
+    await settle(tester);
+
+    expect(find.text('Amine Benali'), findsNothing);
+    expect(byKey('exploreSkeleton'), findsOneWidget);
+
+    womenGate.complete(const []);
+    await settle(tester);
+    expect(find.text(fr.homeCustomerEmptyTitle('women')), findsOneWidget);
+  });
+
+  testWidgets('a space switch searches the new space once, without the '
+      'category', (tester) async {
+    var account = customer();
+    final explore = FakeExploreRepository(cards: threeCards());
+    final h = await pumpExplore(
+      tester,
+      explore: explore,
+      fetch: () async => account,
+    );
+    when(() => h.accounts.setCustomerSpace(Space.women)).thenAnswer((_) async {
+      account = customer(space: Space.women);
+    });
+    await tester.ensureVisible(byKey('filterCategory_beard'));
+    await tester.tap(byKey('filterCategory_beard'));
+    await settle(tester);
+    final before = explore.queries.length;
+
+    await tester.tap(byKey('spaceSwitch_women'));
+    await settle(tester);
+
+    final after = explore.queries.sublist(before);
+    expect(after, [const ExploreQuery()]);
   });
 
   testWidgets('typing searches with the trimmed text', (tester) async {
@@ -322,5 +378,25 @@ class _PendingExplore extends FakeExploreRepository {
   }) {
     queries.add(q);
     return gate;
+  }
+}
+
+/// Answers the men's space at once and the women's through [women].
+class _SpaceExplore extends FakeExploreRepository {
+  _SpaceExplore({required this.menCards, required this.women});
+
+  final List<ProCard> menCards;
+  final Completer<List<ProCard>> women;
+  bool inWomen = false;
+
+  @override
+  Future<List<ProCard>> search(
+    ExploreQuery q, {
+    required int offset,
+    required int limit,
+  }) {
+    queries.add(q);
+    if (inWomen) return women.future;
+    return Future.value(offset == 0 ? menCards : const []);
   }
 }

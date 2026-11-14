@@ -225,3 +225,4 @@
 | `proUnavailableBody` | final | final | draft | draft |
 | `proUnavailableBack` | final | final | draft | draft |
 | `photoViewerPosition` | final | final | draft | draft |
+| `proPhoneUnavailable` | final | final | draft | draft |

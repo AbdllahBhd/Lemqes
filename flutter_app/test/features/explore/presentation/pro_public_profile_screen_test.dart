@@ -194,19 +194,101 @@ void main() {
     expect(find.byType(ProPublicProfileScreen), findsOneWidget);
   });
 
+  testWidgets('a failed reload hides the call bar under the error', (
+    tester,
+  ) async {
+    final pros = _repo();
+    final h = await pumpExplore(tester, pros: pros, location: '/pro/$proUuid');
+    expect(byKey('callPro'), findsOneWidget);
+
+    pros.publicFailure = const ProNetworkFailure();
+    h.container.invalidate(publicProProvider(proUuid));
+    await settle(tester);
+
+    expect(find.byType(ErrorView), findsOneWidget);
+    expect(byKey('callPro'), findsNothing);
+    expect(find.text('+213 550 12 34 56'), findsNothing);
+  });
+
+  testWidgets('a failed phone lookup says so and retry recovers', (
+    tester,
+  ) async {
+    final pros = _repo()..phoneFailure = const ProNetworkFailure();
+    await pumpExplore(tester, pros: pros, location: '/pro/$proUuid');
+
+    expect(byKey('callPro'), findsNothing);
+    expect(find.text(fr.proPhoneUnavailable), findsOneWidget);
+
+    pros.phoneFailure = null;
+    await tester.tap(byKey('phoneRetry'));
+    await settle(tester);
+
+    expect(find.text(fr.proPhoneUnavailable), findsNothing);
+    expect(byKey('callPro'), findsOneWidget);
+  });
+
+  testWidgets('a failed commune lookup does not stick to the next profile', (
+    tester,
+  ) async {
+    const second = '11111111-1111-4111-8111-111111111111';
+    final geo = FlakyGeoRepository()..fail = true;
+    final h = await pumpExplore(
+      tester,
+      pros: PublicProRepository(
+        listed: {
+          proUuid: publicBarber(),
+          second: publicBarber(id: second),
+        },
+      ),
+      geo: geo,
+      location: '/pro/$proUuid',
+    );
+    expect(find.text('Amine Benali'), findsOneWidget);
+    expect(find.text('Alger Centre · Alger'), findsNothing);
+
+    geo.fail = false;
+    h.router.go('/pro/$second');
+    await settle(tester);
+
+    expect(find.text('Alger Centre · Alger'), findsOneWidget);
+  });
+
+  testWidgets('screen readers can open a photo', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpExplore(tester, pros: _repo(), location: '/pro/$proUuid');
+    await tester.scrollUntilVisible(
+      byKey('proPhoto_0'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(
+      tester.getSemantics(byKey('proPhoto_0')),
+      isSemantics(
+        label: fr.photoViewerPosition(1, 3),
+        isButton: true,
+        hasTapAction: true,
+      ),
+    );
+    semantics.dispose();
+  });
+
   testWidgets('back returns to the explore list', (tester) async {
+    final id = cardId(1);
     final h = await pumpExplore(
       tester,
       explore: FakeExploreRepository(cards: threeCards()),
-      pros: PublicProRepository(listed: {'p1': publicBarber(id: 'p1')}),
+      pros: PublicProRepository(listed: {id: publicBarber(id: id)}),
     );
-    await tester.tap(byKey('proCard_p1'));
+    await tester.tap(byKey('proCard_$id'));
     await settle(tester);
-    expect(h.location, '/pro/p1');
+    expect(h.location, '/pro/$id');
+    expect(find.textContaining('Barbier depuis 2016'), findsOneWidget);
 
     await tester.tap(byKey('proBack'));
     await settle(tester);
     expect(h.location, '/home');
+    expect(byKey('proCard_$id'), findsOneWidget);
   });
 
   testWidgets('/pro/setup still opens setup, not a profile', (tester) async {

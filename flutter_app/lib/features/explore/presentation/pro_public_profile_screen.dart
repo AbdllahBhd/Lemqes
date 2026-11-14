@@ -57,7 +57,13 @@ final proContactPhoneProvider = FutureProvider.autoDispose
     .family<String?, String>((ref, id) async {
       if (!_uuid.hasMatch(id)) return null;
       _watchVisibility(ref);
-      return ref.watch(proRepositoryProvider).contactPhone(id);
+      try {
+        return await ref.watch(proRepositoryProvider).contactPhone(id);
+      } on Object catch (e, st) {
+        // The screen offers a retry; the cause goes to the log.
+        developer.log('pro_contact_phone failed', error: e, stackTrace: st);
+        rethrow;
+      }
     }, retry: (_, _) => null);
 
 /// Opens a `tel:` link; overridable so tests never reach the platform.
@@ -87,10 +93,22 @@ class ProPublicProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final state = ref.watch(publicProProvider(proId));
-    final profile = state.value;
+    // After a failed reload the previous profile is still in `value`; the
+    // error view must not sit over its working call bar.
+    final profile = state.hasError ? null : state.value;
     final phone = profile == null
         ? null
-        : ref.watch(proContactPhoneProvider(proId)).value;
+        : ref.watch(proContactPhoneProvider(proId));
+    final Widget? callBar = switch (phone) {
+      null => null,
+      // The call is the screen's only action: its failure is said, not hidden
+      // as if the number were private.
+      AsyncValue(hasError: true) => _PhoneUnavailableBar(
+        onRetry: () => ref.invalidate(proContactPhoneProvider(proId)),
+      ),
+      AsyncValue(value: final String number) => _CallBar(phone: number),
+      _ => null,
+    };
 
     final Widget body;
     if (state.hasError && !state.isLoading) {
@@ -123,10 +141,7 @@ class ProPublicProfileScreen extends ConsumerWidget {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        body: body,
-        bottomNavigationBar: phone == null ? null : _CallBar(phone: phone),
-      ),
+      child: Scaffold(body: body, bottomNavigationBar: callBar),
     );
   }
 }
@@ -288,13 +303,38 @@ class _Section extends StatelessWidget {
   }
 }
 
-class _Hero extends ConsumerWidget {
+class _Hero extends ConsumerStatefulWidget {
   const _Hero({required this.profile});
 
   final ProProfile profile;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Hero> createState() => _HeroState();
+}
+
+class _HeroState extends ConsumerState<_Hero> {
+  @override
+  void initState() {
+    super.initState();
+    // The geo lookups are cached app-wide without retry: a failure seen on
+    // an earlier profile would otherwise hide the place on every profile
+    // until restart. Each hero asks again for what failed. After the frame,
+    // because providers cannot change while widgets build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final id = widget.profile.localityId;
+      if (id != null && ref.read(localityProvider(id)).hasError) {
+        ref.invalidate(localityProvider(id));
+      }
+      if (ref.read(regionsProvider('DZ')).hasError) {
+        ref.invalidate(regionsProvider('DZ'));
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = widget.profile;
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -307,7 +347,7 @@ class _Hero extends ConsumerWidget {
     final kindLine = years == null
         ? kind
         : '$kind · ${l10n.proPublicExperience('b${_experienceBand(years)}')}';
-    final place = _placeOf(context, ref, p.localityId);
+    final place = _placeOf(context, p.localityId);
     final muted = _muted(context);
 
     return DecoratedBox(
@@ -368,7 +408,7 @@ class _Hero extends ConsumerWidget {
 
   /// "Commune · Wilaya" once both lookups answer; the line stays out until
   /// then (and if they fail: the rest of the profile still reads).
-  String? _placeOf(BuildContext context, WidgetRef ref, int? localityId) {
+  String? _placeOf(BuildContext context, int? localityId) {
     if (localityId == null) return null;
     final locale = Localizations.localeOf(context);
     final locality = ref.watch(localityProvider(localityId)).value;
@@ -580,19 +620,56 @@ class _Photos extends ConsumerWidget {
               Semantics(
                 button: true,
                 label: l10n.photoViewerPosition(i + 1, urls.length),
-                child: ExcludeSemantics(
-                  child: InkWell(
-                    key: Key('proPhoto_$i'),
-                    borderRadius: BorderRadius.circular(PhotoTile.radius),
-                    onTap: () =>
-                        showPhotoViewer(context, urls: urls, initial: i),
-                    child: PhotoTile(url: url),
-                  ),
+                onTap: () => showPhotoViewer(context, urls: urls, initial: i),
+                excludeSemantics: true,
+                child: InkWell(
+                  key: Key('proPhoto_$i'),
+                  borderRadius: BorderRadius.circular(PhotoTile.radius),
+                  onTap: () => showPhotoViewer(context, urls: urls, initial: i),
+                  child: PhotoTile(url: url),
                 ),
               ),
           ],
         );
       },
+    );
+  }
+}
+
+/// The phone lookup failed: says so in the call's place, with a retry.
+class _PhoneUnavailableBar extends StatelessWidget {
+  const _PhoneUnavailableBar({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          children: [
+            Text(
+              l10n.proPhoneUnavailable,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            TextButton(
+              key: const Key('phoneRetry'),
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: onRetry,
+              child: Text(l10n.actionRetry),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

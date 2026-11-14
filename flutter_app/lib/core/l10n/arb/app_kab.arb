@@ -298,5 +298,6 @@
   "proUnavailableTitle": "Amaɣnu ulac-it",
   "proUnavailableBody": "Amaɣnu-a ulac-it neɣ ur d-yettban ara deg tamnaṭ-ik.",
   "proUnavailableBack": "Uɣal ɣer usebter agejdan",
-  "photoViewerPosition": "Tawlaft {index} seg {total}"
+  "photoViewerPosition": "Tawlaft {index} seg {total}",
+  "proPhoneUnavailable": "Uṭṭun ulac-it"
 }

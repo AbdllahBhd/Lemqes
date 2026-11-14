@@ -992,5 +992,9 @@
         "type": "int"
       }
     }
+  },
+  "proPhoneUnavailable": "Numéro indisponible",
+  "@proPhoneUnavailable": {
+    "description": "Public profile call bar when the phone lookup failed"
   }
 }

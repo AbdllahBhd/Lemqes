@@ -13,7 +13,9 @@ import 'package:lemqes/features/explore/data/explore_models.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/data/explore_repository.dart';
 import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.dart';
+import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
+import 'package:lemqes/features/geo/data/geo_repository.dart';
 import 'package:lemqes/features/pro/data/photo_uploader.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
@@ -42,6 +44,10 @@ Account customer({Space space = Space.men}) => Account(
 
 const proUuid = '7f1c2b8e-4d3a-4c9b-9e21-0a5b6c7d8e9f';
 
+/// A UUID-shaped id per card, so cards open real profiles.
+String cardId(int i) =>
+    '00000000-0000-4000-8000-${i.toString().padLeft(12, '0')}';
+
 ProCard card(
   int i, {
   String? name,
@@ -51,7 +57,7 @@ ProCard card(
   CustomerMix? mix = CustomerMix.adults,
   int? minPrice = 600,
 }) => ProCard(
-  proId: 'p$i',
+  proId: cardId(i),
   kind: workplace == WorkplaceType.mobile ? ProKind.homeArtist : ProKind.barber,
   displayName: name ?? 'Pro $i',
   workplaceType: workplace,
@@ -130,7 +136,11 @@ class PublicProRepository extends FakeProRepository {
   final Map<String, ProProfile> listed;
   final Map<String, String> phones;
   ProFailure? publicFailure;
+
+  /// When set, `pro_contact_phone` throws it.
+  ProFailure? phoneFailure;
   final publicCalls = <String>[];
+  final phoneCalls = <String>[];
 
   @override
   Future<ProProfile?> publicProfile(String proId) async {
@@ -141,7 +151,23 @@ class PublicProRepository extends FakeProRepository {
   }
 
   @override
-  Future<String?> contactPhone(String proId) async => phones[proId];
+  Future<String?> contactPhone(String proId) async {
+    phoneCalls.add(proId);
+    final f = phoneFailure;
+    if (f != null) throw f;
+    return phones[proId];
+  }
+}
+
+/// A geo backend whose by-id commune lookup fails while [fail] is set.
+class FlakyGeoRepository extends FakeGeoRepository {
+  bool fail = false;
+
+  @override
+  Future<Locality?> locality(int id) async {
+    if (fail) throw const ProNetworkFailure();
+    return super.locality(id);
+  }
 }
 
 class FakePhotoUploader extends Fake implements PhotoUploader {
@@ -236,6 +262,7 @@ Future<ExploreHarness> pumpExplore(
   PublicProRepository? pros,
   String? location,
   Future<bool> Function(Uri)? launcher,
+  GeoRepository? geo,
   Locale locale = const Locale('fr'),
   ThemeMode themeMode = ThemeMode.light,
   double textScale = 1,
@@ -272,7 +299,7 @@ Future<ExploreHarness> pumpExplore(
       exploreDebounceProvider.overrideWithValue(Duration.zero),
       proRepositoryProvider.overrideWithValue(fakePros),
       photoUploaderProvider.overrideWithValue(FakePhotoUploader()),
-      geoRepositoryProvider.overrideWithValue(FakeGeoRepository()),
+      geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
       // A Wednesday, so the hours table's "today" is stable.
       profileClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
       if (launcher != null) phoneLauncherProvider.overrideWithValue(launcher),

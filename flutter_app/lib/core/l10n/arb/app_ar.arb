@@ -298,5 +298,6 @@
   "proUnavailableTitle": "الملف غير متاح",
   "proUnavailableBody": "هذا الملف غير موجود أو لم يعد ظاهراً في فضائك.",
   "proUnavailableBack": "العودة إلى الرئيسية",
-  "photoViewerPosition": "الصورة {index} من {total}"
+  "photoViewerPosition": "الصورة {index} من {total}",
+  "proPhoneUnavailable": "الرقم غير متاح"
 }
