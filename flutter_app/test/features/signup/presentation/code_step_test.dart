@@ -232,6 +232,18 @@ void main() {
     expect(h.draft?.role, AppRole.salonOwner);
   });
 
+  testWidgets('going back to edit the details forgets the typed password', (
+    tester,
+  ) async {
+    final h = await pumpCode(tester);
+    h.container.read(signupPasswordProvider.notifier).set('stale-pass');
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+
+    // Otherwise a different account signing in later would receive it.
+    expect(h.container.read(signupPasswordProvider), isNull);
+  });
+
   testWidgets('back to sign-in clears the draft', (tester) async {
     final h = await pumpCode(tester);
     await tapKey(tester, 'backToLogin');

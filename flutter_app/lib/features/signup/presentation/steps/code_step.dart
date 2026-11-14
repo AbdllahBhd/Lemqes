@@ -124,6 +124,7 @@ class _CodeStepState extends ConsumerState<CodeStep> {
   /// draft forgets it and leaving the wizard no longer resumes this step.
   void _backToDetails() {
     ref.read(signupDraftProvider.notifier).update((d) => d.withoutPhone());
+    ref.read(signupPasswordProvider.notifier).clear();
     context.go('/signup/credentials');
   }
 
