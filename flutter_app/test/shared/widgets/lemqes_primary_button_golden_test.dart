@@ -39,35 +39,46 @@ void main() {
       tester.view.devicePixelRatio = 2;
       addTearDown(tester.view.reset);
       // flutter_test flattens shadows by default; the soft shadow is the design.
+      // Restored in `finally`, not addTearDown: the binding checks painting
+      // debug vars before tear-downs run.
       debugDisableShadows = false;
-      FocusManager.instance.highlightStrategy =
-          FocusHighlightStrategy.alwaysTraditional;
-      const key = ValueKey('sheet');
+      try {
+        FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.alwaysTraditional;
+        const key = ValueKey('sheet');
 
-      await tester.pumpWidget(
-        goldenHost(v, key: key, child: _sheet(_labels[v.locale.languageCode]!)),
-      );
-
-      Focus.of(
-        tester.element(
-          find.descendant(
-            of: find.byKey(const ValueKey('focused')),
-            matching: find.byType(Text),
+        await tester.pumpWidget(
+          goldenHost(
+            v,
+            key: key,
+            child: _sheet(_labels[v.locale.languageCode]!),
           ),
-        ),
-      ).requestFocus();
-      final press = await tester.startGesture(
-        tester.getCenter(find.byKey(const ValueKey('pressed'))),
-      );
-      await tester.pump(const Duration(milliseconds: 300));
+        );
 
-      await expectLater(
-        find.byKey(key),
-        matchesGoldenFile('goldens/lemqes_primary_button_${goldenName(v)}.png'),
-      );
-      await press.up();
-      await tester.pump();
-      debugDisableShadows = true;
+        Focus.of(
+          tester.element(
+            find.descendant(
+              of: find.byKey(const ValueKey('focused')),
+              matching: find.byType(Text),
+            ),
+          ),
+        ).requestFocus();
+        final press = await tester.startGesture(
+          tester.getCenter(find.byKey(const ValueKey('pressed'))),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await expectLater(
+          find.byKey(key),
+          matchesGoldenFile(
+            'goldens/lemqes_primary_button_${goldenName(v)}.png',
+          ),
+        );
+        await press.up();
+        await tester.pump();
+      } finally {
+        debugDisableShadows = true;
+      }
     });
   }
 

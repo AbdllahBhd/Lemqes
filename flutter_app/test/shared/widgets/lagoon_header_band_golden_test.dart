@@ -54,54 +54,59 @@ void main() {
       tester.view.devicePixelRatio = 2;
       addTearDown(tester.view.reset);
       // flutter_test flattens shadows by default; the soft shadow is the design.
+      // Restored in `finally`, not addTearDown: the binding checks painting
+      // debug vars before tear-downs run.
       debugDisableShadows = false;
-      final copy = _copy[v.locale.languageCode]!;
-      const key = ValueKey('band');
+      try {
+        final copy = _copy[v.locale.languageCode]!;
+        const key = ValueKey('band');
 
-      await tester.pumpWidget(
-        goldenHost(
-          v,
-          key: key,
-          child: SizedBox(
-            height: 200,
-            child: Builder(
-              builder: (context) => LagoonHeaderBand(
-                overlap: _SearchField(hint: copy.search),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 36, 16, 0),
-                  child: Row(
-                    children: [
-                      Text(
-                        'LEMQES',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: Colors.white,
-                              fontSize: 18,
-                              letterSpacing: 18 * 0.16,
-                            ),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.place_outlined, color: Colors.white),
-                      const SizedBox(width: 4),
-                      Text(
-                        copy.place,
-                        style: Theme.of(context).textTheme.labelLarge
-                            ?.copyWith(color: Colors.white),
-                      ),
-                    ],
+        await tester.pumpWidget(
+          goldenHost(
+            v,
+            key: key,
+            child: SizedBox(
+              height: 200,
+              child: Builder(
+                builder: (context) => LagoonHeaderBand(
+                  overlap: _SearchField(hint: copy.search),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 36, 16, 0),
+                    child: Row(
+                      children: [
+                        Text(
+                          'LEMQES',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontSize: 18,
+                                letterSpacing: 18 * 0.16,
+                              ),
+                        ),
+                        const Spacer(),
+                        const Icon(Icons.place_outlined, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          copy.place,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await expectLater(
-        find.byKey(key),
-        matchesGoldenFile('goldens/lagoon_header_band_${goldenName(v)}.png'),
-      );
-      debugDisableShadows = true;
+        await expectLater(
+          find.byKey(key),
+          matchesGoldenFile('goldens/lagoon_header_band_${goldenName(v)}.png'),
+        );
+      } finally {
+        debugDisableShadows = true;
+      }
     });
   }
 

@@ -20,6 +20,11 @@ abstract final class LemqesColors {
   static const Color open = Color(0xFF15803D);
   static const Color onBreak = Color(0xFFB45309);
   static const Color closed = muted;
+
+  // The light status inks fall below AA on the deep-sea dark surface.
+  static const Color openOnDark = Color(0xFF4ADE80);
+  static const Color onBreakOnDark = Color(0xFFFBBF24);
+  static const Color closedOnDark = Color(0xFFA3B6BD);
 }
 
 /// Corner radii and shadows shared by cards and brand surfaces.

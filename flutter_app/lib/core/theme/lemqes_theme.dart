@@ -4,7 +4,8 @@ import 'lemqes_gradients.dart';
 import 'lemqes_tokens.dart';
 import 'lemqes_typography.dart';
 
-export 'lemqes_typography.dart' show lemqesNumeric, lemqesTextTheme;
+export 'lemqes_typography.dart'
+    show lemqesNumeric, lemqesTextTheme, lemqesWeight;
 
 const ColorScheme _light = ColorScheme(
   brightness: Brightness.light,
@@ -104,6 +105,16 @@ ThemeData lemqesTheme(Brightness brightness) {
     chipTheme: ChipThemeData(
       selectedColor: LemqesColors.teal,
       checkmarkColor: Colors.white,
+      // M3 would use onSecondaryContainer, unreadable on the solid teal fill.
+      labelStyle: textTheme.labelLarge?.copyWith(
+        color: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return scheme.onSurface.withValues(alpha: 0.38);
+          }
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return scheme.onSurfaceVariant;
+        }),
+      ),
       side: BorderSide(color: scheme.outlineVariant),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),

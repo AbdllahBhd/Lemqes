@@ -13,6 +13,18 @@ const TextStyle lemqesNumeric = TextStyle(
   fontFeatures: [FontFeature.tabularFigures()],
 );
 
+/// Sets a weight that actually renders: the bundled faces are variable fonts,
+/// so `fontWeight` alone does not move their `wght` axis.
+TextStyle lemqesWeight(TextStyle style, FontWeight weight) {
+  return style.copyWith(
+    fontWeight: weight,
+    fontVariations: [
+      ...?style.fontVariations?.where((v) => v.axis != 'wght'),
+      FontVariation.weight(weight.value.toDouble()),
+    ],
+  );
+}
+
 TextStyle _style(
   String family,
   double size,
@@ -20,15 +32,15 @@ TextStyle _style(
   FontWeight weight, [
   double letterSpacing = 0,
 ]) {
-  return TextStyle(
-    fontFamily: family,
-    fontFamilyFallback: _fallback,
-    fontSize: size,
-    height: height / size,
-    fontWeight: weight,
-    // The bundled faces are variable fonts; drive the weight axis explicitly.
-    fontVariations: [FontVariation.weight(weight.value.toDouble())],
-    letterSpacing: letterSpacing,
+  return lemqesWeight(
+    TextStyle(
+      fontFamily: family,
+      fontFamilyFallback: _fallback,
+      fontSize: size,
+      height: height / size,
+      letterSpacing: letterSpacing,
+    ),
+    weight,
   );
 }
 

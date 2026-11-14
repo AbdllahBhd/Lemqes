@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/theme/lemqes_theme.dart';
 import 'package:lemqes/core/theme/lemqes_tokens.dart';
@@ -48,6 +49,40 @@ void main() {
     expectAa('closed/white', LemqesColors.closed, Colors.white);
     expectAa('ink/gold', LemqesColors.ink, LemqesColors.gold);
   });
+
+  test('status colours meet AA on the dark surface', () {
+    final surface = lemqesTheme(Brightness.dark).colorScheme.surface;
+    expectAa('openOnDark', LemqesColors.openOnDark, surface);
+    expectAa('onBreakOnDark', LemqesColors.onBreakOnDark, surface);
+    expectAa('closedOnDark', LemqesColors.closedOnDark, surface);
+  });
+
+  for (final brightness in Brightness.values) {
+    testWidgets('selected chip label meets AA on its fill ($brightness)', (
+      tester,
+    ) async {
+      final theme = lemqesTheme(brightness);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: Center(
+              child: FilterChip(
+                label: const Text('Ouverts'),
+                selected: true,
+                onSelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final label = tester.renderObject<RenderParagraph>(find.text('Ouverts'));
+      final color = label.text.style!.color!;
+      expect(theme.chipTheme.selectedColor, LemqesColors.teal);
+      expectAa('selected chip label', color, LemqesColors.teal);
+    });
+  }
 
   test('dark scheme text pairs meet AA', () {
     final s = lemqesTheme(Brightness.dark).colorScheme;

@@ -40,4 +40,11 @@ void main() {
       contains(const FontFeature.tabularFigures()),
     );
   });
+
+  test('lemqesWeight drives both fontWeight and the wght axis', () {
+    final style = lemqesWeight(light.textTheme.bodyMedium!, FontWeight.w700);
+    expect(style.fontWeight, FontWeight.w700);
+    expect(style.fontVariations, contains(const FontVariation('wght', 700)));
+    expect(style.fontVariations!.where((v) => v.axis == 'wght'), hasLength(1));
+  });
 }
