@@ -26,6 +26,8 @@ flutter_app/.dart_tool/
 flutter_app/.fvm/
 flutter_app/env/local.json
 flutter_app/lib/core/l10n/gen/
+# Golden-diff output from failed widget tests
+flutter_app/test/**/failures/
 supabase/.temp/
 supabase/.branches/
 node_modules/

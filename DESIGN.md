@@ -291,3 +291,4 @@ A white card with a 48 dp mist icon disc, title, muted description, optional tag
 - **Don't** use champagne gold for decoration, or status green and amber for anything but status.
 - **Don't** use #6B7280 for muted text on the ground; it fails AA. Use Muted Ink.
 - **Don't** mix the men's and women's spaces on one screen.
+- **Don't** keep what `flutter_launcher_icons` / `flutter_native_splash` do to iOS: re-running them corrupts `flutter_app/ios/Runner.xcodeproj/project.pbxproj` (`ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`) and re-indents `flutter_app/ios/Runner/Info.plist`; revert those two files after regenerating.

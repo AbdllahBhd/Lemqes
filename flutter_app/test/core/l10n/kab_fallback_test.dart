@@ -34,6 +34,7 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
+    expect(find.byType(DatePickerDialog), findsOneWidget);
     expect(tester.takeException(), isNull);
     expect(MaterialLocalizations.of(captured), isNotNull);
     expect(Directionality.of(captured), TextDirection.ltr);
