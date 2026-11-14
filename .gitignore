@@ -16,3 +16,16 @@
 local.properties
 .env
 debug.keystore
+
+# Brainstorm mockups
+.superpowers/
+
+# Flutter app / Supabase
+flutter_app/build/
+flutter_app/.dart_tool/
+flutter_app/.fvm/
+flutter_app/env/local.json
+flutter_app/lib/core/l10n/gen/
+supabase/.temp/
+supabase/.branches/
+node_modules/
