@@ -60,7 +60,11 @@ final _workJpeg = base64Decode(
 );
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // This binding leaves the real (GTK) text input attached so a person can
+  // type; the test types through `enterText`, so the input is the test's.
+  setUp(binding.testTextInput.register);
+  tearDown(binding.testTextInput.unregister);
 
   final locale = Locale(_shots.startsWith('ar') ? 'ar' : 'fr');
   final dark = _shots.endsWith('dark');
@@ -434,7 +438,7 @@ Future<void> _signUp(
     of: find.byKey(const Key('codeField')),
     matching: find.byType(EditableText),
   );
-  await _waitFor(tester, field);
+  await _waitForSettledRoute(tester, field);
   await tester.enterText(field, _code);
   await tester.pump();
 }
@@ -458,6 +462,9 @@ Future<void> _addService(
   }
   await _tap(tester, find.byKey(const Key('serviceSave')));
   await _waitForGone(tester, find.byKey(const Key('serviceSave')));
+  // The step saves and reloads with its suggestions off (progress bar on);
+  // the next one can only be opened once that has settled.
+  await _waitForGone(tester, find.byType(LinearProgressIndicator));
 }
 
 /// Waits until the explore list has answered (no skeleton, no progress).
@@ -554,10 +561,32 @@ Future<void> _waitForGone(
   );
 }
 
-Future<void> _tap(WidgetTester tester, Finder finder) async {
+/// Waits until [finder]'s route has finished its transition. Mid-transition
+/// the outgoing page can still take a tap meant for the incoming one: a
+/// field then never gets focus and the text typed into it is lost (the form
+/// later refuses to submit, seen as a sign-up that never reaches the code).
+Future<void> _waitForSettledRoute(WidgetTester tester, Finder finder) async {
   await _waitFor(tester, finder);
+  bool settled() {
+    final route = ModalRoute.of(finder.evaluate().first);
+    return route == null ||
+        (route.isCurrent &&
+            (route.animation?.isCompleted ?? true) &&
+            (route.secondaryAnimation?.isDismissed ?? true));
+  }
+
+  final deadline = DateTime.now().add(const Duration(seconds: 30));
+  while (!settled()) {
+    if (DateTime.now().isAfter(deadline)) {
+      throw TestFailure('Route of $finder never settled');
+    }
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+}
+
+Future<void> _tap(WidgetTester tester, Finder finder) async {
+  await _waitForSettledRoute(tester, finder);
   await tester.ensureVisible(finder.first);
-  // A route still sliding in is laid out but not yet hit-testable.
   await _waitFor(tester, finder.hitTestable());
   await tester.tap(finder.hitTestable().first);
   await tester.pump();
@@ -565,7 +594,7 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 
 Future<void> _enter(WidgetTester tester, Key key, String text) async {
   final finder = find.byKey(key);
-  await _waitFor(tester, finder);
+  await _waitForSettledRoute(tester, finder);
   // A sheet replacing one with the same field keeps both onstage until the
   // transition ends.
   final deadline = DateTime.now().add(const Duration(seconds: 10));
@@ -575,6 +604,11 @@ Future<void> _enter(WidgetTester tester, Key key, String text) async {
   await tester.ensureVisible(finder);
   await tester.enterText(finder, text);
   await tester.pump();
+  // Fail here, not 30 s later at a form that never submits.
+  final field = tester.widget<EditableText>(
+    find.descendant(of: finder, matching: find.byType(EditableText)).first,
+  );
+  expect(field.controller.text, text, reason: 'text typed into $key');
 }
 
 Future<void> _signOut(WidgetTester tester) async {
