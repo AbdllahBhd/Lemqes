@@ -1,6 +1,6 @@
 # LEMQES Milestone 1 — Foundation: Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Objective:** Milestone 1 Foundation: real phone + password + SMS sign-up and login, Men/Women spaces and roles enforced in Postgres, four languages with designed Arabic RTL, and the Lagoon theme in light and dark, all on a local Supabase stack.
 
@@ -104,8 +104,8 @@ Why feature-first without `domain/`: `project-structure` skill — this mileston
 
 ### Task 0: Branches
 
-- [ ] **Step 1:** `git checkout -b develop master && git merge --no-ff docs/lemqes-design` (the design doc's review gate was the builder check plus the user's approval).
-- [ ] **Step 2:** `git checkout -b feat/foundation develop`.
+- [x] **Step 1:** `git checkout -b develop master && git merge --no-ff docs/lemqes-design` (the design doc's review gate was the builder check plus the user's approval).
+- [x] **Step 2:** `git checkout -b feat/foundation develop`.
 
 **Done when:** (1) `git branch --show-current` prints `feat/foundation`; `git log develop --oneline` contains `docs: add LEMQES Flutter + Supabase design doc`; (2) no gates exist yet — nothing to run; (3) `git status --short` shows no tracked-file changes beyond the merge.
 
@@ -122,14 +122,14 @@ Why feature-first without `domain/`: `project-structure` skill — this mileston
 - `000-setup.sql` (no `begin`/`rollback`, so it persists in the local DB; `supabase db reset` wipes it and it reruns first): `create extension if not exists pgtap with schema extensions; create schema if not exists tests;` functions `tests.create_user(phone text, confirmed boolean default true) returns uuid` (inserts into `auth.users` with `aud`/`role` `authenticated`, `phone_confirmed_at = case when confirmed then now() end`), `tests.authenticate_as(uid uuid)` (`set local role authenticated` + `set local request.jwt.claims` with `sub`, `role`), `tests.clear_auth()` (`reset role`); then `select plan(1); select has_schema('tests'); select * from finish();`.
 - npm scripts (root `package.json`, no dependencies): `lint` = `scripts/sdk flutter gen-l10n && scripts/sdk dart format --output=none --set-exit-if-changed lib test && scripts/sdk flutter analyze`; `typecheck` = `scripts/sdk flutter analyze --no-pub`; `test` = `scripts/sdk flutter test && supabase test db`. (Task 10 adds `integration_test` to the format list. `gen-l10n` is a no-op until Task 3 adds `l10n.yaml`; until then `lint` starts at `format`.)
 
-- [ ] **Step 1:** Write `scripts/sdk` (bash, `set -euo pipefail`, `chmod +x`); write `flutter_app/.fvmrc` first so the SDK resolves; then from repo root `~/fvm/versions/3.47.5/bin/flutter create --org com.lemqes --project-name lemqes --platforms android,ios,linux flutter_app` (direct path because `scripts/sdk` needs the folder to exist). Confirm `scripts/sdk flutter --version` prints `3.47.5`. Check https://docs.flutter.dev/release/archive: if a newer 3.47.x/3.48 stable exists, report it before continuing.
-- [ ] **Step 2:** Add deps: `supabase_flutter`, `flutter_riverpod`, `go_router`, `shared_preferences`, `intl`, `flutter_localizations (sdk)`; dev: `mocktail`, `integration_test (sdk)`, `flutter_lints`. `analysis_options.yaml`: include `package:flutter_lints/flutter.yaml`, `strict-casts`, `strict-inference`, `strict-raw-types`, plus `prefer_single_quotes`, `always_declare_return_types`, `avoid_dynamic_calls`.
-- [ ] **Step 3:** `supabase init` at repo root (decline the VS Code/IntelliJ settings prompts). In `config.toml` set `project_id = "lemqes"` and ports: `api 55321`, `db 55322`, `shadow_port 55320`, `studio 55323`, `inbucket 55324`, `analytics 55327`, `pooler 55329`. `supabase start`; copy URL + anon key into `flutter_app/env/local.json`.
-- [ ] **Step 4:** `main.dart`: `Supabase.initialize(url: Env.supabaseUrl, anonKey: Env.supabaseAnonKey)` then `runApp(const ProviderScope(child: LemqesApp()))`; `app.dart`: `LemqesApp` (ConsumerWidget) returning a placeholder `MaterialApp`. Replace the counter test with `app_smoke_test.dart`: pumps `LemqesApp` in `ProviderScope` with `supabaseClientProvider` overridden by a mocktail `SupabaseClient`, expects one `MaterialApp`.
-- [ ] **Step 5:** Write `000-setup.sql` and `001-smoke.sql` (`begin; select plan(1); select ok(tests.create_user('+213550000099') is not null); select * from finish(); rollback;`).
-- [ ] **Step 6:** `.gitignore` additions: `flutter_app/build/`, `flutter_app/.dart_tool/`, `flutter_app/.fvm/`, `flutter_app/env/local.json`, `flutter_app/lib/core/l10n/gen/`, `supabase/.temp/`, `supabase/.branches/`, `node_modules/` (and commit the pending `.superpowers/` lines already in the working tree).
-- [ ] **Step 7:** Run `npm run lint`, `npm run typecheck`, `npm test`.
-- [ ] **Step 8:** Commit `chore: scaffold flutter app, supabase stack and gates`.
+- [x] **Step 1:** Write `scripts/sdk` (bash, `set -euo pipefail`, `chmod +x`); write `flutter_app/.fvmrc` first so the SDK resolves; then from repo root `~/fvm/versions/3.47.5/bin/flutter create --org com.lemqes --project-name lemqes --platforms android,ios,linux flutter_app` (direct path because `scripts/sdk` needs the folder to exist). Confirm `scripts/sdk flutter --version` prints `3.47.5`. Check https://docs.flutter.dev/release/archive: if a newer 3.47.x/3.48 stable exists, report it before continuing.
+- [x] **Step 2:** Add deps: `supabase_flutter`, `flutter_riverpod`, `go_router`, `shared_preferences`, `intl`, `flutter_localizations (sdk)`; dev: `mocktail`, `integration_test (sdk)`, `flutter_lints`. `analysis_options.yaml`: include `package:flutter_lints/flutter.yaml`, `strict-casts`, `strict-inference`, `strict-raw-types`, plus `prefer_single_quotes`, `always_declare_return_types`, `avoid_dynamic_calls`.
+- [x] **Step 3:** `supabase init` at repo root (decline the VS Code/IntelliJ settings prompts). In `config.toml` set `project_id = "lemqes"` and ports: `api 55321`, `db 55322`, `shadow_port 55320`, `studio 55323`, `inbucket 55324`, `analytics 55327`, `pooler 55329`. `supabase start`; copy URL + anon key into `flutter_app/env/local.json`.
+- [x] **Step 4:** `main.dart`: `Supabase.initialize(url: Env.supabaseUrl, anonKey: Env.supabaseAnonKey)` then `runApp(const ProviderScope(child: LemqesApp()))`; `app.dart`: `LemqesApp` (ConsumerWidget) returning a placeholder `MaterialApp`. Replace the counter test with `app_smoke_test.dart`: pumps `LemqesApp` in `ProviderScope` with `supabaseClientProvider` overridden by a mocktail `SupabaseClient`, expects one `MaterialApp`.
+- [x] **Step 5:** Write `000-setup.sql` and `001-smoke.sql` (`begin; select plan(1); select ok(tests.create_user('+213550000099') is not null); select * from finish(); rollback;`).
+- [x] **Step 6:** `.gitignore` additions: `flutter_app/build/`, `flutter_app/.dart_tool/`, `flutter_app/.fvm/`, `flutter_app/env/local.json`, `flutter_app/lib/core/l10n/gen/`, `supabase/.temp/`, `supabase/.branches/`, `node_modules/` (and commit the pending `.superpowers/` lines already in the working tree).
+- [x] **Step 7:** Run `npm run lint`, `npm run typecheck`, `npm test`.
+- [x] **Step 8:** Commit `chore: scaffold flutter app, supabase stack and gates`.
 
 **Done when:** (1) `scripts/sdk flutter --version` prints `Flutter 3.47.5`; `npm test` prints `All tests passed!` (1 test: `app_smoke_test.dart`) and pg_prove lists `000-setup.sql .. ok`, `001-smoke.sql .. ok`, `Result: PASS`; `curl -s http://127.0.0.1:55321/rest/v1/ -H "apikey: <anon>" -o /dev/null -w '%{http_code}'` prints `200`; (2) `npm run lint` and `npm run typecheck` exit 0; (3) no files changed outside `flutter_app/`, `supabase/`, `scripts/sdk`, `package.json`, `.gitignore`.
 
@@ -149,16 +149,16 @@ Why feature-first without `domain/`: `project-structure` skill — this mileston
 - `LoadingView()`, `EmptyView({required String title, String? body, Widget? action})`, `ErrorView({required String message, required String retryLabel, required VoidCallback onRetry})`.
 - `app.dart` wires `theme: lemqesTheme(Brightness.light)`, `darkTheme: lemqesTheme(Brightness.dark)`, `themeMode: ref.watch(themeModeProvider)`.
 
-- [ ] **Step 1:** Run `sh .claude/skills/impeccable/scripts/impeccable context --target flutter_app/lib`; write `## Direction contract` (six blocks + FINISH line, `seed:2c904c7b1ac433b2`) into the surface brief it names, per `.claude/skills/impeccable/reference/new-work.md` "Before code". Record the brief's path in this plan's Gate log notes. Read `.claude/skills/impeccable/reference/craft-floor.md` before UI code.
-- [ ] **Step 2: Failing tests.**
+- [x] **Step 1:** Run `sh .claude/skills/impeccable/scripts/impeccable context --target flutter_app/lib`; write `## Direction contract` (six blocks + FINISH line, `seed:2c904c7b1ac433b2`) into the surface brief it names, per `.claude/skills/impeccable/reference/new-work.md` "Before code". Record the brief's path in this plan's Gate log notes. Read `.claude/skills/impeccable/reference/craft-floor.md` before UI code.
+- [x] **Step 2: Failing tests.**
   - `contrast_test.dart` with helper `double contrast(Color a, Color b)` (WCAG relative luminance): `white` on `deepSea`, `teal`, `blue` ≥ 4.5; `ink` on `ground` ≥ 4.5; `muted` on `white`, `ground`, `rowTint` ≥ 4.5; `tealDark` on `pill` ≥ 4.5; `open`, `onBreak`, `closed` on `white` ≥ 4.5; `ink` on `gold` ≥ 4.5; dark scheme `onSurface`/`surface`, `onSurfaceVariant`/`surface`, `onPrimary`/`primary` ≥ 4.5.
   - `theme_test.dart`: light and dark both have `LemqesGradients`; `displayLarge.fontFamily == 'Alexandria'`; `bodyMedium.fontFamily == 'Inter'` with `fontFamilyFallback` containing `'NotoSansArabic'` and `'NotoSansTifinagh'`; `useMaterial3`; light `scaffoldBackgroundColor == LemqesColors.ground`; dark `scaffoldBackgroundColor != Colors.black` and ≠ light ground.
   - `theme_mode_controller_test.dart`: default `system`; `setMode(dark)` persists; a fresh container reads `dark`.
   - `state_views_test.dart`: `ErrorView` retry tap calls `onRetry`; `EmptyView` renders its action.
   Run → FAIL.
-- [ ] **Step 3:** Download the four fonts + `OFL.txt` from github.com/google/fonts (`ofl/alexandria`, `ofl/inter`, `ofl/notosansarabic`, `ofl/notosanstifinagh`); declare families `Alexandria`, `Inter`, `NotoSansArabic`, `NotoSansTifinagh`. Implement tokens, gradients (brand 160°, stops 0 / 0.55 / 1.0; bloom radial white 20 % at `AlignmentDirectional.topEnd`), typography, both `ColorScheme`s (dark designed from deep-sea surfaces, not an invert — values chosen by the implementer, held by the contrast test), the controller and the `app.dart` wiring. Run → PASS.
-- [ ] **Step 4: Goldens.** `flutter_test_config.dart` loads the bundled fonts and `MaterialIcons` via `FontLoader`. Goldens: `LagoonHeaderBand` (with a search-field overlap) and `LemqesPrimaryButton` (enabled / pressed / disabled / loading / focused) × light/dark × `ar` RTL/`fr` LTR (locale set via `Localizations.override` + `Directionality`). Generate with `--update-goldens`, then **look at every PNG** next to a render of `premium-lagoon.html` (`google-chrome --headless=new --window-size=800,960 --screenshot=…`); fix, regenerate, commit.
-- [ ] **Step 5:** ui-quality self-review of the widgets; commit `feat: add Lagoon theme, bundled fonts and core widgets`.
+- [x] **Step 3:** Download the four fonts + `OFL.txt` from github.com/google/fonts (`ofl/alexandria`, `ofl/inter`, `ofl/notosansarabic`, `ofl/notosanstifinagh`); declare families `Alexandria`, `Inter`, `NotoSansArabic`, `NotoSansTifinagh`. Implement tokens, gradients (brand 160°, stops 0 / 0.55 / 1.0; bloom radial white 20 % at `AlignmentDirectional.topEnd`), typography, both `ColorScheme`s (dark designed from deep-sea surfaces, not an invert — values chosen by the implementer, held by the contrast test), the controller and the `app.dart` wiring. Run → PASS.
+- [x] **Step 4: Goldens.** `flutter_test_config.dart` loads the bundled fonts and `MaterialIcons` via `FontLoader`. Goldens: `LagoonHeaderBand` (with a search-field overlap) and `LemqesPrimaryButton` (enabled / pressed / disabled / loading / focused) × light/dark × `ar` RTL/`fr` LTR (locale set via `Localizations.override` + `Directionality`). Generate with `--update-goldens`, then **look at every PNG** next to a render of `premium-lagoon.html` (`google-chrome --headless=new --window-size=800,960 --screenshot=…`); fix, regenerate, commit.
+- [x] **Step 5:** ui-quality self-review of the widgets; commit `feat: add Lagoon theme, bundled fonts and core widgets`.
 
 **Done when:** (1) `scripts/sdk flutter test test/core/theme test/shared` → `All tests passed!` covering the 6 files above, goldens committed under `test/shared/widgets/goldens/` and listed by name in the hand-back with what was checked; the surface brief contains `## Direction contract` and `seed:2c904c7b1ac433b2`; (2) `npm run lint` exits 0 and `scripts/sdk flutter test` (whole suite) passes; (3) no files changed outside `flutter_app/lib/core/theme/`, `flutter_app/lib/shared/widgets/`, `flutter_app/lib/app.dart`, `flutter_app/assets/fonts/`, `flutter_app/test/`, `flutter_app/pubspec.yaml`, the surface brief, `task_plan.md`.
 
@@ -178,16 +178,16 @@ Why feature-first without `domain/`: `project-structure` skill — this mileston
 - `Ltr({required Widget child})` — `Directionality(textDirection: TextDirection.ltr, child: child)` for phone numbers, codes, counts and ± controls.
 - Initial ARB keys (French template from the prototype's French copy, others translated): `appName`, `spaceMen`, `spaceWomen`, `languageName_ar`, `languageName_fr`, `languageName_en`, `languageName_kab`, `themeSystem`, `themeLight`, `themeDark`, `actionRetry`, `errorGeneric`, `errorNetwork`, `loading`. Later tasks add their own keys (Global Constraints).
 
-- [ ] **Step 1: Failing tests.**
+- [x] **Step 1: Failing tests.**
   - `arb_parity_test.dart`: the four ARB files have identical non-`@` key sets, and every placeholder in `fr` appears in each translation.
   - `kab_fallback_test.dart`: `MaterialApp(locale: Locale('kab'), localizationsDelegates: appDelegates, supportedLocales: supportedLocales)` with a button opening `showDatePicker`; after tapping, `tester.takeException()` is null, `MaterialLocalizations.of(ctx)` is non-null and `Directionality.of(ctx) == TextDirection.ltr`; `NumberFormat.decimalPattern(intlLocaleFor(Locale('kab'))).format(1234)` does not throw.
   - `rtl_test.dart`: under `Locale('ar')`, `Directionality.of(ctx) == TextDirection.rtl`; inside `Ltr` it is `ltr`.
   - `intl_locale_test.dart`: `NumberFormat.decimalPattern(intlLocaleFor(Locale('ar'))).format(1234)` matches `RegExp(r'^[0-9.,  ]+$')`; `resolveInitialLocale([Locale('de'), Locale('fr','DZ')]) == Locale('fr')`; `resolveInitialLocale([Locale('de')]) == Locale('ar')`.
   - `locale_controller_test.dart`: `setLocale(Locale('kab'))` persists; a fresh container reads `kab`.
   Run → FAIL.
-- [ ] **Step 2:** Implement. `app.dart`: `locale: ref.watch(localeProvider)`, `localizationsDelegates: [AppLocalizations.delegate, kabMaterialDelegate, kabCupertinoDelegate, kabWidgetsDelegate, ...GlobalMaterialLocalizations.delegates]` (export this list as `appDelegates` for tests), `supportedLocales`. Run → PASS.
-- [ ] **Step 3:** `REVIEW.md`: one row per key with `ar` and `kab` status `draft` (decision D2).
-- [ ] **Step 4:** Commit `feat: add four-language localization with Kabyle fallback`.
+- [x] **Step 2:** Implement. `app.dart`: `locale: ref.watch(localeProvider)`, `localizationsDelegates: [AppLocalizations.delegate, kabMaterialDelegate, kabCupertinoDelegate, kabWidgetsDelegate, ...GlobalMaterialLocalizations.delegates]` (export this list as `appDelegates` for tests), `supportedLocales`. Run → PASS.
+- [x] **Step 3:** `REVIEW.md`: one row per key with `ar` and `kab` status `draft` (decision D2).
+- [x] **Step 4:** Commit `feat: add four-language localization with Kabyle fallback`.
 
 **Done when:** (1) `scripts/sdk flutter test test/core/l10n` → `All tests passed!` covering the 5 files above; (2) `npm run lint` exits 0 and the whole suite passes; (3) no files changed outside `flutter_app/lib/core/l10n/`, `flutter_app/lib/shared/widgets/ltr.dart`, `flutter_app/lib/app.dart`, `flutter_app/l10n.yaml`, `flutter_app/pubspec.yaml`, `flutter_app/test/core/l10n/`.
 
@@ -211,8 +211,8 @@ Why feature-first without `domain/`: `project-structure` skill — this mileston
 - A header comment in the migration states the policy pattern later milestones copy: wrap helpers as `(select current_space())`, `(select acts_as('barber'))`; security = roles held + ownership + the data's space.
 - `config.toml`: `[auth] minimum_password_length = 8`; `[auth.sms] enable_signup = true`, `enable_confirmations = true`; `[auth.sms.test_otp]` `213550000001`, `213550000002`, `213550000003`, `213550000009` = `"123456"`.
 
-- [ ] **Step 1: Spike.** Apply the config, `supabase stop && supabase start` (auth settings reload only on restart). With the anon key against `http://127.0.0.1:55321/auth/v1`: (a) `POST /signup {"phone":"+213550000009","password":"lemqes-spike-1"}`; (b) `POST /verify {"type":"sms","phone":"+213550000009","token":"000000"}` (wrong code); (c) `POST /verify` with `123456`; (d) repeat (a) for the now-confirmed number; (e) `POST /otp {"phone":"+213550000009","create_user":false}`. Write each HTTP status + `error_code`/`msg` (or `identities` length for (d)) into **Spike results** below. If (a) fails with an SMS-provider error, add `[auth.sms.twilio] enabled = true` with dummy `account_sid`/`message_service_sid`/`auth_token = "env(TWILIO_DUMMY)"`, restart, rerun, and record that too.
-- [ ] **Step 2: Failing pgTAP tests** (`010-accounts.sql`, `begin; select plan(n); … select * from finish(); rollback;`):
+- [x] **Step 1: Spike.** Apply the config, `supabase stop && supabase start` (auth settings reload only on restart). With the anon key against `http://127.0.0.1:55321/auth/v1`: (a) `POST /signup {"phone":"+213550000009","password":"lemqes-spike-1"}`; (b) `POST /verify {"type":"sms","phone":"+213550000009","token":"000000"}` (wrong code); (c) `POST /verify` with `123456`; (d) repeat (a) for the now-confirmed number; (e) `POST /otp {"phone":"+213550000009","create_user":false}`. Write each HTTP status + `error_code`/`msg` (or `identities` length for (d)) into **Spike results** below. If (a) fails with an SMS-provider error, add `[auth.sms.twilio] enabled = true` with dummy `account_sid`/`message_service_sid`/`auth_token = "env(TWILIO_DUMMY)"`, restart, rerun, and record that too.
+- [x] **Step 2: Failing pgTAP tests** (`010-accounts.sql`, `begin; select plan(n); … select * from finish(); rollback;`):
   - unconfirmed user (`tests.create_user(…, false)`) → `complete_signup` throws `phone_not_verified`.
   - confirmed → `complete_signup('Amine','men','barber')` returns `pro_space='men'`, `active_role='barber'`; `has_role('customer')` and `has_role('barber')` true; `acts_as('barber')` true, `acts_as('customer')` false; second call throws `profile_exists`.
   - no profile → `current_space()` is null.
@@ -221,8 +221,8 @@ Why feature-first without `domain/`: `project-structure` skill — this mileston
   - user B selects 0 rows of A's `profiles`/`profile_roles`; `insert into profile_roles` → `42501`; `update profiles set pro_space='women'` → `42501`; `update profiles set active_role='customer'` → `42501`; `update profiles set full_name='Amine B'` succeeds for own row, affects 0 rows for another's.
   - as `anon`: each of the 7 functions → `42501`.
   Run `supabase test db` → FAIL.
-- [ ] **Step 3:** Write the migration; `supabase db reset`; `supabase test db` → PASS; `supabase db lint` → no errors.
-- [ ] **Step 4:** Commit `feat: add accounts schema with spaces, roles and RLS`.
+- [x] **Step 3:** Write the migration; `supabase db reset`; `supabase test db` → PASS; `supabase db lint` → no errors.
+- [x] **Step 4:** Commit `feat: add accounts schema with spaces, roles and RLS`.
 
 **Done when:** (1) Spike results below are filled with real statuses for (a)–(e); `supabase test db` → `010-accounts.sql .. ok`, `Result: PASS`; `supabase db lint` reports no errors; (2) `npm test` passes; (3) no files changed outside `supabase/`, `task_plan.md`.
 
@@ -243,13 +243,13 @@ Why feature-first without `domain/`: `project-structure` skill — this mileston
 - `class AccountRepository { AccountRepository(AccountApi api); Future<Account?> fetchMine(); Future<Account> completeSignup({required String fullName, required Space space, required AppRole role, String? businessName}); Future<void> addRole(AppRole role, {Space? space, String? businessName}); Future<void> setActiveRole(AppRole role); Future<void> setCustomerSpace(Space space); }` — maps exception messages to `sealed class AccountFailure implements Exception`: `SpaceLocked`, `SpaceRequired`, `RoleNotHeld`, `ProfileExists`, `PhoneNotVerified`, `UnknownAccountFailure(String debug)`.
 - Providers: `authRepositoryProvider`, `accountRepositoryProvider`, `sessionProvider` (`StreamProvider<Session?>`), `accountProvider` (`AsyncNotifierProvider<AccountController, Account?>`, refetches on session change; `switchRole(AppRole)`, `addRole(AppRole, {Space? space, String? businessName})`, `switchSpace(Space)`, `refresh()` — each calls the repo then refetches).
 
-- [ ] **Step 1: Failing tests.**
+- [x] **Step 1: Failing tests.**
   - `phone_number_test.dart` table → `'+213550123456'`: `'0550 12 34 56'`, `'+213 550 12 34 56'`, `'00213550123456'`, `'213550123456'`, `'550123456'`, `'0550-12-34-56'`, `'0550.12.34.56'`, `'(0550) 12 34 56'`, `'٠٥٥٠ ١٢ ٣٤ ٥٦'`, `'۰۵۵۰۱۲۳۴۵۶'`; → null: `'021 12 34 56'`, `'0450123456'`, `'+33612345678'`, `'05501234'`, `'055012345678'`, `''`, `'abc'`.
   - `auth_repository_test.dart` (mocktail `GoTrueClient`): duplicate-number signal from spike (d) → `PhoneAlreadyRegistered`; spike (b) code → `InvalidOrExpiredCode`; `invalid_credentials` → `InvalidCredentials`; status 429 / `over_sms_send_rate_limit` → `RateLimited`; `weak_password` → `WeakPassword`; `SocketException`/`AuthRetryableFetchException` → `NetworkFailure`; `sendResetCode` calls `signInWithOtp(phone: '+213550123456', shouldCreateUser: false)`.
   - `account_repository_test.dart` (mock `AccountApi`): `completeSignup` calls `rpc('complete_signup', {'p_full_name':'Salon Lina owner','p_space':'women','p_role':'salon_owner','p_business_name':'Salon Lina'})`; `PostgrestException(message: 'space_locked')` → `SpaceLocked`; `fetchMine` with no profile → null; with profile + roles rows → `roles`, `currentSpace`, `displayName` correct.
   - `account_controller_test.dart`: `switchSpace(Space.women)` calls `setCustomerSpace` then state has `currentSpace == women`; a repo failure leaves `AsyncError` and keeps the previous value.
   Run → FAIL.
-- [ ] **Step 2:** Implement; run → PASS. Commit `feat: add auth and account repositories`.
+- [x] **Step 2:** Implement; run → PASS. Commit `feat: add auth and account repositories`.
 
 **Done when:** (1) `scripts/sdk flutter test test/features/auth/data test/features/account/data` → `All tests passed!` covering the 4 files above; (2) `npm run lint` exits 0 and the whole suite passes; (3) no files changed outside `flutter_app/lib/features/{auth,account}/data/`, `flutter_app/test/features/{auth,account}/data/`.
 
@@ -272,8 +272,8 @@ Why feature-first without `domain/`: `project-structure` skill — this mileston
 - `class SignupDraftStore { Future<SignupDraft?> read(); Future<void> write(SignupDraft draft); Future<void> clear(); }` (key `signup_draft`); `final signupDraftProvider = AsyncNotifierProvider<SignupDraftController, SignupDraft?>(…)` with `update(SignupDraft Function(SignupDraft) f)` and `clear()`. The router reads `ref.read(signupDraftProvider).value`.
 - `GoRouter(refreshListenable: …)` driven by session, account and draft changes; exposed as `final routerProvider = Provider<GoRouter>(…)`.
 
-- [ ] **Step 1: Failing tests.** `redirect_test.dart`: one test per rule branch above, including: no session + draft with phone at `/` → `/signup/code`; no session + no draft at `/home` → `/auth`; session + loading at `/signup/role` → `/home`; session + error at `/signup/space` → `/home`; session + no account + no draft at `/home` → `/signup/space`; session + no account at `/signup/role` → null (back navigation); session + account at `/auth/reset` → null; session + account at `/auth` → `/home`. `signup_draft_store_test.dart`: write → read equal; stored JSON has no `password` key; `clear` → null; `resumeStep` for each stage. Run → FAIL.
-- [ ] **Step 2:** Implement; run → PASS. Commit `feat: add router with session-aware redirect and signup draft`.
+- [x] **Step 1: Failing tests.** `redirect_test.dart`: one test per rule branch above, including: no session + draft with phone at `/` → `/signup/code`; no session + no draft at `/home` → `/auth`; session + loading at `/signup/role` → `/home`; session + error at `/signup/space` → `/home`; session + no account + no draft at `/home` → `/signup/space`; session + no account at `/signup/role` → null (back navigation); session + account at `/auth/reset` → null; session + account at `/auth` → `/home`. `signup_draft_store_test.dart`: write → read equal; stored JSON has no `password` key; `clear` → null; `resumeStep` for each stage. Run → FAIL.
+- [x] **Step 2:** Implement; run → PASS. Commit `feat: add router with session-aware redirect and signup draft`.
 
 **Done when:** (1) `scripts/sdk flutter test test/core/router test/features/signup/data` → `All tests passed!` covering the 2 files above with ≥ 12 tests in `redirect_test.dart`; (2) `npm run lint` exits 0 and the whole suite passes; (3) no files changed outside `flutter_app/lib/core/router/`, `flutter_app/lib/features/signup/data/`, `flutter_app/lib/app.dart`, `flutter_app/test/core/router/`, `flutter_app/test/features/signup/data/`.
 
@@ -290,7 +290,7 @@ Behaviour (layout per the direction contract; header band with wordmark on the a
 - **Wizard:** `StepProgress` total 4 for customer, 5 for pro roles (steps 4–5 come in M2; until then, after the code step pros land on `/home`). Step 1 space (two `ChoiceCard`s). Step 2 role (four cards, wording by space via ARB `select`; customer badge "Gratuit"; **no free-month badge on pro roles** — the free month starts at wallet launch, M10). Step 3 credentials: business name (salon owner only), full name, then — **only when there is no session** — phone, password (≥ 8) and confirm with a live match hint → `signUp` → draft saved with phone → `/signup/code`. **With a session (verified, profile missing), step 3 shows only the names and calls `completeSignup` directly.** `PhoneAlreadyRegistered` → message + "Se connecter" / "Réinitialiser le mot de passe" buttons. Code step: `CodeField`, resend with a 60 s countdown, `InvalidOrExpiredCode` message, "Retour à la connexion" (clears the draft); on success `completeSignup` from the draft, then `clear()`; the router moves to `/home`.
 - **Reset:** phone → `sendResetCode` → `CodeField` → `verifyResetCode` → new password + confirm → `setNewPassword` → snackbar → `/home`.
 
-- [ ] **Step 1: Failing widget tests** (repositories mocked, `ProviderScope` overrides):
+- [x] **Step 1: Failing widget tests** (repositories mocked, `ProviderScope` overrides):
   - `test/features/auth/presentation/login_form_test.dart`: invalid phone → phone error, no `signIn`; valid → `signIn(phone: '+213550123456', password: …)`; `InvalidCredentials` → banner; loading state while pending.
   - `test/features/signup/presentation/credentials_step_test.dart`: business-name field only for `salonOwner`; `'1234567'` → length error; mismatch → hint; `PhoneAlreadyRegistered` → message + both buttons and no "account created" text; **with a session and no account, no phone/password fields are shown and `completeSignup` is called, `signUp` never** (Review Focus 2).
   - `test/features/signup/presentation/role_step_test.dart`: women space shows the women wording; pro cards have no free-month badge.
@@ -299,8 +299,8 @@ Behaviour (layout per the direction contract; header band with wordmark on the a
   - `test/features/auth/presentation/auth_rtl_scale_test.dart`: `ar` + `TextScaler.linear(2.0)` at 360×740 for AuthScreen and each wizard step: `tester.takeException()` is null; phone and code fields resolve `Directionality.of == ltr` (Review Focus 5).
   - Goldens: AuthScreen and role step × light/dark × `fr`/`ar`.
   Run → FAIL.
-- [ ] **Step 2:** Implement and wire the routes. Run → PASS. Look at every golden; ui-quality self-review (one primary action per view, designed loading/error states, 48 dp, focus order).
-- [ ] **Step 3:** Commit `feat: add auth screens and sign-up wizard steps 1-3`.
+- [x] **Step 2:** Implement and wire the routes. Run → PASS. Look at every golden; ui-quality self-review (one primary action per view, designed loading/error states, 48 dp, focus order).
+- [x] **Step 3:** Commit `feat: add auth screens and sign-up wizard steps 1-3`.
 
 **Done when:** (1) `scripts/sdk flutter test test/features/auth/presentation test/features/signup/presentation test/shared` → `All tests passed!` covering the 6 files above, goldens listed by name in the hand-back; (2) `npm run lint` exits 0 and the whole suite passes; (3) no files changed outside `flutter_app/lib/features/{auth,signup}/presentation/`, `flutter_app/lib/shared/widgets/`, `flutter_app/lib/core/router/app_router.dart`, `flutter_app/lib/core/l10n/arb/`, `flutter_app/lib/core/l10n/REVIEW.md`, matching `flutter_app/test/` dirs.
 
@@ -318,9 +318,9 @@ Behaviour (layout per the direction contract; header band with wordmark on the a
 - **RoleSwitchSheet:** held roles with the active one selected; tap → `switchRole`; "Ajouter un rôle" → cards for roles not held; a pro role asks for a space only if `proSpace == null` (otherwise shows the locked space); salon owner asks for a business name.
 - **Settings:** language (4 options, native names), theme (system / light / dark), role switch entry, sign out (confirm dialog).
 
-- [ ] **Step 1: Failing widget tests:** `test/features/home/presentation/home_screen_test.dart` — loading, error (retry calls `refresh`), customer vs pro by role. `customer_home_screen_test.dart` — tapping Dames calls `switchSpace(Space.women)` and the label updates. `pro_home_screen_test.dart` — no `SpaceSwitch`; salon owner shows the business name, barber the full name. `test/features/account/presentation/role_switch_sheet_test.dart` — only held roles listed; adding `barber` with `proSpace == men` shows no space choice and calls `addRole(AppRole.barber)`; with `proSpace == null` asks for a space; `salonOwner` requires a business name. `test/features/settings/presentation/settings_screen_test.dart` — choosing Taqbaylit sets `Locale('kab')`; sign-out confirm calls `signOut`. Run → FAIL.
-- [ ] **Step 2:** Implement and wire the routes. Run → PASS. Goldens for both homes × light/dark × `fr`/`ar`; inspect; ui-quality self-review.
-- [ ] **Step 3:** Commit `feat: add role-aware home, settings and role/space switching`.
+- [x] **Step 1: Failing widget tests:** `test/features/home/presentation/home_screen_test.dart` — loading, error (retry calls `refresh`), customer vs pro by role. `customer_home_screen_test.dart` — tapping Dames calls `switchSpace(Space.women)` and the label updates. `pro_home_screen_test.dart` — no `SpaceSwitch`; salon owner shows the business name, barber the full name. `test/features/account/presentation/role_switch_sheet_test.dart` — only held roles listed; adding `barber` with `proSpace == men` shows no space choice and calls `addRole(AppRole.barber)`; with `proSpace == null` asks for a space; `salonOwner` requires a business name. `test/features/settings/presentation/settings_screen_test.dart` — choosing Taqbaylit sets `Locale('kab')`; sign-out confirm calls `signOut`. Run → FAIL.
+- [x] **Step 2:** Implement and wire the routes. Run → PASS. Goldens for both homes × light/dark × `fr`/`ar`; inspect; ui-quality self-review.
+- [x] **Step 3:** Commit `feat: add role-aware home, settings and role/space switching`.
 
 **Done when:** (1) `scripts/sdk flutter test test/features/home test/features/account/presentation test/features/settings` → `All tests passed!` covering the 5 files above, goldens listed by name in the hand-back; `grep -r PlaceholderScreen flutter_app/lib` finds nothing; (2) `npm run lint` exits 0 and the whole suite passes; (3) no files changed outside `flutter_app/lib/features/{home,account/presentation,settings}/`, `flutter_app/lib/core/router/`, `flutter_app/lib/core/l10n/arb/`, `flutter_app/lib/core/l10n/REVIEW.md`, matching `flutter_app/test/` dirs.
 
@@ -330,10 +330,10 @@ Behaviour (layout per the direction contract; header band with wordmark on the a
 
 **Files:** Create `assets/brand/{icon_master.svg,icon_foreground.png,icon_background.png,icon_monochrome.png,splash_mark.png}`, `flutter_launcher_icons.yaml`, `flutter_native_splash.yaml`. Generated by the tools under `android/app/src/main/res/`, `ios/Runner/`.
 
-- [ ] **Step 1:** Design the mark in `icon_master.svg` (1024²): a white scissors-derived "L" monogram on the Lagoon gradient with bloom; foreground inside the 66 % adaptive safe zone; a monochrome variant for Android 13 themed icons. Follow craft-floor. Render PNGs with `google-chrome --headless=new --default-background-color=00000000 --window-size=1024,1024 --screenshot=…` (`rsvg-convert` is not installed).
-- [ ] **Step 2:** Configure flutter_launcher_icons 0.14.4 (`adaptive_icon_background`, `adaptive_icon_foreground`, `adaptive_icon_monochrome`, `remove_alpha_ios: true`) and flutter_native_splash 2.4.8 (`color: "#062A35"`, `image`, plus `android_12:` with `image` and `icon_background_color: "#062A35"`). Run `scripts/sdk dart run flutter_launcher_icons` and `scripts/sdk dart run flutter_native_splash:create`.
-- [ ] **Step 3: Verify:** look at `mipmap-xxxhdpi/ic_launcher.png`, the adaptive foreground over its background, and the iOS 1024 icon, at 48 px and full size; `scripts/sdk flutter build apk --debug --dart-define-from-file=env/local.json` succeeds.
-- [ ] **Step 4:** Commit `feat: redraw app icon and splash in Lagoon`.
+- [x] **Step 1:** Design the mark in `icon_master.svg` (1024²): a white scissors-derived "L" monogram on the Lagoon gradient with bloom; foreground inside the 66 % adaptive safe zone; a monochrome variant for Android 13 themed icons. Follow craft-floor. Render PNGs with `google-chrome --headless=new --default-background-color=00000000 --window-size=1024,1024 --screenshot=…` (`rsvg-convert` is not installed).
+- [x] **Step 2:** Configure flutter_launcher_icons 0.14.4 (`adaptive_icon_background`, `adaptive_icon_foreground`, `adaptive_icon_monochrome`, `remove_alpha_ios: true`) and flutter_native_splash 2.4.8 (`color: "#062A35"`, `image`, plus `android_12:` with `image` and `icon_background_color: "#062A35"`). Run `scripts/sdk dart run flutter_launcher_icons` and `scripts/sdk dart run flutter_native_splash:create`.
+- [x] **Step 3: Verify:** look at `mipmap-xxxhdpi/ic_launcher.png`, the adaptive foreground over its background, and the iOS 1024 icon, at 48 px and full size; `scripts/sdk flutter build apk --debug --dart-define-from-file=env/local.json` succeeds.
+- [x] **Step 4:** Commit `feat: redraw app icon and splash in Lagoon`.
 
 **Done when:** (1) the apk build exits 0; the hand-back names each inspected PNG and what was checked; `file flutter_app/assets/brand/icon_foreground.png` reports `RGBA`; (2) `npm run lint` exits 0 and the whole suite passes; (3) no files changed outside `flutter_app/assets/brand/`, the two yaml configs, `flutter_app/pubspec.yaml`, `flutter_app/android/app/src/main/res/`, `flutter_app/android/app/src/main/AndroidManifest.xml`, `flutter_app/ios/Runner/` (assets, `Info.plist`, `Base.lproj/`), `flutter_app/ios/Runner.xcodeproj/project.pbxproj`, `flutter_app/web/` if the splash tool creates it (delete it instead if not needed).
 
@@ -343,10 +343,10 @@ Behaviour (layout per the direction contract; header band with wordmark on the a
 
 **Files:** Create `flutter_app/integration_test/auth_flow_test.dart`, `scripts/integration.sh`. Modify `package.json` (`integration_test` in the format list).
 
-- [ ] **Step 1:** `scripts/integration.sh`: `supabase db reset` then `scripts/sdk flutter test integration_test/auth_flow_test.dart -d linux --dart-define-from-file=env/local.json`. If the Linux build fails on a missing system library (e.g. `liblzma-dev`), stop and ask the user before any `sudo apt install`.
-- [ ] **Step 2: Write the test** (real local Supabase, test OTP `123456`, phone `0550000001`, finders by the Keys from Tasks 7–8). Start by clearing persisted state (`SharedPreferences.getInstance().then((p) => p.clear())` and `Supabase.instance.client.auth.signOut()` before `pumpWidget`), because `db reset` leaves a stale session on disk. Flow: sign up as a men barber "Amine", password `lemqes-test-1` → code → ProHome shows "Amine" and the men label → role sheet → customer → CustomerHome → Dames → label updates → **RLS check from the real client:** `client.from('profiles').select()` returns exactly 1 row, and `client.rpc('set_active_role', params: {'p_role': 'home_artist'})` throws `PostgrestException` containing `role_not_held` → sign out → log in with phone + password → home → sign out → reset password for `0550000001` → code → new password `lemqes-test-2` → home → sign out → log in with the old password shows the credentials error.
-- [ ] **Step 3:** Run `sh scripts/integration.sh` twice in a row.
-- [ ] **Step 4:** Commit `test: add sign-up, login and reset integration path`.
+- [x] **Step 1:** `scripts/integration.sh`: `supabase db reset` then `scripts/sdk flutter test integration_test/auth_flow_test.dart -d linux --dart-define-from-file=env/local.json`. If the Linux build fails on a missing system library (e.g. `liblzma-dev`), stop and ask the user before any `sudo apt install`.
+- [x] **Step 2: Write the test** (real local Supabase, test OTP `123456`, phone `0550000001`, finders by the Keys from Tasks 7–8). Start by clearing persisted state (`SharedPreferences.getInstance().then((p) => p.clear())` and `Supabase.instance.client.auth.signOut()` before `pumpWidget`), because `db reset` leaves a stale session on disk. Flow: sign up as a men barber "Amine", password `lemqes-test-1` → code → ProHome shows "Amine" and the men label → role sheet → customer → CustomerHome → Dames → label updates → **RLS check from the real client:** `client.from('profiles').select()` returns exactly 1 row, and `client.rpc('set_active_role', params: {'p_role': 'home_artist'})` throws `PostgrestException` containing `role_not_held` → sign out → log in with phone + password → home → sign out → reset password for `0550000001` → code → new password `lemqes-test-2` → home → sign out → log in with the old password shows the credentials error.
+- [x] **Step 3:** Run `sh scripts/integration.sh` twice in a row.
+- [x] **Step 4:** Commit `test: add sign-up, login and reset integration path`.
 
 **Done when:** (1) two consecutive `sh scripts/integration.sh` runs each print `All tests passed!`; (2) `npm run lint` exits 0 and the whole suite passes; (3) no files changed outside `flutter_app/integration_test/`, `scripts/integration.sh`, `package.json`, `flutter_app/linux/`.
 
@@ -354,10 +354,10 @@ Behaviour (layout per the direction contract; header band with wordmark on the a
 
 ### Task 11: Finish review, DESIGN.md, milestone gate
 
-- [ ] **Step 1:** Run the app (`scripts/sdk flutter run -d linux --dart-define-from-file=env/local.json`, or an Android emulator) and screenshot auth, each wizard step, both homes and settings in `fr` light and `ar` dark. Impeccable finish review against the direction contract and `premium-lagoon.html` (header band, primary button, type voices, density); fix findings.
-- [ ] **Step 2:** Run impeccable `document` → `DESIGN.md` (+ sidecar) from the built tokens and widgets; discharge the FINISH line in the surface brief.
-- [ ] **Step 3:** Full gate: `npm run lint && npm run typecheck && npm test && sh scripts/integration.sh`; record the commit and results in the Gate log.
-- [ ] **Step 4:** Delivery loop (`.claude/rules/delivery.md`): `code-reviewer` agent on `git diff develop...feat/foundation`; `security-auditor` agent (auth + RLS); fix or rebut every finding; update `CLAUDE.md` Project Overview + Architecture Notes (stack, `scripts/sdk`, commands, layout); merge `feat/foundation` → `develop` with `--no-ff`; propose M2.
+- [x] **Step 1:** Run the app (`scripts/sdk flutter run -d linux --dart-define-from-file=env/local.json`, or an Android emulator) and screenshot auth, each wizard step, both homes and settings in `fr` light and `ar` dark. Impeccable finish review against the direction contract and `premium-lagoon.html` (header band, primary button, type voices, density); fix findings.
+- [x] **Step 2:** Run impeccable `document` → `DESIGN.md` (+ sidecar) from the built tokens and widgets; discharge the FINISH line in the surface brief.
+- [x] **Step 3:** Full gate: `npm run lint && npm run typecheck && npm test && sh scripts/integration.sh`; record the commit and results in the Gate log.
+- [x] **Step 4:** Delivery loop (`.claude/rules/delivery.md`): `code-reviewer` agent on `git diff develop...feat/foundation`; `security-auditor` agent (auth + RLS); fix or rebut every finding; update `CLAUDE.md` Project Overview + Architecture Notes (stack, `scripts/sdk`, commands, layout); merge `feat/foundation` → `develop` with `--no-ff`; propose M2.
 
 **Done when:** (1) `DESIGN.md` exists; the Gate log row at the merge commit shows lint, typecheck, `flutter test`, `supabase test db` and integration green; both reviewers' findings are listed as fixed or rebutted in the hand-back; (2) the same full gate; (3) no files changed outside `DESIGN.md`, its sidecar, the surface brief, `CLAUDE.md`, `task_plan.md`, and fixes inside paths already fenced by Tasks 1–10.
 
@@ -384,6 +384,7 @@ Behaviour (layout per the direction contract; header band with wordmark on the a
 | D4 | Password min 8 (prototype: 4) | 4 digits are guessable; recycled numbers make it worse | A: 8, no composition rule (recommended) · B: 6 (Supabase default) | [SIDE FIX — safe to defer] | none |
 | D5 | One pro space per person | M1 assumes all of a person's pro roles share one space (`space_locked`); a man owning a women's salon would be blocked | A: keep for M1, revisit when M7 creates `salons` with their own `space` (recommended) · B: allow per-role space now | [FUTURE idea — M7] | M7: ~1 h |
 | D6 | Muted text `#5E6573` instead of the spec's `#6B7280` | `#6B7280` fails AA on the ground colour | A: accept the darker grey (recommended) · B: keep `#6B7280` only on white cards | [SIDE FIX — safe to defer] | none |
+| R3 | Hosted-auth hardening (security audit 2026-11-14) | Before real users: test OTPs + dummy Twilio must never be pushed (M1); SMS pumping needs Twilio geo-permissions limited to Algeria, CAPTCHA on sign-up/OTP, strict hosted rate limits (M4); consider `secure_password_change` / short OTP sessions (L2); never run `supabase test db` against a hosted DB (L5) | Do all four while creating the EU hosted project (recommended) | [NEEDED for the plan — before M5] | 2–3 h |
 | R1 | Kabyle on Material uses French fallback strings (menus, date picker) | Acceptable for Kabyle readers in Algeria; the full documented path is a custom localization | Revisit if users complain | — | — |
 | R2 | Algerian data-protection law (18-07) for stored phone numbers | Applies before real users exist | Review before M5 with the hosted project | [NEEDED for the plan — before M5] | hours |
 
@@ -395,7 +396,7 @@ M2 barber profile, photos (Storage), services, wizard steps 4–5, accepted cust
 
 | Commit | lint | typecheck | flutter test | supabase test db | integration | Notes |
 |---|---|---|---|---|---|---|
-| — | — | — | — | — | — | T2 surface brief: `.impeccable/surfaces/flutter-app-lib.md` |
+| 3fd2b9f (after final fix wave) | ✅ no issues | ✅ no issues | ✅ 255 passed | ✅ 4 files, 65 tests PASS | ✅ passed twice in a row | Surface brief: `.impeccable/surfaces/flutter-app-lib.md`. Per-task evidence + rulings in the SDD ledger; security audit 0 Critical/High; whole-branch review fixes landed. |
 
 ## Plan review (2026-11-14, LLM council) — what changed
 
