@@ -7,6 +7,7 @@ import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/explore/presentation/pro_public_profile_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/pro/data/pro_providers.dart';
+import '../../features/pro/presentation/dashboard/pro_profile_preview_screen.dart';
 import '../../features/pro/presentation/setup/pro_setup_flow.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
@@ -72,7 +73,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ProSetupScreen(
           step: state.pathParameters['step']!,
           incomplete: state.uri.queryParameters['incomplete'] == '1',
+          edit: state.uri.queryParameters['edit'] == '1',
         ),
+      ),
+      // Three segments, so neither `/pro/:id` nor `/pro/setup/:step` can
+      // read it; declared before `/pro/:id` all the same.
+      GoRoute(
+        path: '/pro/me/preview',
+        builder: (_, _) => const ProProfilePreviewScreen(),
       ),
       // After the setup routes: go_router matches in order, and `setup`
       // would otherwise be read as a profile id.

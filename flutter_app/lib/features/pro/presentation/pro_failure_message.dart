@@ -6,6 +6,7 @@ String proFailureMessage(AppLocalizations l10n, Object? error) =>
     switch (error) {
       ProNetworkFailure() => l10n.errorNetwork,
       TooManyServices() => l10n.proErrorTooManyServices,
+      TooManyPhotos() => l10n.proErrorTooManyPhotos,
       InvalidHours() ||
       InvalidBreak() ||
       InvalidWeekday() => l10n.proErrorInvalidHours,

@@ -108,14 +108,6 @@
   "@homeProEmptyTitle": {
     "description": "Pro home empty state title"
   },
-  "homeProEmptyBody": "Add your services and hours to appear to customers. This step is coming soon.",
-  "@homeProEmptyBody": {
-    "description": "Pro home empty state body"
-  },
-  "homeProEmptyAction": "Complete my profile",
-  "@homeProEmptyAction": {
-    "description": "Disabled button until profile setup exists"
-  },
   "proSpaceFixedHint": "A professional account’s space is fixed and cannot be changed.",
   "@proSpaceFixedHint": {
     "description": "Tooltip on the pro space tag"
@@ -299,5 +291,46 @@
   "proUnavailableBody": "This profile does not exist or is no longer visible in your space.",
   "proUnavailableBack": "Back to home",
   "photoViewerPosition": "Photo {index} of {total}",
-  "proPhoneUnavailable": "Number unavailable"
+  "proPhoneUnavailable": "Number unavailable",
+  "dashboardPublished": "Published",
+  "dashboardPublishedBody": "{space, select, women{Customers in the Women’s space can see your profile.} other{Customers in the Men’s space can see your profile.}}",
+  "dashboardHidden": "Hidden",
+  "dashboardHiddenBody": "Customers can’t see your profile yet. Still missing:",
+  "dashboardReadyBody": "Your profile is complete. Publish it to appear to customers.",
+  "dashboardGap": "{gap, select, locality{Your town} mix{Your customers} services{At least one active service} other{Your opening hours}}",
+  "dashboardComplete": "Complete my profile",
+  "dashboardPublish": "Publish my profile",
+  "dashboardProfileSection": "Profile",
+  "dashboardEditProfile": "Edit profile",
+  "dashboardSave": "Save",
+  "dashboardServicesEmpty": "No active service: customers can’t find you.",
+  "dashboardAddService": "Add a service",
+  "dashboardEditHours": "Edit hours",
+  "dashboardSaveHours": "Save hours",
+  "dashboardHoursNeedOne": "Open at least one day.",
+  "dashboardPreview": "See my public profile",
+  "dashboardNoProfileBody": "Add your town, services and hours to appear to customers.",
+  "dashboardSalonTitle": "The salon space is coming soon",
+  "dashboardSalonBody": "You will soon be able to present your salon and its team.",
+  "photosCount": "{count} of 9 photos",
+  "photosAdd": "Add a photo",
+  "photosEmpty": "Show your work: add up to 9 photos.",
+  "photosLimit": "9 photos at most. Remove one to add another.",
+  "photosUploading": "Uploading the photo",
+  "photosUploadFailed": "Upload failed",
+  "photosDiscard": "Drop this photo",
+  "photoRemoveConfirmTitle": "Remove this photo?",
+  "photoRemoveConfirmBody": "It will no longer show on your profile.",
+  "photoRemoveConfirm": "Remove",
+  "proErrorTooManyPhotos": "You have reached the 9-photo limit.",
+  "privacySection": "Privacy",
+  "privacyPhoneLabel": "Your phone number",
+  "privacyPhonePublic": "Visible: customers can call you",
+  "privacyPhoneHidden": "Hidden",
+  "privacyPhoneFollowers": "Followers only",
+  "privacySoon": "Soon",
+  "privacyShowPrices": "Show my prices",
+  "privacyShowPricesHint": "{type, select, mobile{When hidden, customers read “Price on request”.} other{When hidden, customers read “Price at the salon”.}}",
+  "previewTag": "Preview",
+  "previewCallNote": "Customers will see a button to call you here."
 }

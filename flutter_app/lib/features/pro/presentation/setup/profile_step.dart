@@ -49,10 +49,14 @@ int? _bandOf(int? years) => switch (years) {
 
 /// Setup step 1: who the pro is and where they work. The first save creates
 /// the profile; later saves update it.
+///
+/// With [edit] (from the dashboard, once the profile exists) the step stands
+/// alone and saving returns home instead of continuing to the services.
 class ProfileStep extends ConsumerStatefulWidget {
-  const ProfileStep({this.incomplete = false, super.key});
+  const ProfileStep({this.incomplete = false, this.edit = false, super.key});
 
   final bool incomplete;
+  final bool edit;
 
   @override
   ConsumerState<ProfileStep> createState() => _ProfileStepState();
@@ -63,6 +67,7 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
   late final TextEditingController _workplaceName;
   late final ProKind _kind;
   late final Space _space;
+  late final bool _edit;
   int? _band;
   late WorkplaceType _workplace;
   String? _regionCode;
@@ -84,6 +89,8 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
     final account = ref.read(accountProvider).value!;
     final p = ref.read(myProProvider).value;
     _kind = ProKind.forRole(account.activeRole)!;
+    // Without a profile there is nothing to edit: the step creates it.
+    _edit = widget.edit && p != null;
     _space = p?.space ?? account.currentSpace;
     _name = TextEditingController(text: p?.displayName ?? account.fullName);
     _workplaceName = TextEditingController(text: p?.workplaceName);
@@ -169,7 +176,7 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
       });
       return;
     }
-    router.go('/pro/setup/services');
+    router.go(_edit ? '/home' : '/pro/setup/services');
   }
 
   Future<ProFailure?> _save() async {
@@ -261,12 +268,13 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
 
     return SetupStepScaffold(
       index: 0,
-      title: l10n.setupProfileTitle,
+      edit: _edit,
+      title: _edit ? l10n.dashboardEditProfile : l10n.setupProfileTitle,
       body: l10n.setupProfileBody(space),
       onBack: _leave,
       action: LemqesPrimaryButton(
         key: const Key('setupContinue'),
-        label: l10n.actionContinue,
+        label: _edit ? l10n.dashboardSave : l10n.actionContinue,
         expand: true,
         loading: _busy,
         onPressed: _busy ? null : _continue,

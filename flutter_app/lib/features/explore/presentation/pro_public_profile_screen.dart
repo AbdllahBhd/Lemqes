@@ -74,7 +74,9 @@ final phoneLauncherProvider = Provider<Future<bool> Function(Uri)>(
 /// "Today" for the hours table; overridable for stable goldens.
 final profileClockProvider = Provider<DateTime Function()>((_) => DateTime.now);
 
-int _experienceBand(int years) => switch (years) {
+/// The experience band (b0..b3) that `proPublicExperience` words a year
+/// count in.
+int experienceBandOf(int years) => switch (years) {
   < 2 => 0,
   < 5 => 1,
   < 10 => 2,
@@ -110,6 +112,10 @@ class ProPublicProfileScreen extends ConsumerWidget {
       _ => null,
     };
 
+    if (!state.hasError && profile != null) {
+      return ProPublicProfileView(profile: profile, bottomBar: callBar);
+    }
+
     final Widget body;
     if (state.hasError && !state.isLoading) {
       body = _StatePage(
@@ -121,7 +127,7 @@ class ProPublicProfileScreen extends ConsumerWidget {
       );
     } else if (!state.hasValue) {
       body = _StatePage(child: LoadingView(label: l10n.loading));
-    } else if (profile == null) {
+    } else {
       body = _StatePage(
         child: EmptyView(
           key: const Key('proUnavailable'),
@@ -135,37 +141,71 @@ class ProPublicProfileScreen extends ConsumerWidget {
           ),
         ),
       );
-    } else {
-      body = _ProfileBody(profile: profile);
     }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: Scaffold(body: body, bottomNavigationBar: callBar),
+      child: Scaffold(body: body),
+    );
+  }
+}
+
+/// One pro's public profile as customers see it, from a [profile] already
+/// shaped for them. [marker] sits on the band beside back (the owner's
+/// "preview" tag); [bottomBar] holds the call.
+class ProPublicProfileView extends StatelessWidget {
+  const ProPublicProfileView({
+    required this.profile,
+    this.marker,
+    this.bottomBar,
+    super.key,
+  });
+
+  final ProProfile profile;
+  final Widget? marker;
+  final Widget? bottomBar;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        body: _ProfileBody(profile: profile, marker: marker),
+        bottomNavigationBar: bottomBar,
+      ),
     );
   }
 }
 
 /// The band's top row: back, white on the gradient.
 class _BackRow extends StatelessWidget {
-  const _BackRow();
+  const _BackRow({this.marker});
+
+  final Widget? marker;
 
   @override
   Widget build(BuildContext context) {
+    final marker = this.marker;
     return Padding(
       padding: EdgeInsetsDirectional.only(
         start: 4,
+        end: 16,
         top: MediaQuery.paddingOf(context).top + 4,
       ),
       child: Align(
         alignment: AlignmentDirectional.topStart,
-        child: IconButton(
-          key: const Key('proBack'),
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          color: Colors.white,
-          icon: const BackButtonIcon(),
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/home'),
+        child: Row(
+          children: [
+            IconButton(
+              key: const Key('proBack'),
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              color: Colors.white,
+              icon: const BackButtonIcon(),
+              onPressed: () =>
+                  context.canPop() ? context.pop() : context.go('/home'),
+            ),
+            if (marker != null) ...[const Spacer(), Flexible(child: marker)],
+          ],
         ),
       ),
     );
@@ -193,9 +233,10 @@ class _StatePage extends StatelessWidget {
 }
 
 class _ProfileBody extends StatelessWidget {
-  const _ProfileBody({required this.profile});
+  const _ProfileBody({required this.profile, this.marker});
 
   final ProProfile profile;
+  final Widget? marker;
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +255,7 @@ class _ProfileBody extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _Hero(profile: p),
             ),
-            child: const _BackRow(),
+            child: _BackRow(marker: marker),
           ),
           Padding(
             // Each section adds its own 16 dp above.
@@ -346,7 +387,7 @@ class _HeroState extends ConsumerState<_Hero> {
     final years = p.experienceYears;
     final kindLine = years == null
         ? kind
-        : '$kind · ${l10n.proPublicExperience('b${_experienceBand(years)}')}';
+        : '$kind · ${l10n.proPublicExperience('b${experienceBandOf(years)}')}';
     final place = _placeOf(context, p.localityId);
     final muted = _muted(context);
 

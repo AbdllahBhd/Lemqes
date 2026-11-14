@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lemqes/app.dart';
 import 'package:lemqes/core/l10n/locale_controller.dart';
 import 'package:lemqes/core/router/app_router.dart';
@@ -15,6 +17,9 @@ import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
 import 'package:lemqes/features/geo/data/geo_repository.dart';
+import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.dart'
+    show profileClockProvider;
+import 'package:lemqes/features/pro/data/photo_uploader.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:lemqes/features/pro/data/pro_providers.dart';
@@ -113,6 +118,27 @@ class FakeProRepository extends Fake implements ProRepository {
 
   /// When set, [publish] throws it instead of applying the rule.
   ProFailure? publishFailure;
+
+  /// When set, the next write throws it (then it is cleared).
+  ProFailure? nextFailure;
+
+  void _failIfScripted() {
+    final failure = nextFailure;
+    if (failure == null) return;
+    nextFailure = null;
+    throw failure;
+  }
+
+  /// Like the database's trigger: a profile with no active service or no
+  /// open day is no longer listed.
+  void _unpublishIfIncomplete() {
+    final p = profile!;
+    if (p.isPublished &&
+        (!p.services.any((s) => s.active) || p.hours.isEmpty)) {
+      profile = copyProfile(p, unpublish: true);
+    }
+  }
+
   var _ids = 0;
 
   /// Answers for the next `mine` calls, in order (then the stored profile):
@@ -150,6 +176,7 @@ class FakeProRepository extends Fake implements ProRepository {
   @override
   Future<void> updateProfile(String proId, ProProfilePatch patch) async {
     calls.add('updateProfile');
+    _failIfScripted();
     lastPatch = patch;
     final p = profile!;
     bool cleared(PatchField f) => patch.clear.contains(f);
@@ -167,12 +194,16 @@ class FakeProRepository extends Fake implements ProRepository {
       customerMix: patch.customerMix ?? p.customerMix,
       serviceRadiusKm: patch.serviceRadiusKm ?? p.serviceRadiusKm,
       travelFeeDzd: patch.travelFeeDzd ?? p.travelFeeDzd,
+      phoneVisibility: patch.phoneVisibility,
+      showPrices: patch.showPrices,
+      avatarPath: patch.avatarPath,
     );
   }
 
   @override
   Future<ProService> upsertService(String proId, ProServiceDraft d) async {
     calls.add('upsertService');
+    _failIfScripted();
     final s = ProService(
       id: d.id ?? 's${++_ids}',
       presetKey: d.presetKey,
@@ -191,12 +222,14 @@ class FakeProRepository extends Fake implements ProRepository {
         s,
       ],
     );
+    _unpublishIfIncomplete();
     return s;
   }
 
   @override
   Future<void> archiveService(String serviceId) async {
     calls.add('archiveService');
+    _failIfScripted();
     final p = profile!;
     profile = copyProfile(
       p,
@@ -205,13 +238,16 @@ class FakeProRepository extends Fake implements ProRepository {
           if (o.id != serviceId) o,
       ],
     );
+    _unpublishIfIncomplete();
   }
 
   @override
   Future<void> setHours(String proId, List<DayHours> week) async {
     calls.add('setHours');
+    _failIfScripted();
     savedWeek = week;
     profile = copyProfile(profile!, hours: week);
+    _unpublishIfIncomplete();
   }
 
   @override
@@ -246,6 +282,12 @@ ProProfile copyProfile(
   DateTime? publishedAt,
   List<ProService>? services,
   List<DayHours>? hours,
+  List<ProPhoto>? photos,
+  PhoneVisibility? phoneVisibility,
+  bool? showPrices,
+  String? avatarPath,
+  bool? isVerified,
+  bool unpublish = false,
 }) => ProProfile(
   id: p.id,
   kind: p.kind,
@@ -258,14 +300,76 @@ ProProfile copyProfile(
   customerMix: customerMix ?? p.customerMix,
   serviceRadiusKm: serviceRadiusKm ?? p.serviceRadiusKm,
   travelFeeDzd: travelFeeDzd ?? p.travelFeeDzd,
-  phoneVisibility: p.phoneVisibility,
-  showPrices: p.showPrices,
-  isVerified: p.isVerified,
-  publishedAt: publishedAt ?? p.publishedAt,
+  phoneVisibility: phoneVisibility ?? p.phoneVisibility,
+  showPrices: showPrices ?? p.showPrices,
+  isVerified: isVerified ?? p.isVerified,
+  avatarPath: avatarPath ?? p.avatarPath,
+  publishedAt: unpublish ? null : publishedAt ?? p.publishedAt,
   services: services ?? p.services,
   hours: hours ?? p.hours,
-  photos: p.photos,
+  photos: photos ?? p.photos,
 );
+
+/// The photo backend over [FakeProRepository]'s profile, with the
+/// database's 9-photo cap.
+class FakeProPhotoUploader extends Fake implements PhotoUploader {
+  FakeProPhotoUploader(this.pros);
+
+  final FakeProRepository pros;
+  final calls = <String>[];
+
+  /// When set, the next upload throws it (then it is cleared).
+  ProFailure? nextFailure;
+
+  /// When set, uploads wait for it, so a test can see them in flight.
+  Completer<void>? gate;
+  var _n = 0;
+
+  @override
+  Future<ProPhoto> addWorkPhoto(String proId, XFile file) async {
+    calls.add('addWorkPhoto');
+    await gate?.future;
+    final failure = nextFailure;
+    if (failure != null) {
+      nextFailure = null;
+      throw failure;
+    }
+    final p = pros.profile!;
+    if (p.photos.length >= 9) throw const TooManyPhotos();
+    final photo = ProPhoto(
+      id: 'new${++_n}',
+      path: '$proId/new$_n.jpg',
+      sort: p.photos.length,
+    );
+    pros.profile = copyProfile(p, photos: [...p.photos, photo]);
+    return photo;
+  }
+
+  @override
+  Future<void> removeWorkPhoto(ProPhoto photo) async {
+    calls.add('removeWorkPhoto:${photo.id}');
+    final p = pros.profile!;
+    pros.profile = copyProfile(
+      p,
+      photos: [
+        for (final o in p.photos)
+          if (o.id != photo.id) o,
+      ],
+    );
+  }
+
+  @override
+  Future<String> uploadAvatar(String proId, XFile file) async {
+    calls.add('uploadAvatar');
+    final path = '$proId/avatar.jpg';
+    pros.profile = copyProfile(pros.profile!, avatarPath: path);
+    return path;
+  }
+
+  @override
+  String publicUrl(String bucket, String path) =>
+      'https://img.test/$bucket/$path';
+}
 
 /// A barber profile with every step done except what is switched off.
 ProProfile barberProfile({
@@ -305,12 +409,19 @@ ProProfile barberProfile({
 );
 
 class SetupHarness {
-  SetupHarness(this.router, this.container, this.pros, this.accounts);
+  SetupHarness(
+    this.router,
+    this.container,
+    this.pros,
+    this.accounts,
+    this.photos,
+  );
 
   final GoRouter router;
   final ProviderContainer container;
   final FakeProRepository pros;
   final MockAccountRepository accounts;
+  final FakeProPhotoUploader photos;
 
   String get location => router.routerDelegate.currentConfiguration.uri.path;
 
@@ -331,6 +442,8 @@ Future<SetupHarness> pumpSetup(
   void Function()? stubSignup,
   List<TimeOfDay>? timeAnswers,
   FakeGeoRepository? geo,
+  FakeProPhotoUploader Function(FakeProRepository pros)? photos,
+  List<Override> overrides = const [],
   Locale locale = const Locale('fr'),
   ThemeMode themeMode = ThemeMode.light,
   double textScale = 1,
@@ -367,6 +480,7 @@ Future<SetupHarness> pumpSetup(
     });
   }
   final fakePros = pros ?? FakeProRepository();
+  final fakePhotos = (photos ?? FakeProPhotoUploader.new)(fakePros);
 
   final container = ProviderContainer(
     retry: (_, _) => null,
@@ -377,6 +491,10 @@ Future<SetupHarness> pumpSetup(
       sessionProvider.overrideWith((ref) => Stream.value(testSession)),
       proRepositoryProvider.overrideWithValue(fakePros),
       geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
+      photoUploaderProvider.overrideWithValue(fakePhotos),
+      // A Wednesday, so the hours table's "today" is stable.
+      profileClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
+      ...overrides,
       if (timeAnswers != null)
         timePickProvider.overrideWithValue(
           (_, _) async => timeAnswers.removeAt(0),
@@ -413,7 +531,7 @@ Future<SetupHarness> pumpSetup(
     router.go(location);
     await settle(tester);
   }
-  return SetupHarness(router, container, fakePros, accounts);
+  return SetupHarness(router, container, fakePros, accounts, fakePhotos);
 }
 
 /// Steps time instead of pumpAndSettle: the code step's countdown never
@@ -426,6 +544,9 @@ Future<void> settle(WidgetTester tester) async {
 
 Future<void> tapAndSettle(WidgetTester tester, String key) async {
   await tester.ensureVisible(byKey(key));
+  // The scroll lands on the next layout; tapping before it aims at where
+  // the widget was.
+  await tester.pump();
   await tester.tap(byKey(key));
   await settle(tester);
 }

@@ -20,6 +20,7 @@ class ProSetupScreen extends ConsumerWidget {
   const ProSetupScreen({
     required this.step,
     this.incomplete = false,
+    this.edit = false,
     super.key,
   });
 
@@ -27,6 +28,9 @@ class ProSetupScreen extends ConsumerWidget {
 
   /// Publishing was refused because this step is unfinished.
   final bool incomplete;
+
+  /// Opened from the dashboard to edit the profile: saving returns home.
+  final bool edit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,7 +51,7 @@ class ProSetupScreen extends ConsumerWidget {
       child: switch (step) {
         'services' => ServicesStep(incomplete: incomplete),
         'hours' => HoursStep(incomplete: incomplete),
-        _ => ProfileStep(incomplete: incomplete),
+        _ => ProfileStep(incomplete: incomplete, edit: edit),
       },
     );
   }
@@ -88,6 +92,9 @@ class ProSetupEntryScreen extends ConsumerWidget {
 
 /// The wizard frame for setup step [index] (0-based): after sign-up the
 /// count carries on the wizard's (5-7 of 7), otherwise setup counts its own.
+///
+/// [edit] drops the step count: the step is edited on its own, from the
+/// dashboard.
 class SetupStepScaffold extends ConsumerWidget {
   const SetupStepScaffold({
     required this.index,
@@ -96,6 +103,7 @@ class SetupStepScaffold extends ConsumerWidget {
     required this.action,
     this.body,
     this.onBack,
+    this.edit = false,
     super.key,
   });
 
@@ -105,9 +113,18 @@ class SetupStepScaffold extends ConsumerWidget {
   final List<Widget> children;
   final Widget action;
   final VoidCallback? onBack;
+  final bool edit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (edit) {
+      return _EditScaffold(
+        title: title,
+        onBack: onBack,
+        action: action,
+        children: children,
+      );
+    }
     final fromSignup = ref.watch(signupJustCompletedProvider);
     final offset = fromSignup ? 4 : 0;
     return WizardStepScaffold(
@@ -118,6 +135,72 @@ class SetupStepScaffold extends ConsumerWidget {
       onBack: onBack,
       action: action,
       children: children,
+    );
+  }
+}
+
+/// One setup step edited alone: back, title, the fields, the save.
+class _EditScaffold extends StatelessWidget {
+  const _EditScaffold({
+    required this.title,
+    required this.children,
+    required this.action,
+    this.onBack,
+  });
+
+  final String title;
+  final List<Widget> children;
+  final Widget action;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final onBack = this.onBack;
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(4, 4, 24, 0),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: onBack == null
+                    ? const SizedBox(height: 48)
+                    : IconButton(
+                        tooltip: MaterialLocalizations.of(context)
+                            .backButtonTooltip,
+                        icon: const BackButtonIcon(),
+                        onPressed: onBack,
+                      ),
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ...children,
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+              child: action,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

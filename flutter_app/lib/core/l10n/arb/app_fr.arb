@@ -380,14 +380,6 @@
   "@homeProEmptyTitle": {
     "description": "Pro home empty state title"
   },
-  "homeProEmptyBody": "Ajoutez vos services et vos horaires pour apparaître auprès des clients. Cette étape arrive bientôt.",
-  "@homeProEmptyBody": {
-    "description": "Pro home empty state body"
-  },
-  "homeProEmptyAction": "Compléter mon profil",
-  "@homeProEmptyAction": {
-    "description": "Disabled button until profile setup exists"
-  },
   "proSpaceFixedHint": "L’espace d’un compte professionnel est fixe : il ne peut pas être changé.",
   "@proSpaceFixedHint": {
     "description": "Tooltip on the pro space tag"
@@ -996,5 +988,189 @@
   "proPhoneUnavailable": "Numéro indisponible",
   "@proPhoneUnavailable": {
     "description": "Public profile call bar when the phone lookup failed"
+  },
+  "dashboardPublished": "Publié",
+  "@dashboardPublished": {
+    "description": "Dashboard visibility: listed to customers"
+  },
+  "dashboardPublishedBody": "{space, select, women{Les clientes de l’Espace Femmes voient votre profil.} other{Les clients de l’Espace Hommes voient votre profil.}}",
+  "@dashboardPublishedBody": {
+    "description": "Dashboard visibility body when listed",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardHidden": "Masqué",
+  "@dashboardHidden": {
+    "description": "Dashboard visibility: not listed to customers"
+  },
+  "dashboardHiddenBody": "Les clients ne voient pas encore votre profil. Il manque :",
+  "@dashboardHiddenBody": {
+    "description": "Dashboard: unlisted profile, followed by the list of gaps"
+  },
+  "dashboardReadyBody": "Votre profil est complet. Publiez-le pour apparaître auprès des clients.",
+  "@dashboardReadyBody": {
+    "description": "Dashboard: complete but unlisted profile"
+  },
+  "dashboardGap": "{gap, select, locality{Votre commune} mix{Votre clientèle} services{Au moins un service actif} other{Vos horaires d’ouverture}}",
+  "@dashboardGap": {
+    "description": "One missing piece that blocks publishing",
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardComplete": "Compléter mon profil",
+  "@dashboardComplete": {
+    "description": "Dashboard: opens setup at the first missing step"
+  },
+  "dashboardPublish": "Publier mon profil",
+  "@dashboardPublish": {
+    "description": "Dashboard: publishes a complete profile"
+  },
+  "dashboardProfileSection": "Profil",
+  "@dashboardProfileSection": {
+    "description": "Dashboard section heading"
+  },
+  "dashboardEditProfile": "Modifier le profil",
+  "@dashboardEditProfile": {
+    "description": "Dashboard action and title of the profile edit screen"
+  },
+  "dashboardSave": "Enregistrer",
+  "@dashboardSave": {
+    "description": "Save button of the profile edit screen"
+  },
+  "dashboardServicesEmpty": "Aucun service actif : les clients ne peuvent pas vous trouver.",
+  "@dashboardServicesEmpty": {
+    "description": "Dashboard services card with no active service"
+  },
+  "dashboardAddService": "Ajouter un service",
+  "@dashboardAddService": {
+    "description": "Dashboard action and sheet title"
+  },
+  "dashboardEditHours": "Modifier les horaires",
+  "@dashboardEditHours": {
+    "description": "Dashboard action and hours sheet title"
+  },
+  "dashboardSaveHours": "Enregistrer les horaires",
+  "@dashboardSaveHours": {
+    "description": "Hours sheet save button"
+  },
+  "dashboardHoursNeedOne": "Ouvrez au moins un jour.",
+  "@dashboardHoursNeedOne": {
+    "description": "Hours sheet: every day is closed"
+  },
+  "dashboardPreview": "Voir mon profil public",
+  "@dashboardPreview": {
+    "description": "Dashboard: opens the customer view of the profile"
+  },
+  "dashboardNoProfileBody": "Ajoutez votre commune, vos services et vos horaires pour apparaître auprès des clients.",
+  "@dashboardNoProfileBody": {
+    "description": "Dashboard of a pro with no profile yet"
+  },
+  "dashboardSalonTitle": "L’espace salon arrive bientôt",
+  "@dashboardSalonTitle": {
+    "description": "Salon owner dashboard (salons come later)"
+  },
+  "dashboardSalonBody": "Vous pourrez bientôt présenter votre salon et son équipe.",
+  "@dashboardSalonBody": {
+    "description": "Salon owner dashboard body"
+  },
+  "photosCount": "{count} photos sur 9",
+  "@photosCount": {
+    "description": "Spoken photo count; the screen shows count/9",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosAdd": "Ajouter une photo",
+  "@photosAdd": {
+    "description": "Gallery add tile"
+  },
+  "photosEmpty": "Montrez votre travail : ajoutez jusqu’à 9 photos.",
+  "@photosEmpty": {
+    "description": "Gallery with no photo"
+  },
+  "photosLimit": "9 photos au maximum. Retirez-en une pour en ajouter une autre.",
+  "@photosLimit": {
+    "description": "Gallery is full"
+  },
+  "photosUploading": "Envoi de la photo",
+  "@photosUploading": {
+    "description": "Spoken label of an upload in progress"
+  },
+  "photosUploadFailed": "Échec de l’envoi",
+  "@photosUploadFailed": {
+    "description": "A photo that could not be uploaded"
+  },
+  "photosDiscard": "Abandonner cette photo",
+  "@photosDiscard": {
+    "description": "Drops a failed upload"
+  },
+  "photoRemoveConfirmTitle": "Retirer cette photo ?",
+  "@photoRemoveConfirmTitle": {
+    "description": "Confirm dialog title"
+  },
+  "photoRemoveConfirmBody": "Elle ne sera plus visible sur votre profil.",
+  "@photoRemoveConfirmBody": {
+    "description": "Confirm dialog body"
+  },
+  "photoRemoveConfirm": "Retirer",
+  "@photoRemoveConfirm": {
+    "description": "Confirm dialog action"
+  },
+  "proErrorTooManyPhotos": "Vous avez atteint la limite de 9 photos.",
+  "@proErrorTooManyPhotos": {
+    "description": "Server refused a 10th photo"
+  },
+  "privacySection": "Confidentialité",
+  "@privacySection": {
+    "description": "Dashboard section heading"
+  },
+  "privacyPhoneLabel": "Votre numéro de téléphone",
+  "@privacyPhoneLabel": {
+    "description": "Privacy: phone visibility group"
+  },
+  "privacyPhonePublic": "Visible : les clients peuvent vous appeler",
+  "@privacyPhonePublic": {
+    "description": "Phone visibility choice"
+  },
+  "privacyPhoneHidden": "Masqué",
+  "@privacyPhoneHidden": {
+    "description": "Phone visibility choice"
+  },
+  "privacyPhoneFollowers": "Abonnés seulement",
+  "@privacyPhoneFollowers": {
+    "description": "Phone visibility choice, not available yet"
+  },
+  "privacySoon": "Bientôt",
+  "@privacySoon": {
+    "description": "Tag on a choice that is not available yet"
+  },
+  "privacyShowPrices": "Afficher mes prix",
+  "@privacyShowPrices": {
+    "description": "Privacy: show prices switch"
+  },
+  "privacyShowPricesHint": "{type, select, mobile{Masqués, vos clients lisent « Prix sur demande ».} other{Masqués, vos clients lisent « Prix au salon ».}}",
+  "@privacyShowPricesHint": {
+    "description": "Under the show prices switch; quotes the hidden-price words",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "previewTag": "Aperçu",
+  "@previewTag": {
+    "description": "Marks the owner preview of the public profile"
+  },
+  "previewCallNote": "Vos clients verront ici un bouton pour vous appeler.",
+  "@previewCallNote": {
+    "description": "Preview: under the disabled call button"
   }
 }

@@ -108,14 +108,6 @@
   "@homeProEmptyTitle": {
     "description": "Pro home empty state title"
   },
-  "homeProEmptyBody": "Rnu tinawin-ik d yisragen-ik akken ad d-tbanem i yiɣellayen. Aya ad d-yas qrib.",
-  "@homeProEmptyBody": {
-    "description": "Pro home empty state body"
-  },
-  "homeProEmptyAction": "Fak amaɣnu-inu",
-  "@homeProEmptyAction": {
-    "description": "Disabled button until profile setup exists"
-  },
   "proSpaceFixedHint": "Tamnaṭ n umiḍan n uxeddim ur tettbeddil ara.",
   "@proSpaceFixedHint": {
     "description": "Tooltip on the pro space tag"
@@ -299,5 +291,46 @@
   "proUnavailableBody": "Amaɣnu-a ulac-it neɣ ur d-yettban ara deg tamnaṭ-ik.",
   "proUnavailableBack": "Uɣal ɣer usebter agejdan",
   "photoViewerPosition": "Tawlaft {index} seg {total}",
-  "proPhoneUnavailable": "Uṭṭun ulac-it"
+  "proPhoneUnavailable": "Uṭṭun ulac-it",
+  "dashboardPublished": "Yettwasuffeɣ",
+  "dashboardPublishedBody": "{space, select, women{Tilawin n tamnaṭ n tilawin ttwalint amaɣnu-ik.} other{Irgazen n tamnaṭ n yirgazen ttwalin amaɣnu-ik.}}",
+  "dashboardHidden": "Yeffer",
+  "dashboardHiddenBody": "Iɣellayen ur ttwalin ara amaɣnu-ik yakan. Ixuṣṣ:",
+  "dashboardReadyBody": "Amaɣnu-ik yemmed. Suffeɣ-it akken ad d-tbanem i yiɣellayen.",
+  "dashboardGap": "{gap, select, locality{Tamdint-ik} mix{Iɣellayen-ik} services{Ma drus yiwet n tenfa yermden} other{Isragen n tilin}}",
+  "dashboardComplete": "Fak amaɣnu-inu",
+  "dashboardPublish": "Suffeɣ amaɣnu-inu",
+  "dashboardProfileSection": "Amaɣnu",
+  "dashboardEditProfile": "Ẓreg amaɣnu",
+  "dashboardSave": "Sekles",
+  "dashboardServicesEmpty": "Ulac tanfa yermden: iɣellayen ur k-ttafen ara.",
+  "dashboardAddService": "Rnu tanfa",
+  "dashboardEditHours": "Ẓreg isragen",
+  "dashboardSaveHours": "Sekles isragen",
+  "dashboardHoursNeedOne": "Ldi ma drus yiwen n wass.",
+  "dashboardPreview": "Wali amaɣnu-inu azayez",
+  "dashboardNoProfileBody": "Rnu tamdint-ik, tinfa-ik d yisragen-ik akken ad d-tbanem i yiɣellayen.",
+  "dashboardSalonTitle": "Tamnaṭ n ssalun ad d-tas qrib",
+  "dashboardSalonBody": "Qrib ad tizmireḍ ad d-tesskneḍ ssalun-ik d tarbaɛt-is.",
+  "photosCount": "{count} n tewlafin seg 9",
+  "photosAdd": "Rnu tawlaft",
+  "photosEmpty": "Sken-d axeddim-ik: rnu alamma d 9 n tewlafin.",
+  "photosLimit": "9 n tewlafin d afellay. Kkes yiwet akken ad ternuḍ tayeḍ.",
+  "photosUploading": "Tawlaft tettwazen",
+  "photosUploadFailed": "Tuzna ur teddi ara",
+  "photosDiscard": "Eǧǧ tawlaft-a",
+  "photoRemoveConfirmTitle": "Ad tekkseḍ tawlaft-a?",
+  "photoRemoveConfirmBody": "Ur d-tettban ara deg umaɣnu-ik.",
+  "photoRemoveConfirm": "Kkes",
+  "proErrorTooManyPhotos": "Tewḍeḍ ɣer tlist n 9 n tewlafin.",
+  "privacySection": "Tabaḍnit",
+  "privacyPhoneLabel": "Uṭṭun-ik n tilifun",
+  "privacyPhonePublic": "Yettban: iɣellayen zemren ad k-siwlen",
+  "privacyPhoneHidden": "Yeffer",
+  "privacyPhoneFollowers": "Imeḍfaṛen kan",
+  "privacySoon": "Qrib",
+  "privacyShowPrices": "Sken-d ssuma-inu",
+  "privacyShowPricesHint": "{type, select, mobile{Ma ffren, iɣellayen ad ɣren « Ssuma s usuter ».} other{Ma ffren, iɣellayen ad ɣren « Ssuma deg ssalun ».}}",
+  "previewTag": "Taskant",
+  "previewCallNote": "Iɣellayen-ik ad walin dagi taqeffalt i usiwel."
 }

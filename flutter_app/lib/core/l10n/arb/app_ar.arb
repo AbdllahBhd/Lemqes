@@ -108,14 +108,6 @@
   "@homeProEmptyTitle": {
     "description": "Pro home empty state title"
   },
-  "homeProEmptyBody": "أضف خدماتك وساعات عملك لتظهر للزبائن. هذه الخطوة قادمة قريباً.",
-  "@homeProEmptyBody": {
-    "description": "Pro home empty state body"
-  },
-  "homeProEmptyAction": "إكمال ملفي الشخصي",
-  "@homeProEmptyAction": {
-    "description": "Disabled button until profile setup exists"
-  },
   "proSpaceFixedHint": "فضاء الحساب المهني ثابت ولا يمكن تغييره.",
   "@proSpaceFixedHint": {
     "description": "Tooltip on the pro space tag"
@@ -299,5 +291,46 @@
   "proUnavailableBody": "هذا الملف غير موجود أو لم يعد ظاهراً في فضائك.",
   "proUnavailableBack": "العودة إلى الرئيسية",
   "photoViewerPosition": "الصورة {index} من {total}",
-  "proPhoneUnavailable": "الرقم غير متاح"
+  "proPhoneUnavailable": "الرقم غير متاح",
+  "dashboardPublished": "منشور",
+  "dashboardPublishedBody": "{space, select, women{زبونات فضاء النساء يرين ملفك.} other{زبائن فضاء الرجال يرون ملفك.}}",
+  "dashboardHidden": "مخفي",
+  "dashboardHiddenBody": "لا يرى الزبائن ملفك بعد. ينقصه:",
+  "dashboardReadyBody": "ملفك مكتمل. انشره ليظهر للزبائن.",
+  "dashboardGap": "{gap, select, locality{بلديتك} mix{زبائنك} services{خدمة نشطة واحدة على الأقل} other{ساعات العمل}}",
+  "dashboardComplete": "إكمال ملفي",
+  "dashboardPublish": "نشر ملفي",
+  "dashboardProfileSection": "الملف",
+  "dashboardEditProfile": "تعديل الملف",
+  "dashboardSave": "حفظ",
+  "dashboardServicesEmpty": "لا توجد خدمة نشطة: لا يمكن للزبائن إيجادك.",
+  "dashboardAddService": "إضافة خدمة",
+  "dashboardEditHours": "تعديل الساعات",
+  "dashboardSaveHours": "حفظ الساعات",
+  "dashboardHoursNeedOne": "افتح يوماً واحداً على الأقل.",
+  "dashboardPreview": "عرض ملفي العام",
+  "dashboardNoProfileBody": "أضف بلديتك وخدماتك وساعات عملك لتظهر للزبائن.",
+  "dashboardSalonTitle": "فضاء الصالون قادم قريباً",
+  "dashboardSalonBody": "ستتمكن قريباً من تقديم صالونك وفريقه.",
+  "photosCount": "{count} صور من 9",
+  "photosAdd": "إضافة صورة",
+  "photosEmpty": "اعرض عملك: أضف حتى 9 صور.",
+  "photosLimit": "9 صور كحد أقصى. احذف واحدة لإضافة أخرى.",
+  "photosUploading": "جارٍ رفع الصورة",
+  "photosUploadFailed": "فشل الرفع",
+  "photosDiscard": "التخلي عن هذه الصورة",
+  "photoRemoveConfirmTitle": "حذف هذه الصورة؟",
+  "photoRemoveConfirmBody": "لن تظهر بعد الآن في ملفك.",
+  "photoRemoveConfirm": "حذف",
+  "proErrorTooManyPhotos": "وصلت إلى حد 9 صور.",
+  "privacySection": "الخصوصية",
+  "privacyPhoneLabel": "رقم هاتفك",
+  "privacyPhonePublic": "ظاهر: يمكن للزبائن الاتصال بك",
+  "privacyPhoneHidden": "مخفي",
+  "privacyPhoneFollowers": "المتابعون فقط",
+  "privacySoon": "قريباً",
+  "privacyShowPrices": "إظهار أسعاري",
+  "privacyShowPricesHint": "{type, select, mobile{عند إخفائها، يقرأ الزبائن «السعر عند الطلب».} other{عند إخفائها، يقرأ الزبائن «السعر في الصالون».}}",
+  "previewTag": "معاينة",
+  "previewCallNote": "سيرى زبائنك هنا زراً للاتصال بك."
 }
