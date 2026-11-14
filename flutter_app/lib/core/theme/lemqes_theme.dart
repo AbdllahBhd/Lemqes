@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'lemqes_gradients.dart';
 import 'lemqes_tokens.dart';
+import 'status_colors.dart';
 import 'lemqes_typography.dart';
 
 export 'lemqes_typography.dart'
@@ -95,7 +96,10 @@ ThemeData lemqesTheme(Brightness brightness) {
     fontFamilyFallback: const ['NotoSansArabic', 'NotoSansTifinagh'],
     scaffoldBackgroundColor: scheme.surface,
     materialTapTargetSize: MaterialTapTargetSize.padded,
-    extensions: const [LemqesGradients.lagoon],
+    extensions: [
+      LemqesGradients.lagoon,
+      brightness == Brightness.dark ? StatusColors.dark : StatusColors.light,
+    ],
     cardTheme: CardThemeData(
       color: scheme.surfaceContainerLow,
       elevation: 0,

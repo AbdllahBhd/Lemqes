@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../storage/shared_preferences_provider.dart';
 import 'gen/app_localizations.dart';
@@ -29,6 +30,11 @@ Locale resolveInitialLocale(List<Locale> deviceLocales) {
   return const Locale('ar');
 }
 
+/// The stored language, else the device's, else Arabic.
+Locale localeFromPrefs(SharedPreferences prefs) =>
+    LocaleController._parse(prefs.getString(LocaleController.prefsKey)) ??
+    resolveInitialLocale(PlatformDispatcher.instance.locales);
+
 final localeProvider = NotifierProvider<LocaleController, Locale>(
   LocaleController.new,
 );
@@ -39,15 +45,13 @@ class LocaleController extends Notifier<Locale> {
 
   @override
   Locale build() {
-    final stored = ref.watch(sharedPreferencesProvider).getString(prefsKey);
-    final locale =
-        _parse(stored) ??
-        resolveInitialLocale(PlatformDispatcher.instance.locales);
+    final locale = localeFromPrefs(ref.watch(sharedPreferencesProvider));
     Intl.defaultLocale = intlLocaleFor(locale);
     return locale;
   }
 
   Future<void> setLocale(Locale locale) async {
+    await ensureDateFormatting(locale);
     state = locale;
     Intl.defaultLocale = intlLocaleFor(locale);
     await ref

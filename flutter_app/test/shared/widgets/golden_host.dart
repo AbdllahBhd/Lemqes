@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lemqes/core/theme/lemqes_theme.dart';
 
 /// One golden variant: a theme brightness and a locale with its direction.
