@@ -318,6 +318,9 @@ class FakeProPhotoUploader extends Fake implements PhotoUploader {
   final FakeProRepository pros;
   final calls = <String>[];
 
+  /// The `avatar_path` handed over as replaced by the last avatar upload.
+  String? replacedAvatar;
+
   /// When set, the next upload (work photo or avatar) throws it, then it is
   /// cleared.
   ProFailure? nextFailure;
@@ -361,8 +364,13 @@ class FakeProPhotoUploader extends Fake implements PhotoUploader {
   }
 
   @override
-  Future<String> uploadAvatar(String proId, XFile file) async {
+  Future<String> uploadAvatar(
+    String proId,
+    XFile file, {
+    String? previous,
+  }) async {
     calls.add('uploadAvatar');
+    replacedAvatar = previous;
     await gate?.future;
     final failure = nextFailure;
     if (failure != null) {

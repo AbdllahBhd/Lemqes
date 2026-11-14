@@ -103,9 +103,14 @@ class MyProController extends AsyncNotifier<ProProfile?> {
   Future<ProFailure?> publish() =>
       _runOnProfile((id) => ref.read(proRepositoryProvider).publish(id));
 
-  Future<ProFailure?> uploadAvatar(XFile file) => _runOnProfile(
-    (id) => ref.read(photoUploaderProvider).uploadAvatar(id, file),
-  );
+  Future<ProFailure?> uploadAvatar(XFile file) {
+    final previous = state.value?.avatarPath;
+    return _runOnProfile(
+      (id) => ref
+          .read(photoUploaderProvider)
+          .uploadAvatar(id, file, previous: previous),
+    );
+  }
 
   Future<ProFailure?> addWorkPhoto(XFile file) => _runOnProfile(
     (id) => ref.read(photoUploaderProvider).addWorkPhoto(id, file),

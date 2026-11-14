@@ -217,6 +217,10 @@ void main() {
     await tapAndSettle(tester, 'dashAvatar');
     expect(h.photos.calls, ['uploadAvatar']);
     expect(h.pros.profile!.avatarPath, 'p1/avatar.jpg');
+
+    // A second change hands the first photo over for removal.
+    await tapAndSettle(tester, 'dashAvatar');
+    expect(h.photos.replacedAvatar, 'p1/avatar.jpg');
   });
 
   testWidgets('a pro without a profile is sent to set it up', (tester) async {

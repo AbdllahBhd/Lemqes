@@ -24,16 +24,24 @@ class PhotoUploader {
 
   /// Needs the profile to exist (its id is the folder). Returns the path now
   /// stored in `avatar_path`.
-  Future<String> uploadAvatar(String proId, XFile file) => guardPro(() async {
-    final path = await _upload(avatarsBucket, proId, file);
-    try {
-      await _api.update('pro_profiles', proId, {'avatar_path': path});
-    } on Object {
-      await _discard(avatarsBucket, path);
-      rethrow;
-    }
-    return path;
-  });
+  ///
+  /// [previous] (the replaced `avatar_path`) is removed once the row points
+  /// at the new photo: the bucket is public, so a kept object would stay
+  /// reachable. Its removal is best effort and never fails the upload.
+  Future<String> uploadAvatar(String proId, XFile file, {String? previous}) =>
+      guardPro(() async {
+        final path = await _upload(avatarsBucket, proId, file);
+        try {
+          await _api.update('pro_profiles', proId, {'avatar_path': path});
+        } on Object {
+          await _discard(avatarsBucket, path);
+          rethrow;
+        }
+        if (previous != null && previous != path) {
+          await _discard(avatarsBucket, previous);
+        }
+        return path;
+      });
 
   Future<ProPhoto> addWorkPhoto(String proId, XFile file) => guardPro(() async {
     final path = await _upload(workPhotosBucket, proId, file);
@@ -72,9 +80,9 @@ class PhotoUploader {
     try {
       await _storage.remove(bucket, [path]);
     } on Object catch (e, st) {
-      // The caller's original error matters more; the orphan is harmless.
+      // The caller's outcome matters more; an orphan only takes space.
       developer.log(
-        'orphan upload not removed: $bucket/$path',
+        'orphan object not removed: $bucket/$path',
         error: e,
         stackTrace: st,
       );

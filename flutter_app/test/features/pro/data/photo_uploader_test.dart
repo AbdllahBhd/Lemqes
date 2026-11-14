@@ -189,4 +189,74 @@ void main() {
     when(() => storage.publicUrl('avatars', 'p/a.jpg')).thenReturn('u');
     expect(uploader.publicUrl('avatars', 'p/a.jpg'), 'u');
   });
+
+  group('replacing the avatar', () {
+    // The buckets are public: a replaced photo left in place stays reachable
+    // by anyone who kept its URL.
+    test(
+      'removes the previous object once the row points at the new one',
+      () async {
+        when(() => api.update('pro_profiles', 'pro1', any()))
+            .thenAnswer((_) async => {});
+        final path = await uploader.uploadAvatar(
+          'pro1',
+          file,
+          previous: 'pro1/old.jpg',
+        );
+        verifyInOrder([
+          () => storage.upload('avatars', path, any(), 'image/jpeg'),
+          () => api.update('pro_profiles', 'pro1', {'avatar_path': path}),
+          () => storage.remove('avatars', ['pro1/old.jpg']),
+        ]);
+      },
+    );
+
+    test('a failed removal is logged, never fails the upload', () async {
+      when(() => api.update('pro_profiles', 'pro1', any()))
+          .thenAnswer((_) async => {});
+      when(() => storage.remove('avatars', ['pro1/old.jpg']))
+          .thenThrow(Exception('offline'));
+      final path = await uploader.uploadAvatar(
+        'pro1',
+        file,
+        previous: 'pro1/old.jpg',
+      );
+      expect(path, matches(RegExp(r'^pro1/[A-Za-z0-9_-]+\.(jpg|png|webp)$')));
+    });
+
+    test('keeps the previous object when the row update fails', () async {
+      when(() => api.update('pro_profiles', 'pro1', any()))
+          .thenThrow(Exception('denied'));
+      await expectLater(
+        uploader.uploadAvatar('pro1', file, previous: 'pro1/old.jpg'),
+        throwsA(anything),
+      );
+      verifyNever(() => storage.remove('avatars', ['pro1/old.jpg']));
+    });
+
+    test('a first avatar removes nothing', () async {
+      when(() => api.update('pro_profiles', 'pro1', any()))
+          .thenAnswer((_) async => {});
+      await uploader.uploadAvatar('pro1', file);
+      verifyNever(() => storage.remove(any(), any()));
+    });
+  });
+
+  // The storage policies and row CHECKs accept exactly this shape
+  // (20261115000240_pro_storage_paths.sql).
+  test('every generated object name fits the database path rule', () async {
+    when(() => api.update('pro_profiles', 'pro1', any()))
+        .thenAnswer((_) async => {});
+    for (final bytes in [
+      [0xFF, 0xD8, 1],
+      [0x89, 0x50, 0x4E, 0x47],
+      [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50],
+    ]) {
+      final path = await uploader.uploadAvatar(
+        'pro1',
+        XFile.fromData(Uint8List.fromList(bytes)),
+      );
+      expect(path, matches(RegExp(r'^pro1/[A-Za-z0-9_-]+\.(jpg|png|webp)$')));
+    }
+  });
 }
