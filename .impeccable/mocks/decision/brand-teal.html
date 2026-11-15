@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=800">
+<title>LEMQES Canon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{margin:0;width:800px;height:844px;overflow:hidden;background:#D1D5DB;font-family:'Inter','Noto Sans Arabic',sans-serif;color:#111827;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;line-height:1.4}
+.s{position:absolute;top:0;width:390px;height:844px;border-radius:28px;overflow:hidden;background:#fff}
+.l{left:0}.r{left:410px}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i *{vector-effect:non-scaling-stroke}
+svg.sm{width:18px;height:18px}
+.sb{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:14px;font-weight:600;direction:ltr}
+.sg{display:flex;align-items:flex-end;gap:2px;height:12px}.sg i{width:3px;background:#111827;border-radius:1px}
+.bt{width:24px;height:12px;border:1.5px solid #111827;border-radius:3px;padding:1.5px;margin-left:6px}.bt i{display:block;height:100%;width:70%;background:#111827;border-radius:1px}
+.rt{display:flex;align-items:center}
+.ab{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.wm{font-size:22px;font-weight:700;letter-spacing:.06em;margin-right:8px}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 8px;border:1px solid #D1D5DB;border-radius:8px;font-size:12px;font-weight:500;color:#374151;vertical-align:middle}
+.loc{display:flex;align-items:center;gap:4px;height:48px;font-size:14px;font-weight:500}
+.srch{margin:4px 16px 0;height:48px;border-radius:24px;background:#F3F4F6;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:16px;color:#4B5563}
+.info{margin:16px 16px 0;padding:16px;border-radius:16px;background:#EEF7F8;display:flex;gap:12px}
+.pos{width:48px;height:48px;border-radius:24px;background:#fff;color:#0F6E7A;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:16px;font-weight:600}
+.m{font-size:14px;color:#374151;margin-top:2px}
+.btn{margin-top:12px;height:48px;padding:0 24px;border-radius:24px;background:#0F6E7A;color:#fff;font-size:14px;font-weight:600;display:inline-flex;align-items:center}
+.chips{display:flex;gap:8px;padding:8px 16px;overflow:hidden}
+.chip{height:32px;padding:0 12px;border-radius:8px;border:1px solid #D1D5DB;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;color:#374151;white-space:nowrap;flex:none}
+.chip.on{background:#0F6E7A;border-color:#0F6E7A;color:#fff;padding-left:8px}
+.sh{padding:8px 16px 4px;font-size:16px;font-weight:600}
+.it{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #E5E7EB}
+.it.me{background:#EEF7F8}
+.ph{width:56px;height:56px;border-radius:12px;background:#F3F4F6;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#374151}
+.me .ph{background:#fff}
+.bd{flex:1;min-width:0}
+.nm{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.n{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar{font-size:14px;font-weight:400;color:#6B7280;margin-left:6px}
+.me .ar,.me .mu{color:#4B5563}
+.pr{font-size:14px;color:#4B5563;white-space:nowrap}.pr b{color:#111827;font-weight:600}
+.mu{font-size:14px;color:#6B7280;margin-top:2px}.mu b{color:#111827;font-weight:600}
+.st{display:flex;align-items:center;gap:6px;font-size:14px;margin-top:4px;color:#374151}
+.d{width:8px;height:8px;border-radius:50%;flex:none}
+.g{background:#16A34A}.a{background:#D97706}.x{background:#9CA3AF}
+.gw{color:#15803D;font-weight:600}.aw{color:#B45309;font-weight:600}
+.nav{position:absolute;left:0;right:0;bottom:0;height:80px;background:#fff;border-top:1px solid #E5E7EB;display:flex;padding-top:12px}
+.nv{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:500;color:#4B5563}
+.pl{width:64px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.nv.on{color:#111827;font-weight:600}.nv.on .pl{background:#CDE9EC;color:#0B5560}
+.ab2{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.h1{font-size:22px;font-weight:700;line-height:1.3}
+.sub{font-size:14px;color:#4B5563;display:flex;align-items:center;gap:8px}
+.wal{height:32px;padding:0 12px;border:1px solid #D1D5DB;border-radius:8px;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:#374151}
+.seg{display:flex;margin:12px 16px 0;height:48px;border:1px solid #D1D5DB;border-radius:24px;overflow:hidden}
+.sgi{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:500;color:#374151}
+.sgi+.sgi{border-right:1px solid #D1D5DB}
+.sgi.on{background:#CDE9EC;color:#111827;font-weight:600}
+.card{margin:16px;padding:16px;border:1px solid #E5E7EB;border-radius:16px}
+.lb{font-size:14px;font-weight:500;color:#4B5563}
+.ct{display:flex;align-items:center;justify-content:space-between}
+.num{font-size:56px;font-weight:700;line-height:64px}
+.ctl{display:flex;gap:8px}
+.ob{width:64px;height:48px;border:1px solid #D1D5DB;border-radius:24px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.pri{margin-top:16px;height:56px;border-radius:28px;background:#0F6E7A;color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.now{margin:0 16px;padding:12px 16px;background:#F3F4F6;border-radius:12px;display:flex;align-items:center;gap:12px}
+.nt{height:24px;padding:0 8px;border-radius:8px;background:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center}
+.nw{flex:1;font-size:16px;font-weight:600}.nw span{font-size:14px;font-weight:400;color:#374151}
+.qh{padding:16px 16px 4px;font-size:14px;font-weight:600;color:#4B5563}
+.qi{display:flex;align-items:center;gap:16px;padding:0 16px;height:64px}
+.qi+.qi .qb{border-top:1px solid #E5E7EB}
+.qn{width:40px;height:40px;border-radius:20px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex:none}
+.qb{flex:1;height:64px;display:flex;align-items:center;justify-content:space-between}
+.qt{font-size:16px;font-weight:500}.qs{font-size:14px;color:#6B7280}
+.ring{width:8px;height:8px;border-radius:50%;border:1.5px solid #6B7280}
+.bk{height:24px;padding:0 8px;border:1px solid #D1D5DB;border-radius:8px;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+</style>
+</head>
+<body>
+<section class="s l">
+  <div class="sb"><span>9:41</span><span class="rt"><span class="sg"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:12px"></i></span><span class="bt"><i></i></span></span></div>
+  <header class="ab">
+    <div><span class="wm">LEMQES</span><span class="tag">Espace Hommes</span></div>
+    <div class="loc"><svg class="i sm" viewBox="0 0 24 24"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>Kouba, Alger<svg class="i sm" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg></div>
+  </header>
+  <div class="srch"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>Rechercher un salon ou un service</div>
+  <div class="info">
+    <div class="pos">3e</div>
+    <div>
+      <div class="t">Vous êtes 3e chez Amine Coiffure</div>
+      <div class="m">~25 min · 2 personnes avant vous</div>
+      <span class="btn">Je suis en route</span>
+    </div>
+  </div>
+  <div class="chips">
+    <span class="chip on"><svg class="i sm" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Ouverts maintenant</span>
+    <span class="chip">File courte</span>
+    <span class="chip">À domicile</span>
+  </div>
+  <div class="sh">Près de vous · 6</div>
+  <div class="it">
+    <div class="ph">SK</div>
+    <div class="bd">
+      <div class="nm"><span class="n">Salon Karim<bdi class="ar" lang="ar">صالون كريم</bdi></span><span class="pr">dès <b>600 DA</b></span></div>
+      <div class="mu"><b>4,8 ★</b> (126) · Kouba · 350 m</div>
+      <div class="st"><span class="d g"></span><span class="gw">Ouvert</span>· 2 en attente · ~15 min</div>
+    </div>
+  </div>
+  <div class="it me">
+    <div class="ph">AC</div>
+    <div class="bd">
+      <div class="nm"><span class="n">Amine Coiffure<bdi class="ar" lang="ar">أمين للحلاقة</bdi></span><span class="pr">dès <b>500 DA</b></span></div>
+      <div class="mu"><b>4,6 ★</b> (89) · Garidi · 900 m</div>
+      <div class="st"><span class="d g"></span><span class="gw">Ouvert</span>· 5 en attente · ~40 min</div>
+    </div>
+  </div>
+  <div class="it">
+    <div class="ph">BY</div>
+    <div class="bd">
+      <div class="nm"><span class="n">Barber Yacine<bdi class="ar" lang="ar">ياسين باربر</bdi></span><span class="pr">dès <b>700 DA</b></span></div>
+      <div class="mu"><b>4,9 ★</b> (212) · Vieux Kouba · 1,2 km</div>
+      <div class="st"><span class="d a"></span><span class="aw">En pause</span>· reprend 14:30</div>
+    </div>
+  </div>
+  <div class="it">
+    <div class="ph">SH</div>
+    <div class="bd">
+      <div class="nm"><span class="n">Studio Hydra<bdi class="ar" lang="ar">ستوديو حيدرة</bdi></span><span class="pr">dès <b>1&nbsp;200 DA</b></span></div>
+      <div class="mu"><b>4,7 ★</b> (54) · Hydra · 2,8 km</div>
+      <div class="st"><span class="d g"></span><span class="gw">Ouvert</span>· 1 en attente · ~5 min</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nv on"><span class="pl"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></span>Explorer</div>
+    <div class="nv"><span class="pl"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg></span>Rendez-vous</div>
+    <div class="nv"><span class="pl"><svg class="i" viewBox="0 0 24 24"><path d="M6.5 4.5h11v16l-5.5-4-5.5 4z"/></svg></span>Abonnements</div>
+    <div class="nv"><span class="pl"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></span>Profil</div>
+  </nav>
+</section>
+<section class="s r" dir="rtl" lang="ar">
+  <div class="sb"><span>9:41</span><span class="rt"><span class="sg"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:12px"></i></span><span class="bt"><i></i></span></span></div>
+  <header class="ab2">
+    <div><div class="h1">صالون نسرين</div><div class="sub">باب الزوار<span class="tag">فضاء النساء</span></div></div>
+    <span class="wal"><svg class="i sm" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M3.5 10h17M15.5 14.5h2"/></svg>المحفظة · 18 يومًا</span>
+  </header>
+  <div class="seg">
+    <span class="sgi on"><span class="d g"></span>متاحة</span>
+    <span class="sgi"><span class="d a"></span>استراحة</span>
+    <span class="sgi"><span class="d x"></span>مغلقة</span>
+  </div>
+  <div class="card">
+    <div class="lb">في الانتظار</div>
+    <div class="ct">
+      <div class="num">4</div>
+      <div class="ctl"><span class="ob"><bdi dir="ltr">−1</bdi></span><span class="ob"><bdi dir="ltr">+1</bdi></span></div>
+    </div>
+    <div class="pri">استدعاء التالية</div>
+  </div>
+  <div class="now"><span class="nt">الآن</span><div class="nw">سارة ب. <span>· قصّ وتجفيف</span></div></div>
+  <div class="qh">قائمة الانتظار</div>
+  <div class="qi"><span class="qn">1</span><div class="qb"><div><div class="qt">ليلى م.</div><div class="qs">صبغة</div></div><span class="st"><span class="ring"></span>في الطريق</span></div></div>
+  <div class="qi"><span class="qn">2</span><div class="qb"><div><div class="qt">أمينة ك.</div><div class="qs">قصّ</div></div><span class="st"><span class="d g"></span><span class="gw">حاضرة</span></span></div></div>
+  <div class="qi"><span class="qn">3</span><div class="qb"><div><div class="qt">ريم ع.</div><div class="qs">تسريحة</div></div><span class="bk"><svg class="i sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>حجز 11:30</span></div></div>
+  <div class="qi"><span class="qn">4</span><div class="qb"><div><div class="qt">خديجة ط.</div><div class="qs">قصّ</div></div><span class="st"><span class="ring"></span>في الطريق</span></div></div>
+  <nav class="nav">
+    <div class="nv on"><span class="pl"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg></span>اليوم</div>
+    <div class="nv"><span class="pl"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg></span>الحجوزات</div>
+    <div class="nv"><span class="pl"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M3.5 10h17M15.5 14.5h2"/></svg></span>المالية</div>
+    <div class="nv"><span class="pl"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></span>حسابي</div>
+  </nav>
+</section>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Gate Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Readex+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--board:#121417;--row:#1B1E22;--line:#2C3035;--ink:#121417;--ground:#EEF0F2;--panel:#FFFFFF;--mute:#5B636B;--bmute:#A9B0B7;--amber:#FFB000;--men:#2E4A62;--women:#5A2747;--mentint:#D6E0E9;--womtint:#F1DFE9}
+*{box-sizing:border-box;margin:0;padding:0}
+body{margin:0;width:800px;height:844px;overflow:hidden;background:#C9CDD1;font-family:"Readex Pro",sans-serif;color:var(--ink);font-variant-numeric:tabular-nums;display:flex;gap:20px}
+.scr{width:390px;height:844px;border-radius:28px;overflow:hidden;position:relative;background:var(--ground)}
+.bc{font-family:"Barlow Condensed","Readex Pro",sans-serif;font-variant-numeric:tabular-nums}
+.cap{font-family:"Barlow Condensed","Readex Pro",sans-serif;font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.sb{direction:ltr;height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:13px;font-weight:500;color:#fff}
+.sig{display:flex;gap:6px;align-items:center}.sig b{display:inline-block;width:3px;background:#fff;margin-left:1px}
+.bat{width:22px;height:11px;border:1.5px solid #fff;border-radius:3px;padding:1px}.bat i{display:block;height:100%;width:70%;background:#fff;border-radius:1px}
+.ab{color:#fff;padding:4px 16px 12px}
+.ab .row{display:flex;justify-content:space-between;align-items:flex-end}
+.wm{font-size:28px;font-weight:700;letter-spacing:.06em;line-height:1}
+.lab{font-size:12px;font-weight:500;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.16)}
+.sub{font-size:13px;opacity:.9;margin-top:4px}
+.pad{padding:0 16px}
+.tk{display:flex;margin:16px 16px 0}
+.seg{background:var(--panel);border-radius:12px;position:relative}
+.seg.l{flex:1;padding:12px 16px;border-right:1px dashed #9AA1A8;border-radius:12px 0 0 12px}
+.seg.r{width:120px;padding:12px;border-radius:0 12px 12px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.seg.l:before,.seg.l:after{content:"";position:absolute;z-index:1;right:-11px;width:20px;height:20px;border-radius:50%;background:var(--ground)}
+.seg.l:before{top:-10px}.seg.l:after{bottom:-10px}
+.place{font-size:24px;letter-spacing:.02em;font-weight:700;line-height:1;margin-top:6px}
+.place span{color:var(--men)}
+.tk p{font-size:13px;line-height:18px;color:var(--mute);margin-top:8px}
+.qr{display:grid;grid-template-columns:repeat(7,7px);gap:0;width:49px;height:49px}.qr i{width:7px;height:7px}.qr .k{background:var(--ink)}
+.btn{height:48px;border-radius:24px;border:0;font:500 14px "Readex Pro",sans-serif;padding:0 12px;display:flex;align-items:center;justify-content:center;width:100%}
+.btn.men{background:var(--men);color:#fff;font-size:13px}
+.chips{display:flex;gap:8px;padding:16px 16px 0;overflow:hidden}
+.chip{flex:none;white-space:nowrap;height:32px;padding:0 12px;border-radius:8px;border:1px solid #9AA1A8;font-size:13px;display:flex;align-items:center;gap:6px;background:var(--panel)}
+.chip.on{background:var(--mentint);border-color:var(--mentint);font-weight:500}
+.sh{display:flex;justify-content:space-between;align-items:baseline;padding:20px 16px 8px}
+.sh h2{font-size:16px;font-weight:600}
+.brd{background:var(--board);color:#fff;border-radius:12px;margin:0 16px;overflow:hidden}
+.bh,.br{display:grid;grid-template-columns:1fr 64px 96px;align-items:center;column-gap:8px;padding:0 12px}
+.bh{height:32px;color:var(--bmute);border-bottom:1px solid var(--line)}
+.br{min-height:64px;padding-top:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.br:last-child{border-bottom:0}
+.nm{font-size:15px;font-weight:500}
+.mt{font-size:12px;color:var(--bmute);margin-top:2px;line-height:16px}
+.num{font-size:28px;font-weight:700;line-height:1}
+.num small{display:block;font-size:13px;font-weight:600;color:var(--bmute);letter-spacing:.04em}
+.st{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;padding:6px 8px;border-radius:6px;border:1px solid #4A5057;text-align:center}
+.st.chg{background:var(--amber);border-color:var(--amber);color:var(--ink);text-transform:none;letter-spacing:0;font-size:15px;line-height:17px}
+.st.chg em{display:block;font-style:normal;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.mine{display:inline-block;margin-top:4px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);background:#fff;padding:1px 6px;border-radius:4px;font-family:"Barlow Condensed",sans-serif}
+.nav{position:absolute;left:0;right:0;bottom:0;height:80px;background:var(--panel);display:flex;padding-top:12px}
+.nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--mute);text-decoration:none;min-height:48px}
+.nav .ic{width:56px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#3A4148}
+svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}svg.s{width:18px;height:18px}
+.nav a.on{color:var(--ink);font-weight:600}
+.m .nav a.on .ic{background:var(--mentint)}.w .nav a.on .ic{background:var(--womtint)}
+.w{font-family:"Readex Pro",sans-serif}
+.w .ab{background:var(--women)}
+.wal{height:32px;border-radius:8px;background:rgba(255,255,255,.16);font-size:13px;display:flex;align-items:center;padding:0 12px;font-weight:500}
+.sgb{display:flex;margin:16px 16px 0;border:1px solid #8E959C;border-radius:24px;overflow:hidden;height:48px}
+.sgb span{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:500;border-left:1px solid #8E959C;background:var(--panel)}
+.sgb span:last-child{border-left:0}.sgb .on{background:var(--womtint);font-weight:600}
+.q{padding:12px 16px 16px;margin-top:16px}
+.qt{display:flex;justify-content:space-between;align-items:center}
+.big{font-size:88px;font-weight:700;line-height:.9}
+.pm{display:flex;gap:8px}
+.pm span{width:64px;height:56px;border-radius:16px;background:#2A2F35;color:#fff;font-family:"Barlow Condensed",sans-serif;font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.pri{margin-top:12px;height:56px;border-radius:28px;background:#fff;color:var(--ink);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.now{margin:12px 16px 0;background:var(--panel);border-radius:12px;padding:10px 16px;display:flex;gap:12px;align-items:center;min-height:56px}
+.now .tag{background:var(--women);color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px}
+.now b{font-size:15px;font-weight:500}
+.w .bh,.w .br{grid-template-columns:1fr 80px 104px}
+.w .br{min-height:52px}
+.w .bh{font-family:"Readex Pro",sans-serif;font-size:12px;letter-spacing:0;text-transform:none;font-weight:500}
+.w .st{font-family:"Readex Pro",sans-serif;letter-spacing:0;font-size:13px;font-weight:500;text-transform:none}
+.w .st.chg{font-size:13px;font-weight:600}
+.svc{font-size:14px;color:#D4D8DC}
+</style></head>
+<body>
+<section class="scr m">
+ <div style="background:var(--men)">
+  <div class="sb"><span>9:41</span><span class="sig"><span><b style="height:4px"></b><b style="height:6px"></b><b style="height:8px"></b><b style="height:10px"></b></span><span class="bat"><i></i></span></span></div>
+  <header class="ab"><div class="row"><div><div class="wm bc">LEMQES</div><div class="sub" style="display:flex;align-items:center;gap:4px"><svg class="s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.5-7-12a7 7 0 0114 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Kouba, Alger</div></div><span class="lab">Espace Hommes</span></div></header>
+ </div>
+ <div class="tk">
+  <div class="seg l">
+   <div class="cap" style="color:var(--mute)">Amine Coiffure · Garidi</div>
+   <div class="place bc">PLACE <span>3</span> · ~25 MIN</div>
+   <p>Vous êtes 3e chez Amine Coiffure · ~25 min</p>
+  </div>
+  <div class="seg r">
+   <div class="qr"><i class=k></i><i class=k></i><i class=k></i><i></i><i class=k></i><i></i><i class=k></i><i class=k></i><i></i><i class=k></i><i></i><i class=k></i><i class=k></i><i></i><i class=k></i><i class=k></i><i class=k></i><i></i><i></i><i class=k></i><i class=k></i><i></i><i></i><i></i><i class=k></i><i class=k></i><i></i><i></i><i class=k></i><i class=k></i><i></i><i class=k></i><i></i><i class=k></i><i class=k></i><i></i><i class=k></i><i class=k></i><i></i><i class=k></i><i></i><i class=k></i><i class=k></i><i></i><i class=k></i><i class=k></i><i class=k></i><i></i><i class=k></i></div>
+   <button class="btn men">Je suis en route</button>
+  </div>
+ </div>
+ <div class="chips"><span class="chip on"><svg class="s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Ouverts maintenant</span><span class="chip">File courte</span><span class="chip">À domicile</span></div>
+ <div class="sh"><h2>Près de vous · 6</h2><span class="cap" style="color:var(--mute)">Tri : attente</span></div>
+ <div class="brd">
+  <div class="bh cap"><span>Salon</span><span>Attente</span><span>Statut</span></div>
+  <div class="br"><div><div class="nm">Studio Hydra</div><div class="mt"><span lang="ar">ستوديو حيدرة</span> · Hydra · 2,8 km · dès 1 200 DA</div></div><div class="num bc">1<small>~5 MIN</small></div><span class="st">Ouvert</span></div>
+  <div class="br"><div><div class="nm">Salon Karim</div><div class="mt"><span lang="ar">صالون كريم</span> · Kouba · 350 m · dès 600 DA</div></div><div class="num bc">2<small>~15 MIN</small></div><span class="st">Ouvert</span></div>
+  <div class="br"><div><div class="nm">Amine Coiffure</div><div class="mt"><span lang="ar">أمين للحلاقة</span> · Garidi · 900 m · dès 500 DA</div><span class="mine">Votre file · place 3</span></div><div class="num bc">5<small>~40 MIN</small></div><span class="st">Ouvert</span></div>
+  <div class="br"><div><div class="nm">Barber Yacine</div><div class="mt"><span lang="ar">ياسين باربر</span> · Vieux Kouba · 1,2 km · dès 700 DA</div></div><div class="num bc">—<small>PAUSE</small></div><span class="st chg"><em>Changé</em>En pause · 14:30</span></div>
+ </div>
+ <nav class="nav"><a class="on"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>Explorer</a><a><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg></span>Rendez-vous</a><a><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg></span>Abonnements</a><a><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>Profil</a></nav>
+</section>
+<section class="scr w" dir="rtl" lang="ar">
+ <div style="background:var(--women)">
+  <div class="sb"><span>9:41</span><span class="sig"><span><b style="height:4px"></b><b style="height:6px"></b><b style="height:8px"></b><b style="height:10px"></b></span><span class="bat"><i></i></span></span></div>
+  <header class="ab"><div class="row"><div><span class="lab">فضاء النساء</span><div style="font-size:24px;font-weight:600;margin-top:8px;line-height:1.2">صالون نسرين</div><div class="sub">باب الزوار</div></div><span class="wal">المحفظة · 18 يومًا</span></div></header>
+ </div>
+ <div class="sgb"><span class="on"><svg class="s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>متاحة</span><span>استراحة</span><span>مغلقة</span></div>
+ <div class="brd q">
+  <div class="qt"><div><div style="font-size:14px;color:var(--bmute);font-weight:500">في الانتظار</div><div class="big bc">4</div></div><div class="pm" dir="ltr"><span>−1</span><span>+1</span></div></div>
+  <div class="pri">استدعاء التالية</div>
+ </div>
+ <div class="now"><span class="tag">الآن</span><b>سارة ب. · قصّ وتجفيف</b></div>
+ <div class="brd" style="margin-top:12px">
+  <div class="bh"><span>الاسم</span><span>الخدمة</span><span>الحالة</span></div>
+  <div class="br"><span class="nm">ليلى م.</span><span class="svc">صبغة</span><span class="st chg">في الطريق</span></div>
+  <div class="br"><span class="nm">أمينة ك.</span><span class="svc">قصّ</span><span class="st">حاضرة</span></div>
+  <div class="br"><span class="nm">ريم ع.</span><span class="svc">تسريحة</span><span class="st">حجز <span class="bc" style="font-weight:700;font-size:15px">11:30</span></span></div>
+  <div class="br"><span class="nm">خديجة ط.</span><span class="svc">قصّ</span><span class="st">في الطريق</span></div>
+ </div>
+ <nav class="nav"><a class="on"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>اليوم</a><a><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg></span>الحجوزات</a><a><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/></svg></span>المالية</a><a><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>حسابي</a></nav>
+</section>
+</body></html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>LEMQES — Raï Cassette</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Readex+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ultra:#1B2A8C;--ultra-2:#14206E;--ultra-tint:#E4E7F8;--mag:#D3136F;--mag-2:#A60E57;--mag-tint:#FCE4EF;--saff:#FFC21A;--ink:#0E0E14;--mute:#5A5A6B;--line:#E7E6EE;--open:#0F8A4C;--pause:#E2561B;--off:#8A8A99}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:800px;height:844px;overflow:hidden;background:#DCDAE6;font-family:'Readex Pro',sans-serif;color:var(--ink);font-variant-numeric:tabular-nums}
+.ph{position:absolute;top:0;width:390px;height:844px;border-radius:28px;overflow:hidden;background:#fff}
+.l{left:0}.r{left:410px}
+.sb{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:14px;font-weight:500}
+.sb i{display:inline-block;width:24px;height:11px;border:1.5px solid currentColor;border-radius:3px;position:relative}
+.sb i:after{content:"";position:absolute;inset:1.5px;right:5px;background:currentColor;border-radius:1px}
+.num{font-family:'Big Shoulders Display',sans-serif;font-weight:900;line-height:.9}
+svg.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+/* customer */
+.hd{background:var(--ultra);color:#fff;padding-bottom:16px}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 0 20px;height:56px}
+.wm{font-size:30px;letter-spacing:.06em}
+.sp{font-size:12px;font-weight:500;background:var(--ultra-2);padding:6px 10px;border-radius:8px}
+.loc{display:flex;align-items:center;gap:6px;padding:0 20px;font-size:14px;color:#D3D8F7;height:28px}
+.loc svg{width:18px;height:18px}
+.you{margin:12px 16px 0;background:var(--saff);border-radius:14px;display:flex;align-items:stretch;overflow:hidden;color:var(--ink)}
+.you .sp2{width:64px;background:var(--ink);color:var(--saff);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.you .sp2 b{font-size:40px}.you .sp2 small{font-size:11px;font-weight:700;letter-spacing:.08em}
+.you .tx{flex:1;padding:12px 12px 12px 14px}
+.you .t1{font-size:15px;font-weight:700}.you .t2{font-size:13px;color:#3D3214;margin-top:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border-radius:20px;font:500 14px 'Readex Pro';margin-top:10px}
+.btn.ink{background:var(--ink);color:#fff}
+.chips{display:flex;gap:8px;padding:16px 16px 4px;overflow:hidden}
+.chip{flex:none;white-space:nowrap;height:36px;padding:0 14px;border-radius:10px;border:1px solid #C9CCDD;font-size:14px;display:flex;align-items:center;gap:6px;color:var(--ink)}
+.chip.on{background:var(--ultra);border-color:var(--ultra);color:#fff}
+.sh{display:flex;justify-content:space-between;align-items:baseline;padding:16px 20px 8px}
+.sh h2{font-size:18px;font-weight:700}.sh span{font-size:13px;color:var(--mute)}
+.row{display:flex;align-items:stretch;height:84px;margin:0 16px 8px;border-radius:12px;background:#F6F6F9;overflow:hidden}
+.spn{width:64px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none}
+.spn b{font-size:40px}.spn small{font-size:10px;font-weight:700;letter-spacing:.1em;margin-top:2px}
+.spn.open{background:var(--open)}
+.spn.pause{background:repeating-linear-gradient(135deg,var(--pause) 0 8px,#C9481A 8px 16px)}
+.spn.pause b{font-size:26px}
+.info{flex:1;padding:10px 12px;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.ar{font-size:13px;color:var(--mute);direction:rtl;text-align:left}
+.nm{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px}
+.tag{font-size:11px;font-weight:700;background:var(--saff);padding:2px 6px;border-radius:6px}
+.meta{font-size:13px;color:var(--mute);margin-top:3px;display:flex;justify-content:space-between}
+.meta em{font-style:normal;color:var(--ink);font-weight:500}
+.st{font-weight:500}.st.o{color:var(--open)}.st.p{color:#B8431A}
+.nav{position:absolute;bottom:0;left:0;right:0;height:80px;background:#fff;border-top:1px solid var(--line);display:flex;padding-top:10px}
+.nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--mute)}
+.nav a span{width:56px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center}
+.l .nav a.on{color:var(--ultra)}.l .nav a.on span{background:var(--ultra-tint)}
+.r .nav a.on{color:var(--mag-2)}.r .nav a.on span{background:var(--mag-tint)}
+/* stylist */
+.cv{background:var(--mag);color:#fff;padding-bottom:20px}
+.cv .bar{padding:4px 20px 0 16px}
+.sal{font-size:22px;font-weight:700}.sub{font-size:13px;color:#FFD6E8;margin-top:2px}
+.wal{font-size:12px;font-weight:500;background:var(--mag-2);padding:7px 10px;border-radius:8px}
+.seg{display:flex;margin:16px 16px 0;border:1px solid #F7A9CC;border-radius:24px;height:48px;overflow:hidden}
+.seg div{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:500;border-inline-start:1px solid #F7A9CC}
+.seg div:first-child{border:0}
+.seg .on{background:#fff;color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--open)}
+.q{display:flex;align-items:flex-end;justify-content:space-between;padding:20px 20px 0}
+.ql{font-size:15px;font-weight:500;color:#FFD6E8}
+.q .num{font-size:150px;margin-top:4px}
+.pm{display:flex;gap:10px;margin-bottom:14px}
+.pm div{width:64px;height:56px;border-radius:14px;background:var(--mag-2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700}
+.cta{margin:14px 16px 0;height:56px;border-radius:28px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-size:17px;font-weight:700}
+.now{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line)}
+.now b{font-size:15px}.now span{font-size:13px;color:var(--mute)}
+.qr{display:flex;align-items:center;gap:12px;height:60px;padding:0 20px;border-bottom:1px solid var(--line)}
+.qr .pos{width:36px;height:36px;border-radius:10px;background:var(--mag-tint);color:var(--mag-2);display:flex;align-items:center;justify-content:center;font-size:22px}
+.qr .who{flex:1}.qr .who b{display:block;font-size:15px}.qr .who span{font-size:13px;color:var(--mute)}
+.qs{font-size:13px;font-weight:500;padding:4px 10px;border-radius:8px}
+.qs.in{background:#E1F3E9;color:var(--open)}.qs.way{background:#F1F1F5;color:var(--ink)}.qs.bk{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px #CFCFDA}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="explore" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></symbol>
+<symbol id="cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+<symbol id="heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+<symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.3 7.5-5.3s6.3 1.7 7.5 5.3"/></symbol>
+<symbol id="pin" viewBox="0 0 24 24"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 0 0-13 0c0 5 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+<symbol id="today" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="cash" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.5"/></symbol>
+<symbol id="next" viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></symbol>
+</defs></svg>
+
+<section class="ph l">
+ <div class="hd">
+  <div class="sb"><span>9:41</span><i></i></div>
+  <div class="bar"><span class="num wm">LEMQES</span><span class="sp">Espace Hommes</span></div>
+  <div class="loc"><svg class="ic"><use href="#pin"/></svg>Kouba, Alger</div>
+  <div class="you"><div class="sp2"><b class="num">3<sup style="font-size:18px">e</sup></b><small>VOUS</small></div>
+   <div class="tx"><div class="t1">Vous êtes 3e chez Amine Coiffure</div><div class="t2">Environ 25 min · 5 en attente</div><span class="btn ink">Je suis en route</span></div></div>
+ </div>
+ <div class="chips"><span class="chip on">Ouverts maintenant</span><span class="chip">File courte</span><span class="chip">À domicile</span></div>
+ <div class="sh"><h2>Près de vous</h2><span>6 ouverts</span></div>
+ <div class="row"><div class="spn open"><b class="num">2</b><small>ATT.</small></div><div class="info"><div class="ar">صالون كريم</div><div class="nm">Salon Karim</div><div class="meta"><span><span class="st o">Ouvert</span> · Kouba · 350 m · ~15 min</span><em>600 DA</em></div></div></div>
+ <div class="row"><div class="spn open"><b class="num">5</b><small>ATT.</small></div><div class="info"><div class="ar">أمين للحلاقة</div><div class="nm">Amine Coiffure <span class="tag">Vous · 3e</span></div><div class="meta"><span><span class="st o">Ouvert</span> · Garidi · 900 m · ~40 min</span><em>500 DA</em></div></div></div>
+ <div class="row"><div class="spn pause"><b class="num">14:30</b><small>REPRISE</small></div><div class="info"><div class="ar">ياسين باربر</div><div class="nm">Barber Yacine</div><div class="meta"><span><span class="st p">En pause</span> · Vieux Kouba · 1,2 km</span><em>700 DA</em></div></div></div>
+ <div class="row"><div class="spn open"><b class="num">1</b><small>ATT.</small></div><div class="info"><div class="ar">ستوديو حيدرة</div><div class="nm">Studio Hydra</div><div class="meta"><span><span class="st o">Ouvert</span> · Hydra · 2,8 km · ~5 min</span><em>1 200 DA</em></div></div></div>
+ <nav class="nav"><a class="on"><span><svg class="ic"><use href="#explore"/></svg></span>Explorer</a><a><span><svg class="ic"><use href="#cal"/></svg></span>Rendez-vous</a><a><span><svg class="ic"><use href="#heart"/></svg></span>Abonnements</a><a><span><svg class="ic"><use href="#user"/></svg></span>Profil</a></nav>
+</section>
+
+<section class="ph r" dir="rtl" lang="ar">
+ <div class="cv">
+  <div class="sb"><span>9:41</span><i></i></div>
+  <div class="bar"><div><div class="sal">صالون نسرين</div><div class="sub">باب الزوار · فضاء النساء</div></div><span class="wal">المحفظة · 18 يومًا</span></div>
+  <div class="seg"><div class="on"><span class="dot"></span>متاحة</div><div>استراحة</div><div>مغلقة</div></div>
+  <div class="q"><div><div class="ql">في الانتظار</div><div class="num">4</div></div><div class="pm" dir="ltr"><div>−1</div><div>+1</div></div></div>
+  <div class="cta">استدعاء التالية<svg class="ic"><use href="#next"/></svg></div>
+ </div>
+ <div class="now"><div><span>الآن</span><br><b>سارة ب. · قصّ وتجفيف</b></div><span>منذ 12 د</span></div>
+ <div class="qr"><div class="pos num">1</div><div class="who"><b>ليلى م.</b><span>صبغة</span></div><span class="qs way">في الطريق</span></div>
+ <div class="qr"><div class="pos num">2</div><div class="who"><b>أمينة ك.</b><span>قصّ</span></div><span class="qs in">حاضرة</span></div>
+ <div class="qr"><div class="pos num">3</div><div class="who"><b>ريم ع.</b><span>تسريحة · حجز 11:30</span></div><span class="qs bk">حجز</span></div>
+ <div class="qr"><div class="pos num">4</div><div class="who"><b>خديجة ط.</b><span>قصّ</span></div><span class="qs way">في الطريق</span></div>
+ <nav class="nav"><a class="on"><span><svg class="ic"><use href="#today"/></svg></span>اليوم</a><a><span><svg class="ic"><use href="#cal"/></svg></span>الحجوزات</a><a><span><svg class="ic"><use href="#cash"/></svg></span>المالية</a><a><span><svg class="ic"><use href="#user"/></svg></span>حسابي</a></nav>
+</section>
+</body></html>

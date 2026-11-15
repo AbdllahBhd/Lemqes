@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Painted Shopfront</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rakkas&family=Readex+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--g:#0F5B3E;--v:#4B2A9A;--au:#E0A526;--ink:#101010;--mute:#595959;--line:#E4E4E4;--amb:#B7791F;--ambt:#7A4F0F;--gt:#E3EFE8;--vt:#EEE8F8;--ok:#1F8A5B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:800px;height:844px;overflow:hidden;position:relative;background:#D8D5CF;color:var(--ink);font:400 14px/1.35 "Readex Pro",sans-serif;font-variant-numeric:tabular-nums}
+.scr{position:absolute;top:0;width:390px;height:844px;border-radius:28px;overflow:hidden;background:#fff}
+.L{left:0}.R{left:410px}
+.L .sb,.L .bar{background:var(--g)}.R .sb,.R .bar{background:var(--v)}
+.sb{height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;color:#fff;font:500 12px/1 "Readex Pro"}
+.gl{display:flex;align-items:flex-end;gap:2px;direction:ltr}.gl i{display:block;width:3px;background:#fff;border-radius:1px}
+.bat{display:block;width:20px;height:10px;border:1.5px solid #fff;border-radius:2px;margin-left:6px;position:relative}.bat::before{content:"";position:absolute;top:1px;bottom:1px;left:1px;width:11px;background:#fff}
+.bar{padding:2px 10px 10px}
+.frame{min-height:80px;border:1.5px solid var(--au);border-radius:6px;padding:8px 12px 8px 14px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lab{font:500 12px/1.2 "Readex Pro";letter-spacing:.08em;text-transform:uppercase}
+.labA{font:500 12px/1.3 "Readex Pro"}
+.name{font:400 30px/1.1 "Rakkas",serif;letter-spacing:.03em}
+.R .name{letter-spacing:0;font-size:32px}
+.loc{height:48px;display:flex;align-items:center;gap:8px;font:500 14px "Readex Pro";color:#fff}
+.qb{margin:12px 16px 0;background:var(--gt);border-radius:16px;padding:14px 16px}
+.qb .k{font:700 12px/1.2 "Readex Pro";color:var(--g);letter-spacing:.06em;text-transform:uppercase}
+.qb p{font:500 16px/1.4 "Readex Pro";margin:4px 0 8px}
+.btn{height:48px;border:0;border-radius:24px;padding:0 22px;display:inline-flex;align-items:center;justify-content:center;font:500 14px "Readex Pro"}
+.fg{background:var(--g);color:#fff}
+.end{display:flex;justify-content:flex-end}
+.chips{display:flex;gap:8px;padding:0 16px;height:48px;align-items:center;margin-top:8px;overflow:hidden}
+.chip{flex:none;height:32px;border:1px solid #7D7D7D;border-radius:8px;padding:0 12px;display:flex;align-items:center;gap:6px;font:500 14px "Readex Pro";white-space:nowrap;color:var(--ink)}
+.chip.on{background:var(--gt);border-color:var(--gt);color:var(--g)}
+.sh{padding:10px 16px 4px;font:500 16px/1.4 "Readex Pro"}
+.row{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:flex-start}
+.row.me{background:var(--gt)}
+.plate{flex:none;width:68px;height:28px;margin-top:2px;border-radius:6px;background:var(--g);color:#fff;outline:1.5px solid var(--au);outline-offset:-4px;display:grid;place-items:center;font:700 12px/1 "Readex Pro";letter-spacing:.1em}
+.plate.p{background:#fff;color:var(--ambt);border:1.5px solid var(--amb);outline:0}
+.mc{flex:1;min-width:0}
+.l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.nm{font:500 16px/1.35 "Readex Pro"}
+.pr{font:400 12px "Readex Pro";color:var(--mute);white-space:nowrap}.pr b{font:700 14px "Readex Pro";color:var(--ink)}
+.sub{color:var(--mute);font-size:14px}
+.ql{font-size:14px;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.amb{color:var(--ambt)}
+.tag{font:700 12px "Readex Pro";color:var(--g);margin-inline-start:6px}
+.nav{position:absolute;left:0;right:0;bottom:0;height:80px;background:#fff;border-top:1px solid var(--line);display:flex;padding-top:12px}
+.nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font:500 12px "Readex Pro";color:var(--mute);text-decoration:none}
+.ind{width:64px;height:32px;border-radius:16px;display:grid;place-items:center}
+.nav a.on{color:var(--ink);font-weight:700}.L .nav a.on .ind{background:var(--gt);color:var(--g)}.R .nav a.on .ind{background:var(--vt);color:var(--v)}
+.sv{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.sv.sm{width:18px;height:18px;flex:none}.sv path,.sv circle,.sv rect{vector-effect:non-scaling-stroke}
+.R{font-family:"Readex Pro",sans-serif}
+.wal{height:48px;display:flex;align-items:center}.wal span{height:32px;border:1px solid #fff;border-radius:8px;padding:0 10px;display:flex;align-items:center;font:500 12px "Readex Pro";color:#fff;white-space:nowrap}
+.hang{position:relative;height:92px;display:flex;justify-content:center;padding-top:22px}
+.str{position:absolute;top:0;width:1.5px;height:24px;background:#5A5A5A}.str::before{content:"";position:absolute;top:-1px;left:-3px;width:7px;height:7px;border-radius:50%;background:var(--ink)}
+.big{width:250px;height:60px;border-radius:8px;background:var(--v);outline:1.5px solid var(--au);outline-offset:-6px;display:flex;align-items:center;justify-content:center;gap:10px;color:#fff;font:700 22px/1 "Readex Pro";text-shadow:1px 0 0 var(--au),-1px 0 0 var(--au),0 1px 0 var(--au),0 -1px 0 var(--au)}
+.big .dot{width:12px;height:12px;background:#3FC487;box-shadow:0 0 0 2px #fff}
+.seg{display:flex;margin:0 16px;height:48px;border:1px solid #7A7580;border-radius:24px;overflow:hidden}
+.seg span{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font:500 14px "Readex Pro";border-inline-start:1px solid #7A7580}
+.seg span:first-child{border-inline-start:0}.seg .on{background:var(--vt);color:var(--v)}
+.qk{margin:12px 16px 0;background:var(--vt);border-radius:16px;padding:12px 16px 16px}
+.qrow{display:flex;align-items:center;justify-content:space-between}
+.cnt{font:400 72px/1 "Rakkas",serif;color:var(--v)}
+.qlab{font:500 14px "Readex Pro";color:var(--mute)}
+.steps{display:flex;gap:12px;direction:ltr}
+.step{width:56px;height:56px;border-radius:28px;background:#fff;color:var(--v);border:0;font:700 18px "Readex Pro";display:grid;place-items:center}
+.call{width:100%;height:56px;margin-top:12px;border:0;border-radius:28px;background:var(--v);color:#fff;font:700 16px "Readex Pro"}
+.now{margin:4px 16px 0;min-height:56px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);font:500 16px "Readex Pro"}
+.now i{font:700 12px/1 "Readex Pro";font-style:normal;color:#fff;background:var(--ink);border-radius:6px;padding:6px 10px}
+.qi{display:flex;align-items:center;gap:12px;padding:0 16px;height:64px;border-bottom:1px solid var(--line)}
+.n{flex:none;width:32px;height:32px;border-radius:50%;background:var(--vt);color:var(--v);font:700 14px "Readex Pro";display:grid;place-items:center}
+.qi .mc div:first-child{font:500 16px/1.35 "Readex Pro"}
+.st{font:500 14px "Readex Pro";color:var(--mute);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.ring{width:8px;height:8px;border-radius:50%;border:2px solid currentColor}
+.st.ok{color:var(--g)}
+.bk{height:28px;padding:0 10px;border-radius:8px;background:var(--vt);color:var(--v);font:700 12px "Readex Pro";display:flex;align-items:center}
+</style>
+</head>
+<body>
+<section class="scr L">
+  <div class="sb"><span>9:41</span><span class="gl"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><b class="bat"></b></span></div>
+  <header class="bar"><div class="frame">
+    <div><div class="lab">Espace Hommes</div><div class="name">LEMQES</div></div>
+    <div class="loc"><svg class="sv sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Kouba, Alger<svg class="sv sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div>
+  </div></header>
+  <div class="qb">
+    <div class="k">Votre file</div>
+    <p>Vous êtes 3e chez Amine Coiffure · ~25 min</p>
+    <div class="end"><button class="btn fg">Je suis en route</button></div>
+  </div>
+  <div class="chips"><span class="chip on"><svg class="sv sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Ouverts maintenant</span><span class="chip">File courte</span><span class="chip">À domicile</span></div>
+  <div class="sh">Près de vous · 6</div>
+  <div class="row"><span class="plate">OUVERT</span><div class="mc">
+    <div class="l1"><span class="nm">Salon Karim</span><span class="pr">dès <b>600 DA</b></span></div>
+    <div class="sub"><bdi lang="ar">صالون كريم</bdi> · Kouba · 350 m</div>
+    <div class="ql"><span class="dot"></span>2 en attente · ~15 min</div></div></div>
+  <div class="row me"><span class="plate">OUVERT</span><div class="mc">
+    <div class="l1"><span class="nm">Amine Coiffure</span><span class="pr">dès <b>500 DA</b></span></div>
+    <div class="sub"><bdi lang="ar">أمين للحلاقة</bdi> · Garidi · 900 m</div>
+    <div class="ql"><span class="dot"></span>5 en attente · ~40 min<span class="tag">Vous · 3e</span></div></div></div>
+  <div class="row"><span class="plate p">PAUSE</span><div class="mc">
+    <div class="l1"><span class="nm">Barber Yacine</span><span class="pr">dès <b>700 DA</b></span></div>
+    <div class="sub"><bdi lang="ar">ياسين باربر</bdi> · Vieux Kouba · 1,2 km</div>
+    <div class="ql amb">En pause · reprend 14:30</div></div></div>
+  <div class="row"><span class="plate">OUVERT</span><div class="mc">
+    <div class="l1"><span class="nm">Studio Hydra</span><span class="pr">dès <b>1 200 DA</b></span></div>
+    <div class="sub"><bdi lang="ar">ستوديو حيدرة</bdi> · Hydra · 2,8 km</div>
+    <div class="ql"><span class="dot"></span>1 en attente · ~5 min</div></div></div>
+  <nav class="nav">
+    <a class="on"><span class="ind"><svg class="sv" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>Explorer</a>
+    <a><span class="ind"><svg class="sv" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>Rendez-vous</a>
+    <a><span class="ind"><svg class="sv" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M6 6h12M9 3h6"/></svg></span>Abonnements</a>
+    <a><span class="ind"><svg class="sv" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>Profil</a>
+  </nav>
+</section>
+<section class="scr R" dir="rtl" lang="ar">
+  <div class="sb"><span>9:41</span><span class="gl"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><b class="bat"></b></span></div>
+  <header class="bar"><div class="frame">
+    <div><div class="labA">فضاء النساء</div><div class="name">صالون نسرين</div><div class="labA" style="font-weight:400;font-size:14px">باب الزوار</div></div>
+    <div class="wal"><span>المحفظة · 18 يومًا</span></div>
+  </div></header>
+  <div class="hang">
+    <span class="str" style="right:95px"></span><span class="str" style="left:95px"></span>
+    <div class="big"><span class="dot"></span>مفتوح · OUVERT</div>
+  </div>
+  <div class="seg"><span class="on"><svg class="sv sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>متاحة</span><span>استراحة</span><span>مغلقة</span></div>
+  <div class="qk">
+    <div class="qrow">
+      <div><div class="qlab">في الانتظار</div><div class="cnt">4</div></div>
+      <div class="steps"><button class="step">−1</button><button class="step">+1</button></div>
+    </div>
+    <button class="call">استدعاء التالية</button>
+  </div>
+  <div class="now"><i>الآن</i>سارة ب. · قصّ وتجفيف</div>
+  <div class="qi"><span class="n">1</span><div class="mc"><div>ليلى م.</div><div class="sub">صبغة</div></div><span class="st"><span class="ring"></span>في الطريق</span></div>
+  <div class="qi"><span class="n">2</span><div class="mc"><div>أمينة ك.</div><div class="sub">قصّ</div></div><span class="st ok"><span class="dot"></span>حاضرة</span></div>
+  <div class="qi"><span class="n">3</span><div class="mc"><div>ريم ع.</div><div class="sub">تسريحة</div></div><span class="bk">حجز 11:30</span></div>
+  <div class="qi"><span class="n">4</span><div class="mc"><div>خديجة ط.</div><div class="sub">قصّ</div></div><span class="st"><span class="ring"></span>في الطريق</span></div>
+  <nav class="nav">
+    <a class="on"><span class="ind"><svg class="sv" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="15.5" cy="15.5" r="1.75"/></svg></span>اليوم</a>
+    <a><span class="ind"><svg class="sv" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>الحجوزات</a>
+    <a><span class="ind"><svg class="sv" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg></span>المالية</a>
+    <a><span class="ind"><svg class="sv" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></span>حسابي</a>
+  </nav>
+</section>
+</body>
+</html>
