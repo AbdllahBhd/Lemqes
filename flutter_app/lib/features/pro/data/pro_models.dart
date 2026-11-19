@@ -311,6 +311,7 @@ class ProProfile {
     this.serviceRadiusKm,
     this.travelFeeDzd,
     this.avatarPath,
+    this.contactPhone,
     this.publishedAt,
     this.services = const [],
     this.hours = const [],
@@ -346,6 +347,7 @@ class ProProfile {
       serviceRadiusKm: r['service_radius_km'] as int?,
       travelFeeDzd: r['travel_fee_dzd'] as int?,
       avatarPath: r['avatar_path'] as String?,
+      contactPhone: r['contact_phone'] as String?,
       phoneVisibility: PhoneVisibility.fromDb(r['phone_visibility']! as String),
       showPrices: r['show_prices']! as bool,
       isVerified: r['is_verified']! as bool,
@@ -378,6 +380,10 @@ class ProProfile {
   final int? serviceRadiusKm;
   final int? travelFeeDzd;
   final String? avatarPath;
+
+  /// The number customers call when [phoneVisibility] is public (E.164),
+  /// never the login number. Only the owner's own profile carries it.
+  final String? contactPhone;
   final PhoneVisibility phoneVisibility;
   final bool showPrices;
   final bool isVerified;
@@ -426,6 +432,7 @@ class ProProfilePatch {
     this.travelFeeDzd,
     this.avatarPath,
     this.phoneVisibility,
+    this.contactPhone,
     this.showPrices,
     this.clear = const {},
   });
@@ -441,6 +448,10 @@ class ProProfilePatch {
   final int? travelFeeDzd;
   final String? avatarPath;
   final PhoneVisibility? phoneVisibility;
+
+  /// E.164; sent with a public [phoneVisibility] in one write, since the
+  /// database refuses a public phone without a number.
+  final String? contactPhone;
   final bool? showPrices;
 
   /// Nullable columns to reset to null (a null field alone means "unchanged").
@@ -459,6 +470,7 @@ class ProProfilePatch {
     if (travelFeeDzd != null) 'travel_fee_dzd': travelFeeDzd,
     if (avatarPath != null) 'avatar_path': avatarPath,
     if (phoneVisibility != null) 'phone_visibility': phoneVisibility!.toDb(),
+    if (contactPhone != null) 'contact_phone': contactPhone,
     if (showPrices != null) 'show_prices': showPrices,
   };
 }

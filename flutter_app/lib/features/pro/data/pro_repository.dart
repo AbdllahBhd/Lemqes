@@ -15,7 +15,13 @@ class ProRepository {
       guardPro(() async {
         if (ProKind.forRole(activeRole) != kind) return null;
         final row = await _api.selectMine(kind.toDb());
-        return row == null ? null : ProProfile.fromRow(row);
+        if (row == null) return null;
+        // `contact_phone` has no column grant (customers share the
+        // `authenticated` role), so the owner reads it through its own RPC.
+        final phone = await _api.rpc('own_pro_contact_phone', {
+          'p_pro_id': row['id'],
+        });
+        return ProProfile.fromRow({...row, 'contact_phone': phone});
       });
 
   Future<ProProfile> create(

@@ -299,7 +299,7 @@ One block per day from Saturday, hairline dividers between them: day name and an
 A three-across grid of `PhotoTile`s (up to 9) ending in a Pill Mist add tile (camera-plus icon and label, faded when the gallery is full); each upload shows in its own tile under a scrim with a spinner, a failed one offers retry and discard. Removal asks first.
 
 ### Privacy section (`PrivacySection`)
-Two groups inside a dashboard card: who sees the phone (single-choice rows: public, hidden, and "followers" tagged "soon" and not selectable) and a "show prices" switch row. Each change saves only its own field.
+Two groups inside a dashboard card: who sees the phone (single-choice rows: public, hidden, and "followers" tagged "soon" and not selectable) and a "show prices" switch row. Each change saves only its own field. Choosing "Visible" opens an inline contact-number field under that row (never prefilled with the login number; the sign-up parser and errors; Cancel text button and an outlined Save pill), and the number and the visibility save together. Once public, the number shows in `Ltr` under the row with a "change number" text button; hiding keeps the number for next time.
 
 ### Visibility card (dashboard)
 The first dashboard card says whether customers can see the profile: a 48 dp Pill Mist disc with an eye (published) or crossed eye (hidden) icon, "Publié" / "Masqué" as the title, a muted line naming the space, and, when something is missing, a list of gaps with error-colour icons and the "Compléter mon profil" or "Publier mon profil" pill.

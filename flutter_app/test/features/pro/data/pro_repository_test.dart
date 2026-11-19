@@ -61,6 +61,8 @@ void main() {
   setUp(() {
     api = _MockApi();
     repo = ProRepository(api);
+    when(() => api.rpc('own_pro_contact_phone', any()))
+        .thenAnswer((_) async => null);
   });
 
   group(
@@ -276,6 +278,32 @@ void main() {
         'locality_id': 1601,
       }),
     ).called(1);
+  });
+
+  test('mine reads the contact number through its own RPC', () async {
+    when(() => api.selectMine('barber')).thenAnswer((_) async => _row());
+    when(() => api.rpc('own_pro_contact_phone', any()))
+        .thenAnswer((_) async => '+213661234567');
+    final p = (await repo.mine(ProKind.barber, activeRole: AppRole.barber))!;
+    expect(p.contactPhone, '+213661234567');
+    verify(() => api.rpc('own_pro_contact_phone', {'p_pro_id': 'p1'}))
+        .called(1);
+  });
+
+  test('mine without a profile does not ask for a contact number', () async {
+    when(() => api.selectMine(any())).thenAnswer((_) async => null);
+    expect(await repo.mine(ProKind.barber, activeRole: AppRole.barber), isNull);
+    verifyNever(() => api.rpc('own_pro_contact_phone', any()));
+  });
+
+  test('a contact number patch sends contact_phone', () {
+    expect(
+      const ProProfilePatch(
+        contactPhone: '+213661234567',
+        phoneVisibility: PhoneVisibility.public,
+      ).toDb(),
+      {'contact_phone': '+213661234567', 'phone_visibility': 'public'},
+    );
   });
 
   test('patch can explicitly clear a nullable field', () {

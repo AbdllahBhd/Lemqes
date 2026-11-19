@@ -1152,6 +1152,18 @@
   "@privacySoon": {
     "description": "Tag on a choice that is not available yet"
   },
+  "privacyContactPhoneLabel": "Numéro pour vos clients",
+  "@privacyContactPhoneLabel": {
+    "description": "Privacy: label of the number customers call (not the login number)"
+  },
+  "privacyContactPhoneHelp": "Affiché sur votre profil. Il peut être différent du numéro de votre compte.",
+  "@privacyContactPhoneHelp": {
+    "description": "Privacy: under the contact number field"
+  },
+  "privacyContactPhoneEdit": "Changer le numéro",
+  "@privacyContactPhoneEdit": {
+    "description": "Privacy: opens the contact number field again"
+  },
   "privacyShowPrices": "Afficher mes prix",
   "@privacyShowPrices": {
     "description": "Privacy: show prices switch"

@@ -261,6 +261,9 @@
 | `privacyPhoneHidden` | final | final | draft | draft |
 | `privacyPhoneFollowers` | final | final | draft | draft |
 | `privacySoon` | final | final | draft | draft |
+| `privacyContactPhoneLabel` | final | final | draft | draft |
+| `privacyContactPhoneHelp` | final | final | draft | draft |
+| `privacyContactPhoneEdit` | final | final | draft | draft |
 | `privacyShowPrices` | final | final | draft | draft |
 | `privacyShowPricesHint` | final | final | draft | draft |
 | `previewTag` | final | final | draft | draft |
