@@ -260,12 +260,29 @@ flutter_app/test/ (mirrors lib/)  flutter_app/integration_test/pro_profile_flow_
 
 ---
 
+### Follow-up F1: separate pro contact phone, capped search paging (decided 2026-11-19)
+
+**Why:** the M2 security audit showed a customer's space is self-chosen, so "only same-space customers" does not limit `pro_contact_phone`; and it returned the pro's **login** number. Space stays a preference (decision); the fix stops exposing login identities and bounds bulk paging. Rate limiting stays with the hosted setup (R3).
+
+**Files:** new migration `supabase/migrations/20261119000100_pro_contact_phone.sql`; `supabase/tests/database/040-pro-profiles.sql`, `060-search-pros.sql`; `flutter_app/lib/features/pro/data/{pro_models,pro_api,pro_repository}.dart` (+ tests); `flutter_app/lib/features/pro/presentation/edit/privacy_section.dart`, dashboard wiring, ARBs + REVIEW.md (+ tests); `flutter_app/integration_test/pro_profile_flow_test.dart`; `DESIGN.md` (PrivacySection).
+
+**Behaviour:**
+- `pro_profiles.contact_phone text`: null or an Algerian mobile in E.164 (`^\+213[567][0-9]{8}$`); owner-writable through the column grant; never selectable by customers directly.
+- CHECK `phone_visibility <> 'public' or contact_phone is not null`; existing `public` rows without a number become `hidden` in the migration.
+- `pro_contact_phone(p_pro_id)` returns `contact_phone` (never `auth.users.phone`) under the same conditions as before (published, caller's current space, acting as customer, visibility public).
+- `search_pros`: `p_offset` clamped to `0..1000` (`p_limit` still capped at 50).
+- Privacy section: choosing "Visible" asks for the contact number (empty field, not prefilled with the login number; Algerian mobile in local or +213 form, same parser as sign-up). An invalid or empty number shows an inline error and saves nothing; switching to "Masqué" keeps the stored number; the number is shown in `Ltr`.
+
+**Done when:** (1) pgTAP: contact_phone format CHECK, public-without-number refused, `pro_contact_phone` returns the contact number and never the login number (fixture makes them differ), customers cannot select `contact_phone`, offset clamp; widget tests for the privacy flow (valid, invalid, empty, Eastern Arabic digits, hiding keeps the number); integration: the barber sets a public contact number different from her login, and the Femmes customer sees the call button with that number; (2) `npm run lint`, `npm run typecheck`, `npm test`, `sh scripts/integration.sh` x2 pass; (3) no files changed outside the list above (+ matching test dirs, `pubspec.lock` if needed).
+
+---
+
 ## Risks & open questions
 
 | # | What | Why it matters | Decision (recommended first) | Relation | Cost |
 |---|---|---|---|---|---|
 | D7 | Official names of the 11 new wilayas | Press sources disagree on spellings; wrong names in a public picker look careless | A: verify against JO 2026 n° 40 in Task 2; if unreachable, keep the dataset's names unchanged with `verified: no` in `SOURCE.md` and recheck against the JO before M5 — never invent spellings (recommended) · B: hide wilayas 59–69 until verified | [NEEDED for the plan — Task 2] | 30–60 min |
-| R7 | `pro_contact_phone` could be called in a loop to collect public phone numbers | Scraping/harassment, sensitive in the women's space | A: accept for M2 — only same-space customers, only pros who chose "public"; reviewed in the Task 9 audit; rate-limit with the hosted setup (R3) (recommended) | [NEEDED for the plan — before M5] | 1 h |
+| R7 | `pro_contact_phone` could be called in a loop to collect public phone numbers | Space is self-chosen (audit 2026-11-19), so any account can reach the women's space; scraping/harassment | F1: return a separate contact number (never the login), cap search paging; space stays a preference (decision 2026-11-19); rate-limit with the hosted setup (R3) before any hosted release | [NEEDED for the plan — F1 now, rate limit before hosting] | F1: 1–2 h |
 | R8 | Orphan Storage objects (upload succeeded, row insert failed and compensating delete also failed) | Wasted storage, not a leak (paths carry no account id) | A: accept; periodic sweep later (recommended) | [FUTURE idea] | 1 h |
 | R4 | Commune coordinates may be wilaya centroids in the dataset | Distance/near-me (M4) needs real commune points | A: accept for M2 (no distance shown); geocode from OSM/Wikidata in M4 (recommended) | [FUTURE idea — M4] | M4: 2 h |
 | R5 | Public-read photo buckets | Anyone with a URL can fetch a pro's photos | A: accept — these photos are meant to be public; owner-only writes (recommended) · B: signed URLs (more requests, harder caching) | [SIDE FIX — safe to defer] | — |
