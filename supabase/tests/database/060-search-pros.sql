@@ -1,5 +1,5 @@
 begin;
-select plan(31);
+select plan(32);
 
 -- Search results are compared whole, so pros left in the local database (an integration run
 -- publishes one) must not count; the transaction rolls this back.
@@ -7,6 +7,7 @@ delete from public.pro_profiles;
 
 -- Fixture: three published men pros, one unpublished men pro, one published women pro.
 --   m1 'Salon Dégradé'  Alger (16/1601)  adults           + preset men_salon_beard_trim, phone public
+--                                                          (contact +213661000501, login +213550000501)
 --   m2 'Barber Oran'    Oran  (31/3101)  adults_and_kids  + custom 'Coupe Spéciale Zarzis',
 --                                                          verified, prices hidden
 --   m3 'Kids Corner'    Alger (16/1601)  kids_only        + preset men_home_cut_fade (home artist)
@@ -39,12 +40,14 @@ begin
   insert into public.pro_services (pro_id, name, category, price_dzd, duration_min)
   values (m2, 'Coupe Spéciale Zarzis', 'hair', 700, 30);
 
-  update public.pro_profiles set published_at = now() - interval '2 hours', phone_visibility = 'public'
+  update public.pro_profiles set published_at = now() - interval '2 hours', phone_visibility = 'public',
+                                 contact_phone = '+213661000501'
    where id = m1;
   update public.pro_profiles set is_verified = true, show_prices = false where id = m2;
   update public.pro_profiles set published_at = now() - interval '1 hour', phone_visibility = 'followers'
    where id = m3;
-  update public.pro_profiles set phone_visibility = 'public' where id in (m4, w1);
+  update public.pro_profiles set phone_visibility = 'public', contact_phone = '+213661000599'
+   where id in (m4, w1);
 
   perform set_config('t.m1', m1::text, true);
   perform set_config('t.m2', m2::text, true);
@@ -131,8 +134,8 @@ select results_eq(
        from public.pro_public_services(current_setting('t.m1')::uuid) order by 1 $$,
   $$ values ('Base service'::text, 800), ('men_salon_beard_trim', 1000) $$,
   'pro_public_services shows prices when show_prices is true');
-select is(public.pro_contact_phone(current_setting('t.m1')::uuid), '+213550000501',
-  'a public phone of a listable pro is returned to a customer');
+select is(public.pro_contact_phone(current_setting('t.m1')::uuid), '+213661000501',
+  'a public phone of a listable pro is its contact number, never its login number');
 select is(public.pro_contact_phone(current_setting('t.m3')::uuid), null,
   'a followers-only phone is not returned');
 select is(public.pro_contact_phone(current_setting('t.m4')::uuid), null,
@@ -189,6 +192,25 @@ select is((select count(*)::int from public.search_pros(p_limit => 500)), 50,
   'p_limit is capped at 50');
 select is((select count(*)::int from public.search_pros(p_limit => 5, p_offset => 56)), 2,
   'p_offset pages past the first rows');
+do $$ begin perform tests.clear_auth(); end; $$;
+
+-- Offset cap: 1008 listable men pros, so an offset past 1000 would otherwise return nothing.
+
+do $$
+declare
+  i int;
+begin
+  for i in 1..950 loop
+    perform tests.create_pro(
+      tests.create_account('213551' || lpad(i::text, 6, '0'), 'men', 'barber'),
+      'barber', 'Bulk more ' || i);
+  end loop;
+end;
+$$;
+
+do $$ begin perform tests.authenticate_as(current_setting('t.cm')::uuid); end; $$;
+select is((select count(*)::int from public.search_pros(p_limit => 50, p_offset => 5000)), 8,
+  'p_offset is clamped at 1000');
 do $$ begin perform tests.clear_auth(); end; $$;
 
 select * from finish();
