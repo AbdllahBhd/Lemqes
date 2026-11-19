@@ -1,5 +1,5 @@
 begin;
-select plan(91);
+select plan(107);
 
 -- Accounts are created as postgres up front: once a test switches role it cannot write auth.users.
 do $$
@@ -26,11 +26,11 @@ select is(
                       'pro_public_services', 'owns_pro', 'owns_pro_folder',
                       'pro_profiles_before_write', 'pro_services_before_write',
                       'pro_services_after_change', 'pro_photos_before_insert',
-                      'trim_profile_full_name')
+                      'trim_profile_full_name', 'own_pro_contact_phone')
       and prosecdef
       and proconfig @> array['search_path=""']),
-  15,
-  'all 15 new non-search functions are security definer with search_path = '''''
+  16,
+  'all 16 new non-search functions are security definer with search_path = '''''
 );
 select ok(
   (select not prosecdef and proconfig @> array['search_path=""'] and provolatile = 's'
@@ -54,7 +54,7 @@ select is(
                       'pro_public_services', 'owns_pro', 'owns_pro_folder',
                       'pro_profiles_before_write', 'pro_services_before_write',
                       'pro_services_after_change', 'pro_photos_before_insert',
-                      'trim_profile_full_name')
+                      'trim_profile_full_name', 'own_pro_contact_phone')
       and (has_function_privilege('anon', oid, 'execute')
            or has_function_privilege('public', oid, 'execute'))),
   0,
@@ -82,6 +82,8 @@ select throws_ok($$ select public.publish_pro_profile(gen_random_uuid()) $$,
   '42501', null, 'anon cannot call publish_pro_profile');
 select throws_ok($$ select public.pro_contact_phone(gen_random_uuid()) $$,
   '42501', null, 'anon cannot call pro_contact_phone');
+select throws_ok($$ select public.own_pro_contact_phone(gen_random_uuid()) $$,
+  '42501', null, 'anon cannot call own_pro_contact_phone');
 select throws_ok($$ select * from public.search_pros() $$,
   '42501', null, 'anon cannot call search_pros');
 select throws_ok($$ select * from public.pro_public_services(gen_random_uuid()) $$,
@@ -429,6 +431,64 @@ do $$ begin perform tests.authenticate_as(current_setting('t.b')::uuid); end; $$
 select is(
   (select count(*)::int from public.pro_profiles where id = current_setting('t.pb')::uuid),
   1, 'the owner sees its own unpublished profile');
+do $$ begin perform tests.clear_auth(); end; $$;
+
+-- Contact phone (A's login is +213550000401; the contact number is another one) ---------------
+
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select throws_ok(
+  $$ update public.pro_profiles set contact_phone = '0661234567'
+      where id = current_setting('t.pa')::uuid $$,
+  '23514', null, 'contact_phone must be E.164');
+select throws_ok(
+  $$ update public.pro_profiles set contact_phone = '+213261234567'
+      where id = current_setting('t.pa')::uuid $$,
+  '23514', null, 'contact_phone must be an Algerian mobile (5, 6 or 7)');
+select throws_ok(
+  $$ update public.pro_profiles set phone_visibility = 'public'
+      where id = current_setting('t.pa')::uuid $$,
+  '23514', null, 'a public phone without a contact number is refused');
+select lives_ok(
+  $$ update public.pro_profiles set contact_phone = '+213661234567', phone_visibility = 'public'
+      where id = current_setting('t.pa')::uuid $$,
+  'the owner sets a contact number and makes it public in one write');
+select is(public.own_pro_contact_phone(current_setting('t.pa')::uuid), '+213661234567',
+  'the owner reads its contact number through own_pro_contact_phone');
+select throws_ok(
+  $$ select contact_phone from public.pro_profiles where id = current_setting('t.pa')::uuid $$,
+  '42501', null, 'contact_phone has no column grant, even for the owner');
+select throws_ok(
+  $$ update public.pro_profiles set contact_phone = null where id = current_setting('t.pa')::uuid $$,
+  '23514', null, 'the number of a public phone cannot be cleared');
+select lives_ok(
+  $$ update public.pro_profiles set phone_visibility = 'hidden'
+      where id = current_setting('t.pa')::uuid $$,
+  'the owner hides the phone');
+select is(public.own_pro_contact_phone(current_setting('t.pa')::uuid), '+213661234567',
+  'hiding the phone keeps the contact number');
+do $$ begin perform tests.authenticate_as(current_setting('t.cm')::uuid); end; $$;
+select is(public.pro_contact_phone(current_setting('t.pa')::uuid), null,
+  'a hidden phone gives customers nothing, even with a number stored');
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select lives_ok(
+  $$ update public.pro_profiles set phone_visibility = 'public'
+      where id = current_setting('t.pa')::uuid $$,
+  'with a stored number the phone can be made public again');
+do $$ begin perform tests.clear_auth(); end; $$;
+
+do $$ begin perform tests.authenticate_as(current_setting('t.b')::uuid); end; $$;
+select is(public.own_pro_contact_phone(current_setting('t.pa')::uuid), null,
+  'another pro gets nothing from own_pro_contact_phone');
+do $$ begin perform tests.clear_auth(); end; $$;
+
+do $$ begin perform tests.authenticate_as(current_setting('t.cm')::uuid); end; $$;
+select throws_ok(
+  $$ select contact_phone from public.pro_profiles where id = current_setting('t.pa')::uuid $$,
+  '42501', null, 'a customer cannot select contact_phone');
+select is(public.own_pro_contact_phone(current_setting('t.pa')::uuid), null,
+  'a customer gets nothing from own_pro_contact_phone');
+select is(public.pro_contact_phone(current_setting('t.pa')::uuid), '+213661234567',
+  'pro_contact_phone returns the contact number, never the login number');
 do $$ begin perform tests.clear_auth(); end; $$;
 
 -- Un-publishing when the last service goes ------------------------------------------------------

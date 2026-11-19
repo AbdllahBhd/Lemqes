@@ -179,6 +179,12 @@ class FakeProRepository extends Fake implements ProRepository {
     _failIfScripted();
     lastPatch = patch;
     final p = profile!;
+    // The database's CHECK: a public phone needs a contact number.
+    if ((patch.phoneVisibility ?? p.phoneVisibility) ==
+            PhoneVisibility.public &&
+        (patch.contactPhone ?? p.contactPhone) == null) {
+      throw const UnknownProFailure('pro_profiles_public_phone_has_number');
+    }
     bool cleared(PatchField f) => patch.clear.contains(f);
     profile = copyProfile(
       p,
@@ -195,6 +201,7 @@ class FakeProRepository extends Fake implements ProRepository {
       serviceRadiusKm: patch.serviceRadiusKm ?? p.serviceRadiusKm,
       travelFeeDzd: patch.travelFeeDzd ?? p.travelFeeDzd,
       phoneVisibility: patch.phoneVisibility,
+      contactPhone: patch.contactPhone,
       showPrices: patch.showPrices,
       avatarPath: patch.avatarPath,
     );
@@ -284,6 +291,7 @@ ProProfile copyProfile(
   List<DayHours>? hours,
   List<ProPhoto>? photos,
   PhoneVisibility? phoneVisibility,
+  String? contactPhone,
   bool? showPrices,
   String? avatarPath,
   bool? isVerified,
@@ -301,6 +309,7 @@ ProProfile copyProfile(
   serviceRadiusKm: serviceRadiusKm ?? p.serviceRadiusKm,
   travelFeeDzd: travelFeeDzd ?? p.travelFeeDzd,
   phoneVisibility: phoneVisibility ?? p.phoneVisibility,
+  contactPhone: contactPhone ?? p.contactPhone,
   showPrices: showPrices ?? p.showPrices,
   isVerified: isVerified ?? p.isVerified,
   avatarPath: avatarPath ?? p.avatarPath,

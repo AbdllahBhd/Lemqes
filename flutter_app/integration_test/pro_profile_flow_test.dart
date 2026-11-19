@@ -18,6 +18,7 @@ import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.d
 import 'package:lemqes/features/pro/data/price_parse.dart';
 import 'package:lemqes/features/pro/presentation/edit/hours_editor.dart';
 import 'package:lemqes/features/pro/presentation/edit/photo_gallery_editor.dart';
+import 'package:lemqes/shared/widgets/ltr.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,6 +26,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Test OTP numbers only (supabase/config.toml): the code is always 123456.
 const _barberPhone = '0550000002';
 const _customerPhone = '0550000003';
+
+/// The number the barber gives customers: not her login number.
+const _contactPhone = '0661234567';
+const _contactShown = '+213 661 23 45 67';
 const _code = '123456';
 const _password = 'lemqes-test-1';
 
@@ -243,6 +248,19 @@ void main() {
       (await client.from('pro_profiles').select('space')).single['space'],
       'women',
     );
+    // A public phone needs a contact number of her own (CHECK), and the
+    // column is not selectable, not even by her.
+    await expectLater(
+      client
+          .from('pro_profiles')
+          .update({'phone_visibility': 'public'})
+          .eq('id', barberProId),
+      throwsA(isA<PostgrestException>().having((e) => e.code, 'code', '23514')),
+    );
+    await expectLater(
+      client.from('pro_profiles').select('contact_phone'),
+      throwsA(isA<PostgrestException>().having((e) => e.code, 'code', '42501')),
+    );
 
     // Storage API limits, in the barber's own folder (so only the limit can
     // refuse): a disallowed type, then a file over 5 MB.
@@ -407,6 +425,50 @@ void main() {
       );
     }
 
+    await _signOut(tester);
+
+    // --- The barber makes a contact number public ---------------------------
+    await _logIn(tester, _barberPhone);
+    await _waitFor(tester, find.byKey(const Key('visibilityCard')));
+    await _scrollTo(tester, find.byKey(const Key('phone_public')));
+    await _tap(tester, find.byKey(const Key('phone_public')));
+    await _enter(tester, const Key('contactPhoneField'), _contactPhone);
+    await _tap(tester, find.byKey(const Key('contactPhoneSave')));
+    await _waitFor(tester, find.byKey(const Key('contactPhoneNumber')));
+    expect(find.text(_contactShown), findsOneWidget);
+    expect(
+      await client.rpc<String?>(
+        'own_pro_contact_phone',
+        params: {'p_pro_id': barberProId},
+      ),
+      '+213661234567',
+    );
+    await _scrollToTop(tester);
+    await _signOut(tester);
+
+    // --- The Femmes customer now gets the call, with that number -----------
+    await _logIn(tester, _customerPhone);
+    await _waitFor(tester, find.byKey(const Key('spaceSwitch_women')));
+    await _tap(tester, find.byKey(const Key('spaceSwitch_women')));
+    await _waitFor(tester, card);
+    await _tap(tester, card);
+    await _waitFor(tester, find.byKey(const Key('callPro')));
+    expect(
+      find.ancestor(of: find.text(_contactShown), matching: find.byType(Ltr)),
+      findsOneWidget,
+    );
+    expect(
+      await client.rpc<String?>(
+        'pro_contact_phone',
+        params: {'p_pro_id': barberProId},
+      ),
+      '+213661234567',
+    );
+    await expectLater(
+      client.from('pro_profiles').select('contact_phone').eq('id', barberProId),
+      throwsA(isA<PostgrestException>().having((e) => e.code, 'code', '42501')),
+    );
+    await _tap(tester, find.byKey(const Key('proBack')));
     await _signOut(tester);
   });
 }
@@ -609,6 +671,12 @@ Future<void> _enter(WidgetTester tester, Key key, String text) async {
     find.descendant(of: finder, matching: find.byType(EditableText)).first,
   );
   expect(field.controller.text, text, reason: 'text typed into $key');
+}
+
+Future<void> _logIn(WidgetTester tester, String phone) async {
+  await _enter(tester, const Key('phoneField'), phone);
+  await _enter(tester, const Key('passwordField'), _password);
+  await _tap(tester, find.byKey(const Key('primaryAction')));
 }
 
 Future<void> _signOut(WidgetTester tester) async {

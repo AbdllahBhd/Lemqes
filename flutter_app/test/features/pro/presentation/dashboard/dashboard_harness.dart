@@ -22,12 +22,17 @@ XFile jpegFile([String name = 'photo.jpg']) => XFile.fromData(
   mimeType: 'image/jpeg',
 );
 
+/// The contact number [publishedBarber] gets with a public phone (the
+/// database refuses a public phone without one).
+const barberContactPhone = '+213661234567';
+
 /// A listed barber: [barberProfile] with a publish date and [photos] work
 /// photos.
 ProProfile publishedBarber({
   int photos = 0,
   bool showPrices = true,
   PhoneVisibility phone = PhoneVisibility.hidden,
+  String? contactPhone,
   bool verified = false,
   String name = 'Amine Benali',
 }) => copyProfile(
@@ -36,6 +41,9 @@ ProProfile publishedBarber({
   publishedAt: DateTime.utc(2026, 11, 1),
   showPrices: showPrices,
   phoneVisibility: phone,
+  contactPhone:
+      contactPhone ??
+      (phone == PhoneVisibility.public ? barberContactPhone : null),
   isVerified: verified,
   photos: [
     for (var i = 0; i < photos; i++)
