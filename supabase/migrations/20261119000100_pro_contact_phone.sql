@@ -1,7 +1,8 @@
 -- Follow-up F1 (M2 security audit, 2026-11-19): a customer's space is self-chosen, so the
 -- same-space condition does not limit who can call pro_contact_phone. It must therefore never hand
--- out the pro's login number: pros now give a separate contact number, and search paging is
--- bounded so listings cannot be walked without end.
+-- out the pro's login number: pros now give a separate contact number. Search paging is bounded
+-- per query only (other filters still reach every listing), so rate limiting with the hosted
+-- setup (R3) stays the control against bulk collection of public contact numbers.
 
 alter table public.pro_profiles
   add column contact_phone text

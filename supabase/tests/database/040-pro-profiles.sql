@@ -1,5 +1,5 @@
 begin;
-select plan(106);
+select plan(107);
 
 -- Accounts are created as postgres up front: once a test switches role it cannot write auth.users.
 do $$
@@ -466,6 +466,10 @@ select lives_ok(
   'the owner hides the phone');
 select is(public.own_pro_contact_phone(current_setting('t.pa')::uuid), '+213661234567',
   'hiding the phone keeps the contact number');
+do $$ begin perform tests.authenticate_as(current_setting('t.cm')::uuid); end; $$;
+select is(public.pro_contact_phone(current_setting('t.pa')::uuid), null,
+  'a hidden phone gives customers nothing, even with a number stored');
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 select lives_ok(
   $$ update public.pro_profiles set phone_visibility = 'public'
       where id = current_setting('t.pa')::uuid $$,
