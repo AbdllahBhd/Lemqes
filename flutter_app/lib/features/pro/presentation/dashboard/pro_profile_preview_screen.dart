@@ -3,9 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/l10n/locale_controller.dart';
+import '../../../../core/theme/lemqes_typography.dart';
 import '../../../../shared/widgets/lemqes_primary_button.dart';
+import '../../../../shared/widgets/ltr.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../account/data/account_providers.dart';
+import '../../../auth/presentation/auth_widgets.dart' show formatAlgerianPhone;
 import '../../../explore/presentation/pro_public_profile_screen.dart';
 import '../../../home/presentation/home_header.dart';
 import '../../data/pro_models.dart';
@@ -52,8 +55,8 @@ ProProfile customerViewOf(ProProfile p) => ProProfile(
 ///
 /// Built from the owner's own profile: the customer read serves services
 /// only for listable profiles seen as a customer, so the owner would see
-/// none. The call never dials (and the phone is never fetched): it shows
-/// where customers will find it.
+/// none. The call never dials: it shows where customers will find it and the
+/// contact number they will get (the owner's own, never the login number).
 class ProProfilePreviewScreen extends ConsumerWidget {
   const ProProfilePreviewScreen({super.key});
 
@@ -90,7 +93,7 @@ class ProProfilePreviewScreen extends ConsumerWidget {
         child: BandTag(label: l10n.previewTag),
       ),
       bottomBar: profile.phoneVisibility == PhoneVisibility.public
-          ? const _CallPreviewBar()
+          ? _CallPreviewBar(phone: profile.contactPhone)
           : null,
     );
   }
@@ -98,7 +101,11 @@ class ProProfilePreviewScreen extends ConsumerWidget {
 
 /// Where customers find the call: a button that cannot call, and why.
 class _CallPreviewBar extends StatelessWidget {
-  const _CallPreviewBar();
+  const _CallPreviewBar({required this.phone});
+
+  /// Always set for a public phone (database CHECK); null is shown as no
+  /// number rather than a crash.
+  final String? phone;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +119,19 @@ class _CallPreviewBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (phone case final number?) ...[
+              Ltr(
+                child: Text(
+                  formatAlgerianPhone(number),
+                  textAlign: TextAlign.center,
+                  style: lemqesWeight(
+                    theme.textTheme.titleMedium!.merge(lemqesNumeric),
+                    FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+            ],
             Text(
               l10n.previewCallNote,
               textAlign: TextAlign.center,

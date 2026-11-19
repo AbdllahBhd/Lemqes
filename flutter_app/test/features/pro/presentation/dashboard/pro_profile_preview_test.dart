@@ -4,7 +4,10 @@ import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.d
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:lemqes/features/pro/presentation/dashboard/pro_profile_preview_screen.dart';
 import 'package:lemqes/features/pro/presentation/setup/pro_setup_flow.dart';
+import 'package:lemqes/features/auth/presentation/auth_widgets.dart'
+    show formatAlgerianPhone;
 import 'package:lemqes/shared/widgets/lemqes_primary_button.dart';
+import 'package:lemqes/shared/widgets/ltr.dart';
 
 import 'dashboard_harness.dart';
 
@@ -70,6 +73,26 @@ void main() {
     final button = tester.widget<LemqesPrimaryButton>(byKey('callPreview'));
     expect(button.onPressed, isNull);
     expect(find.text(fr.previewCallNote), findsOneWidget);
+  });
+
+  testWidgets('a public phone shows the contact number customers will get', (
+    tester,
+  ) async {
+    await pumpDashboard(
+      tester,
+      profile: publishedBarber(
+        phone: PhoneVisibility.public,
+        contactPhone: '+213661234567',
+      ),
+    );
+    await scrollAndTap(tester, 'dashPreview');
+    final number = find.text(formatAlgerianPhone('+213661234567'));
+    expect(number, findsOneWidget);
+    // Digits stay left to right inside RTL screens.
+    expect(
+      find.ancestor(of: number, matching: find.byType(Ltr)),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a hidden phone shows no call button', (tester) async {
