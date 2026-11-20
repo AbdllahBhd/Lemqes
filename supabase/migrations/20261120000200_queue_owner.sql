@@ -1,9 +1,11 @@
 -- Live queue (M3 Task 2a): queue entries and the owner's actions on them.
 --
 --   * queue_entries is history: rows change state but are never deleted (a before-delete
---     trigger raises history_is_kept unless the delete cascades from the pro being deleted).
+--     trigger raises history_is_kept unless the delete cascades from the pro being deleted; a
+--     before-truncate trigger refuses truncate, which service_role still holds by default).
 --   * Clients have no table privilege; owners act through the definer RPCs below and read
---     owner_queue_row, which never carries a customer id.
+--     owner_queue_row, which never carries a customer id. Labels carry no UI text: an entry
+--     without a name has a null label and the app shows its localized "Client N".
 --   * Every owner RPC locks the pro's pro_live row first (for update): ticket numbers, call next
 --     and finish are serialized per pro, so two devices tapping at once never serve two people.
 --     supabase/tests/race/call_next_race.sh proves it with two sessions.
@@ -86,8 +88,24 @@ create trigger queue_entries_keep_history
 before delete on public.queue_entries
 for each row execute function public.queue_entries_keep_history();
 
+-- Truncate skips row triggers; refuse it outright.
+create function public.queue_entries_no_truncate()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  raise exception 'history_is_kept';
+end;
+$$;
+
+create trigger queue_entries_no_truncate
+before truncate on public.queue_entries
+for each statement execute function public.queue_entries_no_truncate();
+
 -- What an owner sees: no customer id, ever. label = walk-in name, else the remote customer's
--- full_name, else 'Client <ticket_no>'. position: 0 for the serving entry, 1.. for waiting.
+-- full_name, else null (the app builds the localized "Client <ticket_no>").
+-- position: 0 for the serving entry, 1.. for waiting.
 create type public.owner_queue_row as (
   entry_id uuid,
   ticket_no integer,
@@ -111,6 +129,7 @@ create function public.queue_wait_min(p_pro_id uuid, p_before_sort_at timestampt
 returns integer
 language sql
 stable
+security definer
 set search_path = ''
 as $$
   select (ceil((
@@ -182,7 +201,7 @@ begin
 
   return query
   select e.id, e.ticket_no, e.kind,
-         coalesce(e.name, c.full_name, 'Client ' || e.ticket_no),
+         coalesce(e.name, c.full_name),
          e.service_id, e.duration_min, e.state, e.on_my_way_at, e.called_at, e.sort_at,
          case
            when e.state = 'serving' then 0
@@ -505,6 +524,7 @@ revoke all on public.queue_entries from anon, authenticated;
 
 revoke execute on function
   public.queue_entries_keep_history(),
+  public.queue_entries_no_truncate(),
   public.queue_wait_min(uuid, timestamptz),
   public.queue_serve_current(uuid),
   public.owner_queue(uuid),
@@ -519,6 +539,7 @@ from public, anon;
 
 revoke execute on function
   public.queue_entries_keep_history(),
+  public.queue_entries_no_truncate(),
   public.queue_wait_min(uuid, timestamptz),
   public.queue_serve_current(uuid)
 from authenticated;

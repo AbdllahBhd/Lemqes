@@ -1,5 +1,5 @@
 begin;
-select plan(94);
+select plan(100);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday. The service day is the local
 -- date of (now - 6 h 30), so 2026-11-24 05:00 still belongs to 2026-11-23.
@@ -42,11 +42,12 @@ select is(
     where pronamespace = 'public'::regnamespace
       and proname in ('queue_add_walk_in', 'queue_set_details', 'queue_undo_walk_in',
                       'queue_call_next', 'queue_finish', 'queue_mark_absent', 'queue_clear',
-                      'owner_queue', 'queue_serve_current', 'queue_entries_keep_history')
+                      'owner_queue', 'queue_serve_current', 'queue_entries_keep_history',
+                      'queue_wait_min')
       and prosecdef
       and proconfig @> array['search_path=""']),
-  10,
-  'the 10 new definer functions are security definer with search_path = '''''
+  11,
+  'the 11 new definer functions are security definer with search_path = '''''
 );
 select is(
   (select count(*)::int from pg_proc
@@ -54,7 +55,7 @@ select is(
       and proname in ('queue_add_walk_in', 'queue_set_details', 'queue_undo_walk_in',
                       'queue_call_next', 'queue_finish', 'queue_mark_absent', 'queue_clear',
                       'owner_queue', 'queue_serve_current', 'queue_entries_keep_history',
-                      'queue_wait_min')
+                      'queue_wait_min', 'queue_entries_no_truncate')
       and (has_function_privilege('anon', oid, 'execute')
            or has_function_privilege('public', oid, 'execute'))),
   0,
@@ -63,7 +64,8 @@ select is(
 select is(
   (select count(*)::int from pg_proc
     where pronamespace = 'public'::regnamespace
-      and proname in ('queue_wait_min', 'queue_serve_current', 'queue_entries_keep_history')
+      and proname in ('queue_wait_min', 'queue_serve_current', 'queue_entries_keep_history',
+                      'queue_entries_no_truncate')
       and has_function_privilege('authenticated', oid, 'execute')),
   0,
   'internal helpers and the trigger function are not executable by authenticated'
@@ -266,10 +268,10 @@ select is(
 );
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 select is(
-  (select array_agg(ticket_no || ':' || label || ':' || position order by position)
+  (select array_agg(ticket_no || ':' || coalesce(label, '<null>') || ':' || position order by position)
      from public.owner_queue(current_setting('t.pa')::uuid)),
-  array['1:Client 1:0', '4:Chafik:1', '5:Client 5:2'],
-  'Q13 labels: unnamed walk-in Client N, remote full_name, remote without account Client N'
+  array['1:<null>:0', '4:Chafik:1', '5:<null>:2'],
+  'Q13 labels: unnamed walk-in null, remote full_name, remote without account null (the app shows Client N)'
 );
 
 -- Q8 ------------------------------------------------------------------------------------------
@@ -343,10 +345,10 @@ select is(
   'Chafik:30', 'Q8 a remote entry takes a service'
 );
 select is(
-  (select label || ':' || coalesce(duration_min::text, 'avg')
+  (select coalesce(label, '<null>') || ':' || coalesce(duration_min::text, 'avg')
      from public.queue_set_details(current_setting('t.e1')::uuid, '', null, gen_random_uuid())
     where entry_id = current_setting('t.e1')::uuid),
-  'Client 1:avg', 'Q8 an empty name and no service clear both (duration falls back to the average)'
+  '<null>:avg', 'Q8 an empty name and no service clear both (duration falls back to the average)'
 );
 
 -- Q9 ------------------------------------------------------------------------------------------
@@ -354,9 +356,10 @@ select throws_ok(
   format($$ select * from public.queue_mark_absent(%L, gen_random_uuid()) $$, current_setting('t.e1')),
   'P0001', 'not_remote', 'Q9 a walk-in cannot be marked absent'
 );
+do $$ begin perform set_config('t.r3', gen_random_uuid()::text, true); end; $$;
 select is(
   (select array_agg(ticket_no order by position)
-     from public.queue_mark_absent(current_setting('t.e4')::uuid, gen_random_uuid())),
+     from public.queue_mark_absent(current_setting('t.e4')::uuid, current_setting('t.r3')::uuid)),
   array[1, 5], 'Q9 marking a remote entry absent takes it out of the queue'
 );
 do $$ begin perform tests.clear_auth(); end; $$;
@@ -365,10 +368,35 @@ select ok(
     where id = current_setting('t.e4')::uuid),
   'Q9 the absent entry is kept with ended_at at now'
 );
+do $$
+begin
+  perform set_config('t.v', (select queue_version::text from public.pro_live
+                              where pro_id = current_setting('t.pa')::uuid), true);
+  perform tests.authenticate_as(current_setting('t.a')::uuid);
+end;
+$$;
+select tests.freeze_now('2026-11-25 10:05+01');
+select is(
+  (select array_agg(ticket_no order by position)
+     from public.queue_mark_absent(current_setting('t.e4')::uuid, current_setting('t.r3')::uuid)),
+  array[1, 5], 'Q9 replaying mark_absent with the same request id returns the queue without error'
+);
+do $$ begin perform tests.clear_auth(); end; $$;
+select ok(
+  (select e.ended_at = '2026-11-25 10:00+01' and l.queue_version = current_setting('t.v')::bigint
+          and l.last_activity_at = '2026-11-25 10:00+01'
+     from public.queue_entries e join public.pro_live l on l.pro_id = e.pro_id
+    where e.id = current_setting('t.e4')::uuid),
+  'Q9 the replay changes nothing (ended_at, queue_version, last_activity_at)'
+);
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 select throws_ok(
   format($$ select * from public.queue_mark_absent(%L, gen_random_uuid()) $$, current_setting('t.e4')),
   'P0001', 'entry_not_active', 'Q9 an entry already out of the queue cannot change again'
+);
+select throws_ok(
+  format($$ select * from public.queue_set_details(%L, null, null, gen_random_uuid()) $$, current_setting('t.e4')),
+  'P0001', 'entry_not_active', 'Q8 details of an ended entry cannot change (entry_not_active)'
 );
 
 -- Q7 ------------------------------------------------------------------------------------------
@@ -490,6 +518,21 @@ select current_setting('t.pb')::uuid, current_setting('t.pb')::uuid, 200 + i, '2
 from generate_series(1, 8) i;
 do $$ begin perform tests.authenticate_as(current_setting('t.b')::uuid); end; $$;
 select public.queue_call_next(current_setting('t.pb')::uuid, gen_random_uuid());
+-- Q4 (serving, nobody waiting): ticket 3 is serving since 12:48 and nobody waits.
+select tests.freeze_now('2026-11-26 13:00+01');
+select throws_ok(
+  format($$ select * from public.queue_call_next(%L, gen_random_uuid()) $$, current_setting('t.pb')),
+  'P0001', 'queue_empty', 'Q4 call next with someone serving but nobody waiting raises queue_empty'
+);
+do $$ begin perform tests.clear_auth(); end; $$;
+select ok(
+  (select state = 'serving' and called_at = '2026-11-26 12:48+01' and ended_at is null
+     from public.queue_entries
+    where pro_id = current_setting('t.pb')::uuid and service_day = '2026-11-26' and ticket_no = 3)
+  and (select avg_service_min = 14 from public.pro_live where pro_id = current_setting('t.pb')::uuid),
+  'Q4 the serving entry and the average are unchanged'
+);
+do $$ begin perform tests.authenticate_as(current_setting('t.b')::uuid); end; $$;
 select tests.freeze_now('2026-11-26 13:18+01');
 select is(
   (select count(*)::int from public.queue_finish(current_setting('t.pb')::uuid, gen_random_uuid())),
@@ -579,6 +622,10 @@ select ok(
 );
 
 -- Q15 -----------------------------------------------------------------------------------------
+select throws_ok(
+  'truncate public.queue_entries',
+  'P0001', 'history_is_kept', 'Q15 truncating queue_entries raises history_is_kept, even as postgres'
+);
 select throws_ok(
   format($$ delete from public.queue_entries where pro_id = %L $$, current_setting('t.pa')),
   'P0001', 'history_is_kept', 'Q15 deleting queue entries raises history_is_kept, even as postgres'
