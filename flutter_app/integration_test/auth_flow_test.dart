@@ -69,7 +69,8 @@ void main() {
     await _enterCode(tester);
 
     // A new pro carries on into the profile setup (steps 5-7 of 7); leaving
-    // it lands on the dashboard, which asks for the missing profile.
+    // it lands on Today (the pro home since M3), which asks for the missing
+    // profile.
     await _waitFor(tester, find.byKey(const Key('displayNameField')));
     expect(find.text(fr.setupProfileTitle), findsOneWidget);
     await _tap(tester, find.byTooltip('Retour'));
@@ -80,7 +81,10 @@ void main() {
         DateTime.now().isBefore(deadline)) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    expect(find.byKey(const Key('dashComplete')), findsOneWidget);
+    expect(find.byKey(const Key('todayComplete')), findsOneWidget);
+    // "Mon profil" (the dashboard) asks the same and names the space.
+    await _tap(tester, find.byKey(const Key('proNavProfile')));
+    await _waitFor(tester, find.byKey(const Key('dashComplete')));
     expect(find.text('Amine'), findsOneWidget);
     expect(find.text(fr.homeSpaceLabel('men')), findsOneWidget);
 
