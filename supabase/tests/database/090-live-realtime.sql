@@ -1,5 +1,5 @@
 begin;
-select plan(96);
+select plan(103);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday (create_pro gives Monday
 -- 09:00-18:00); time is frozen at 10:00, then at Tuesday 07:00 for the end-of-day job.
@@ -123,8 +123,8 @@ select ok(
 select is(
   (select array_agg(k order by k collate "C")
      from jsonb_object_keys(public.live_snapshot(current_setting('t.pa')::uuid)) k),
-  array['ahead_minutes', 'auto_close_at', 'break_until', 'join_block', 'listed', 'pro_id',
-        'queue_mode', 'queue_version', 'server_now', 'serving_called_at', 'serving_duration_min',
+  array['ahead_minutes', 'auto_close_at', 'break_until', 'join_block', 'listed', 'live_version',
+        'pro_id', 'queue_mode', 'queue_version', 'server_now', 'serving_called_at', 'serving_duration_min',
         'status', 'status_age_from', 'wait_min', 'waiting_count'],
   'R1 the snapshot keys are exactly the Approach list'
 );
@@ -677,6 +677,95 @@ select throws_ok(
   format($$ select public.queue_wait_min(%L, null) $$, current_setting('t.pa')),
   '42501', null, 'R11 authenticated cannot call queue_wait_min');
 do $$ begin perform tests.clear_auth(); end; $$;
+
+-- R12 -----------------------------------------------------------------------------------------
+-- Every broadcast moves live_version by exactly one (the client's ordering key), the status-only
+-- paths included: they do not move queue_version, and server_now ties within a transaction.
+
+delete from realtime.messages;
+do $$
+begin
+  perform set_config('t.lv', (select live_version::text from public.pro_live
+                               where pro_id = current_setting('t.pa')::uuid), true);
+end;
+$$;
+
+-- 'ok' when pro_live.live_version moved by exactly one since the last call and the one broadcast
+-- on the pro's topic carries it; else what differs. Clears the messages.
+create function tests.live_version_step(p_pro uuid)
+returns text
+language plpgsql
+as $$
+declare
+  v_prev bigint := current_setting('t.lv')::bigint;
+  v_now bigint;
+  v_sent bigint[];
+begin
+  select l.live_version into v_now from public.pro_live l where l.pro_id = p_pro;
+  select array_agg((m.payload ->> 'live_version')::bigint) into v_sent
+  from realtime.messages m where m.topic = 'pro:' || p_pro;
+  delete from realtime.messages;
+  perform set_config('t.lv', v_now::text, true);
+  if v_now is distinct from v_prev + 1 then
+    return 'live_version ' || v_prev || ' -> ' || v_now;
+  end if;
+  if v_sent is distinct from array[v_now] then
+    return 'sent ' || coalesce(v_sent::text, 'nothing');
+  end if;
+  return 'ok';
+end;
+$$;
+
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select public.set_live_status(current_setting('t.pa')::uuid, 'open', null,
+                              '00000000-0000-4000-8000-0000000000b1');
+do $$ begin perform tests.clear_auth(); end; $$;
+select is(tests.live_version_step(current_setting('t.pa')::uuid), 'ok',
+  'R12 set_live_status moves live_version by one');
+
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select public.set_live_status(current_setting('t.pa')::uuid, 'open', null,
+                              '00000000-0000-4000-8000-0000000000b1');
+do $$ begin perform tests.clear_auth(); end; $$;
+select is(
+  (select live_version from public.pro_live where pro_id = current_setting('t.pa')::uuid),
+  current_setting('t.lv')::bigint, 'R12 a replay sends nothing and keeps live_version');
+
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select public.extend_auto_close(current_setting('t.pa')::uuid, gen_random_uuid());
+do $$ begin perform tests.clear_auth(); end; $$;
+select is(tests.live_version_step(current_setting('t.pa')::uuid), 'ok',
+  'R12 extend_auto_close moves live_version by one');
+
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select public.set_queue_settings(current_setting('t.pa')::uuid, null, false, gen_random_uuid());
+do $$ begin perform tests.clear_auth(); end; $$;
+select is(tests.live_version_step(current_setting('t.pa')::uuid), 'ok',
+  'R12 a queue RPC moves live_version by one too');
+
+insert into public.pro_blocks (pro_id, customer_id, ticket_label)
+values (current_setting('t.pa')::uuid, current_setting('t.e')::uuid, 'Elias');
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select count(*) from public.queue_unblock(
+  current_setting('t.pa')::uuid,
+  (select b.block_id from public.queue_blocked(current_setting('t.pa')::uuid) b
+    where b.ticket_label = 'Elias'),
+  gen_random_uuid());
+do $$ begin perform tests.clear_auth(); end; $$;
+select is(tests.live_version_step(current_setting('t.pa')::uuid), 'ok',
+  'R12 queue_unblock moves live_version by one');
+
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+update public.pro_profiles set display_name = 'Salon Amine III'
+ where id = current_setting('t.pa')::uuid;
+do $$ begin perform tests.clear_auth(); end; $$;
+select is(tests.live_version_step(current_setting('t.pa')::uuid), 'ok',
+  'R12 the pro_profiles trigger path moves live_version by one');
+
+select tests.freeze_now('2026-11-25 12:00+01');
+select public.live_auto_close();
+select is(tests.live_version_step(current_setting('t.pa')::uuid), 'ok',
+  'R12 live_auto_close moves live_version by one');
 
 select * from finish();
 rollback;

@@ -28,6 +28,7 @@ LiveSnapshot snap({
   servingDurationMin: servingCalledAt == null ? null : servingDuration,
   aheadMinutes: ahead,
   queueVersion: 1,
+  liveVersion: 1,
   serverNow: t0,
 );
 

@@ -113,6 +113,7 @@ class LiveSnapshot {
     required this.servingDurationMin,
     required this.aheadMinutes,
     required this.queueVersion,
+    required this.liveVersion,
     required this.serverNow,
   });
 
@@ -131,6 +132,7 @@ class LiveSnapshot {
     servingDurationMin: (j['serving_duration_min'] as num?)?.toInt(),
     aheadMinutes: (j['ahead_minutes'] as num?)?.toInt() ?? 0,
     queueVersion: (j['queue_version']! as num).toInt(),
+    liveVersion: (j['live_version']! as num).toInt(),
     serverNow: _ts(j['server_now']),
   );
 
@@ -154,18 +156,19 @@ class LiveSnapshot {
   final DateTime? servingCalledAt;
   final int? servingDurationMin;
   final int aheadMinutes;
+  /// Moves when the queue changes: the owner queue and the ticket refetch
+  /// on it.
   final int queueVersion;
+
+  /// Moves on every broadcast, status-only ones included: the ordering key.
+  final int liveVersion;
   final DateTime serverNow;
 
-  /// True when this snapshot is fresher than [other]: a higher
-  /// `queue_version`, or the same version stamped later (status-only changes
-  /// do not bump the version).
-  bool isNewerThan(LiveSnapshot other) {
-    if (queueVersion != other.queueVersion) {
-      return queueVersion > other.queueVersion;
-    }
-    return serverNow.isAfter(other.serverNow);
-  }
+  /// True when this snapshot is fresher than [other]. Only `live_version`
+  /// orders snapshots: `server_now` is a transaction start, so a fetch that
+  /// began before a change committed can carry a later stamp than the
+  /// change's own broadcast.
+  bool isNewerThan(LiveSnapshot other) => liveVersion > other.liveVersion;
 
   @override
   bool operator ==(Object other) =>
@@ -184,6 +187,7 @@ class LiveSnapshot {
       servingDurationMin == other.servingDurationMin &&
       aheadMinutes == other.aheadMinutes &&
       queueVersion == other.queueVersion &&
+      liveVersion == other.liveVersion &&
       serverNow == other.serverNow;
 
   @override
@@ -202,6 +206,7 @@ class LiveSnapshot {
     servingDurationMin,
     aheadMinutes,
     queueVersion,
+    liveVersion,
     serverNow,
   );
 }

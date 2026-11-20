@@ -100,6 +100,7 @@ LiveSnapshot ownSnapshot({
   servingDurationMin: null,
   aheadMinutes: waitMin ?? 0,
   queueVersion: version,
+  liveVersion: version,
   serverNow: testNow,
 );
 

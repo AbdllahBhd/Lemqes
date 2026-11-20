@@ -59,6 +59,7 @@ create table public.pro_live (
   hide_queue_count boolean not null default false,
   avg_service_min smallint not null default 20 check (avg_service_min between 5 and 120),
   queue_version bigint not null default 0,
+  live_version bigint not null default 0,
   check (break_until is null or status = 'on_break'),
   check ((status = 'closed') = (auto_close_at is null))
 );
@@ -166,6 +167,8 @@ as $$
 $$;
 
 -- STUB: Task 3 adds the realtime.send of the snapshot. Keep this signature.
+-- live_version moves on every broadcast (the client's ordering key for snapshots);
+-- queue_version only when the queue changed (the owner queue and ticket refetch on it).
 create function public.live_broadcast(p_pro_id uuid, p_queue_changed boolean default false)
 returns void
 language plpgsql
@@ -173,9 +176,10 @@ security definer
 set search_path = ''
 as $$
 begin
-  if p_queue_changed then
-    update public.pro_live l set queue_version = l.queue_version + 1 where l.pro_id = p_pro_id;
-  end if;
+  update public.pro_live l
+     set live_version = l.live_version + 1,
+         queue_version = l.queue_version + case when p_queue_changed then 1 else 0 end
+   where l.pro_id = p_pro_id;
 end;
 $$;
 

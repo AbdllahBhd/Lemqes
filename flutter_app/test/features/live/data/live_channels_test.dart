@@ -118,11 +118,12 @@ void main() {
     ch.send(live('p1', version: 5));
     await t.pump();
     expect(got.map((s) => s.queueVersion), [5]);
-    // Same version, later stamp: a status-only change.
+    // A status-only change: live_version moves, queue_version does not.
     ch.send(
       live(
         'p1',
-        version: 5,
+        version: 6,
+        queueVersion: 5,
         serverNow: '2026-11-20T10:01:00+00:00',
         status: 'on_break',
       ),
@@ -130,6 +131,36 @@ void main() {
     await t.pump();
     expect(got.last.status, LiveStatus.onBreak);
     expect(serverTimes, hasLength(2));
+    stop(a);
+  });
+
+  channelsTest('a fetch older than a broadcast never replaces it', (t) async {
+    final got = <LiveSnapshot>[];
+    final a = channels.watch('p1').listen(got.add);
+    final ch = factory.last('p1');
+    // The fetch's transaction started before the status change committed:
+    // same queue_version, a later server_now, but the older live_version.
+    server['p1'] = snapshot(
+      'p1',
+      version: 5,
+      queueVersion: 5,
+      serverNow: '2026-11-20T10:00:02+00:00',
+    );
+    ch.subscribed();
+    ch.send(
+      live(
+        'p1',
+        version: 6,
+        queueVersion: 5,
+        serverNow: '2026-11-20T10:00:01+00:00',
+        status: 'on_break',
+      ),
+    );
+    await t.pump(const Duration(milliseconds: 300));
+    expect(fetches, [
+      ['p1'],
+    ]);
+    expect(got.map((s) => s.status), [LiveStatus.onBreak]);
     stop(a);
   });
 

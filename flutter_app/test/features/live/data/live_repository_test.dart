@@ -314,6 +314,7 @@ void main() {
             'serving_duration_min': null,
             'ahead_minutes': 0,
             'queue_version': 1,
+            'live_version': 1,
             'server_now': '2026-11-20T10:00:00+00:00',
           },
         },

@@ -62,14 +62,17 @@ class FakeFactory {
   }
 }
 
+/// [version] is `live_version`; `queue_version` follows it unless
+/// [queueVersion] is given.
 Map<String, Object?> live(
   String proId, {
   int version = 3,
+  int? queueVersion,
   String serverNow = '2026-11-20T10:00:00+00:00',
   String status = 'open',
   bool listed = true,
 }) => {
-  ...snap(version: version, serverNow: serverNow),
+  ...snap(version: version, queueVersion: queueVersion, serverNow: serverNow),
   'pro_id': proId,
   'status': status,
   'listed': listed,
@@ -78,10 +81,17 @@ Map<String, Object?> live(
 LiveSnapshot snapshot(
   String proId, {
   int version = 3,
+  int? queueVersion,
   String serverNow = '2026-11-20T10:00:00+00:00',
   String status = 'open',
 }) => LiveSnapshot.fromJson(
-  live(proId, version: version, serverNow: serverNow, status: status),
+  live(
+    proId,
+    version: version,
+    queueVersion: queueVersion,
+    serverNow: serverNow,
+    status: status,
+  ),
 );
 
 /// Not awaited: inside testWidgets, awaiting a cancel resumes outside the
@@ -91,7 +101,8 @@ void stop(StreamSubscription<Object?> s) => unawaited(s.cancel());
 extension CopyListed on LiveSnapshot {
   /// The same snapshot with another `listed` value.
   LiveSnapshot copyWithListed(bool listed) => LiveSnapshot.fromJson({
-    ...live(proId, version: queueVersion, listed: listed),
+    ...live(proId, version: liveVersion, listed: listed),
+    'queue_version': queueVersion,
     'server_now': serverNow.toIso8601String(),
   });
 }

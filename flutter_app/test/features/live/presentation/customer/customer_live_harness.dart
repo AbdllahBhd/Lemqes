@@ -49,6 +49,7 @@ Map<String, Object?> custLive(
   'serving_duration_min': null,
   'ahead_minutes': waitMin ?? 0,
   'queue_version': version,
+  'live_version': version,
   'server_now': (serverNow ?? testNow).toIso8601String(),
 };
 

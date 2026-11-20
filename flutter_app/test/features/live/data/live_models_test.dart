@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/live/data/live_models.dart';
 
+/// [version] is the snapshot's `live_version` (its ordering key);
+/// `queue_version` follows it unless [queueVersion] says otherwise.
 Map<String, Object?> snap({
   int version = 3,
+  int? queueVersion,
   String serverNow = '2026-11-20T10:00:00+00:00',
 }) => {
   'pro_id': 'p1',
@@ -18,7 +21,8 @@ Map<String, Object?> snap({
   'serving_called_at': '2026-11-20T09:50:00+00:00',
   'serving_duration_min': 20,
   'ahead_minutes': 30,
-  'queue_version': version,
+  'queue_version': queueVersion ?? version,
+  'live_version': version,
   'server_now': serverNow,
 };
 
@@ -58,13 +62,29 @@ void main() {
     );
   });
 
-  test('isNewerThan compares queue_version then server_now', () {
+  test('isNewerThan compares live_version only', () {
     final base = LiveSnapshot.fromJson(snap());
     expect(LiveSnapshot.fromJson(snap(version: 4)).isNewerThan(base), isTrue);
     expect(LiveSnapshot.fromJson(snap(version: 2)).isNewerThan(base), isFalse);
+    // A status-only broadcast moves live_version, not queue_version.
     expect(
-      LiveSnapshot.fromJson(snap(serverNow: '2026-11-20T10:00:05+00:00'))
-          .isNewerThan(base),
+      LiveSnapshot.fromJson(
+        snap(version: 4, queueVersion: 3),
+      ).isNewerThan(base),
+      isTrue,
+    );
+    // server_now is a transaction start: a later stamp at the same
+    // live_version is the same state, an earlier one can still be newer.
+    expect(
+      LiveSnapshot.fromJson(
+        snap(serverNow: '2026-11-20T10:00:05+00:00'),
+      ).isNewerThan(base),
+      isFalse,
+    );
+    expect(
+      LiveSnapshot.fromJson(
+        snap(version: 4, serverNow: '2026-11-20T09:59:59+00:00'),
+      ).isNewerThan(base),
       isTrue,
     );
     expect(base.isNewerThan(base), isFalse);

@@ -88,6 +88,7 @@ begin
     'serving_duration_min', v_serving_duration_min,
     'ahead_minutes', v_ahead,
     'queue_version', v_live.queue_version,
+    'live_version', v_live.live_version,
     'server_now', public.live_now()
   );
 end;
@@ -127,9 +128,13 @@ as $$
 declare
   v_snapshot jsonb;
 begin
-  if p_queue_changed then
-    update public.pro_live l set queue_version = l.queue_version + 1 where l.pro_id = p_pro_id;
-  end if;
+  -- The row update also serializes concurrent broadcasts of one pro (the pro_profiles trigger
+  -- path takes no pro_live lock first): live_version orders their snapshots strictly, where
+  -- server_now (transaction start) can tie or invert.
+  update public.pro_live l
+     set live_version = l.live_version + 1,
+         queue_version = l.queue_version + case when p_queue_changed then 1 else 0 end
+   where l.pro_id = p_pro_id;
 
   v_snapshot := public.live_snapshot(p_pro_id);
   if v_snapshot is not null then
@@ -185,14 +190,14 @@ begin
 end;
 $$;
 
+-- The helper is wrapped in a select so it runs once per query (initPlan), not per row; the row's
+-- own topic must be the joined one, so a client authorized on one topic reads no other's rows.
 create policy live_topics on realtime.messages
 for select to authenticated
 using (
   realtime.messages.extension = 'broadcast'
   and realtime.messages.topic = (select realtime.topic())
   and (select public.live_topic_allowed((select realtime.topic())))
--- The helper is wrapped in a select so it runs once per query (initPlan), not per row; the row's
--- own topic must be the joined one, so a client authorized on one topic reads no other's rows.
 );
 
 -- search_pros ------------------------------------------------------------------------------------

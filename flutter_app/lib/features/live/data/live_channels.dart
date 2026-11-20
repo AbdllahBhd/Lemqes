@@ -92,8 +92,7 @@ class _Topic {
 /// * Every (re)subscribe, and [refreshAll] (app resume), re-fetches
 ///   snapshots, batched over [batchWindow]: a message missed while the socket
 ///   was down is replaced by the server's current state.
-/// * A snapshot older than the one held (`queue_version`, then `server_now`)
-///   is dropped.
+/// * A snapshot not newer than the one held (`live_version`) is dropped.
 /// * At most [maxChannels] channels (the server allows 100 per connection):
 ///   past it, lingering channels close first, then new pros are served by
 ///   fetches only until a slot frees. A fetch-only pro refreshes on attach
