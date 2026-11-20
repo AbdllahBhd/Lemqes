@@ -84,15 +84,19 @@ final liveChannelsProvider = Provider<LiveChannels>((ref) {
         _tracked(ref, () => ref.read(liveRepositoryProvider).snapshots(ids)),
     onServerNow: (t) => ref.read(serverOffsetProvider.notifier).observe(t),
   );
+  // Signed out, every join would be refused (and the refusal would stick
+  // for the next account): nothing joins until an account is there.
+  if (ref.read(accountProvider).value?.id == null) {
+    channels.closeAll(rejoin: false);
+  }
   ref.listen(
     accountProvider.select((a) {
       final v = a.value;
       return (v?.id, v?.currentSpace, v?.activeRole);
     }),
     (previous, next) {
-      // Nothing can be joined before the first account (sign-in).
-      if (previous == null || previous.$1 == null || previous == next) return;
-      channels.closeAll();
+      if (previous == next) return;
+      channels.closeAll(rejoin: next.$1 != null);
     },
   );
   final resumes = ref.watch(appResumesProvider).listen((_) {
@@ -110,6 +114,14 @@ final liveChannelsProvider = Provider<LiveChannels>((ref) {
 final liveSnapshotProvider = StreamProvider.autoDispose
     .family<LiveSnapshot, String>(
       (ref, proId) => ref.watch(liveChannelsProvider).watch(proId),
+      retry: _noRetry,
+    );
+
+/// The owner's view of their own pro: unlike [liveSnapshotProvider], an
+/// unpublished pro (`listed: false`) stays visible.
+final ownLiveSnapshotProvider = StreamProvider.autoDispose
+    .family<LiveSnapshot, String>(
+      (ref, proId) => ref.watch(liveChannelsProvider).watch(proId, own: true),
       retry: _noRetry,
     );
 
@@ -182,7 +194,9 @@ class OwnerQueueController extends AsyncNotifier<OwnerQueue> {
 
   @override
   Future<OwnerQueue> build() async {
-    ref.watch(liveSnapshotProvider(proId).select((s) => s.value?.queueVersion));
+    ref.watch(
+      ownLiveSnapshotProvider(proId).select((s) => s.value?.queueVersion),
+    );
     final rows = await _tracked(
       ref,
       () => ref.read(liveRepositoryProvider).ownerQueue(proId),
@@ -216,7 +230,8 @@ class OwnerQueueController extends AsyncNotifier<OwnerQueue> {
       _run(OwnerAction.block, (r) => r.block(entryId));
 
   /// Ignored while another action is in flight (a double tap must never
-  /// call next twice). Failures are rethrown for the screen to show.
+  /// call next twice): the ignored call is a no-op that completes at once.
+  /// Failures are rethrown for the screen to show.
   Future<void> _run(
     OwnerAction action,
     Future<List<OwnerQueueRow>> Function(LiveRepository repo) body,
@@ -254,6 +269,10 @@ final myTicketProvider = AsyncNotifierProvider<MyTicketController, MyTicket?>(
 );
 
 class MyTicketController extends AsyncNotifier<MyTicket?> {
+  // The pro version the ticket was last refetched for. Kept across rebuilds:
+  // the rebuilt listener sees the same snapshot again and must stay quiet.
+  ({String proId, int version})? _seen;
+
   @override
   Future<MyTicket?> build() async {
     final (:id, :space) = ref.watch(
@@ -274,12 +293,15 @@ class MyTicketController extends AsyncNotifier<MyTicket?> {
     if (ticket == null || ticket.proSpace != space.toDb()) return null;
     if (ticket.state == EntryState.waiting ||
         ticket.state == EntryState.serving) {
-      ref.listen(liveSnapshotProvider(ticket.proId), (previous, next) {
-        final before = previous?.value?.queueVersion;
-        final after = next.value?.queueVersion;
-        if (before != null && after != null && after != before) {
-          ref.invalidateSelf();
-        }
+      ref.listen(liveSnapshotProvider(ticket.proId), (_, next) {
+        final version = next.value?.queueVersion;
+        if (version == null) return;
+        final seen = (proId: ticket.proId, version: version);
+        if (seen == _seen) return;
+        // Also on the first snapshot: the queue may have moved between the
+        // ticket fetch and the channel join.
+        _seen = seen;
+        ref.invalidateSelf();
       });
     }
     return ticket;

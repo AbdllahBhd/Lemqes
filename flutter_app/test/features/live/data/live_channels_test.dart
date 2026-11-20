@@ -6,87 +6,7 @@ import 'package:lemqes/features/live/data/live_failure.dart';
 import 'package:lemqes/features/live/data/live_models.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'live_models_test.dart' show snap;
-
-/// One fake private channel: the test drives its status and broadcasts.
-class FakeChannel implements LiveChannel {
-  FakeChannel(this.topic, this.onBroadcast, this.onStatus);
-
-  final String topic;
-  final LiveBroadcastHandler onBroadcast;
-  final LiveStatusHandler onStatus;
-  bool closed = false;
-
-  @override
-  Future<void> close() async => closed = true;
-
-  void subscribed() => onStatus(RealtimeSubscribeStatus.subscribed, null);
-
-  void error([Object? e]) =>
-      onStatus(RealtimeSubscribeStatus.channelError, e ?? Exception('down'));
-
-  void refuse() => onStatus(
-    RealtimeSubscribeStatus.channelError,
-    Exception(
-      'Unauthorized: You do not have permissions to read from this '
-      'Channel topic: $topic',
-    ),
-  );
-
-  /// A broadcast exactly as realtime_client hands it over (spike b).
-  void send(Map<String, Object?> live) => onBroadcast({
-    'type': 'broadcast',
-    'event': 'live',
-    'payload': {...live, 'id': 'message-id'},
-    'meta': {'id': 'message-id'},
-  });
-}
-
-class FakeFactory {
-  final channels = <FakeChannel>[];
-
-  List<FakeChannel> get open => [
-    for (final c in channels)
-      if (!c.closed) c,
-  ];
-
-  FakeChannel last(String proId) =>
-      channels.lastWhere((c) => c.topic == 'pro:$proId');
-
-  LiveChannel call(
-    String topic,
-    LiveBroadcastHandler onBroadcast,
-    LiveStatusHandler onStatus,
-  ) {
-    final c = FakeChannel(topic, onBroadcast, onStatus);
-    channels.add(c);
-    return c;
-  }
-}
-
-Map<String, Object?> live(
-  String proId, {
-  int version = 3,
-  String serverNow = '2026-11-20T10:00:00+00:00',
-  String status = 'open',
-}) => {
-  ...snap(version: version, serverNow: serverNow),
-  'pro_id': proId,
-  'status': status,
-};
-
-LiveSnapshot snapshot(
-  String proId, {
-  int version = 3,
-  String serverNow = '2026-11-20T10:00:00+00:00',
-  String status = 'open',
-}) => LiveSnapshot.fromJson(
-  live(proId, version: version, serverNow: serverNow, status: status),
-);
-
-/// Not awaited: inside testWidgets, awaiting a cancel resumes outside the
-/// fake-async zone and the next pump never returns.
-void stop(StreamSubscription<Object?> s) => unawaited(s.cancel());
+import 'live_fakes.dart';
 
 void main() {
   late FakeFactory factory;
@@ -164,6 +84,7 @@ void main() {
     // The socket drops and comes back: a fresh fetch, never an old message.
     factory.last('p1').error();
     server['p1'] = snapshot('p1', version: 4);
+    await t.pump(const Duration(seconds: 3));
     factory.last('p1').subscribed();
     await t.pump(const Duration(milliseconds: 300));
     expect(fetches.last, ['p1']);
@@ -328,6 +249,117 @@ void main() {
     for (final s in [a, b, c]) {
       stop(s);
     }
+  });
+
+  channelsTest('a join-reply error without Unauthorized rejoins', (t) async {
+    final a = channels.watch('p1').listen((_) {});
+    final first = factory.last('p1');
+    // realtime_client schedules no rejoin for an error join reply.
+    first.error(Exception('"ChannelRateLimitReached: Too many channels"'));
+    expect(first.closed, isTrue);
+    await t.pump(const Duration(seconds: 3));
+    final second = factory.last('p1');
+    expect(second, isNot(same(first)));
+    expect(channels.connected, isTrue);
+    second.subscribed();
+    await t.pump(const Duration(seconds: 6));
+    expect(channels.connected, isTrue);
+    stop(a);
+  });
+
+  channelsTest('a refused pro stays refused after its listeners leave', (
+    t,
+  ) async {
+    final a = channels.watch('p1').listen((_) {}, onError: (_) {});
+    factory.last('p1').refuse();
+    stop(a);
+    await t.pump(const Duration(seconds: 20));
+    final errors = <Object>[];
+    final b = channels.watch('p1').listen((_) {}, onError: errors.add);
+    await t.pump();
+    expect(errors.single, isA<LiveUnavailable>());
+    expect(factory.channels.where((c) => c.topic == 'pro:p1'), hasLength(1));
+    stop(b);
+  });
+
+  channelsTest('an unlisted pro becomes unavailable to customers', (t) async {
+    final errors = <Object>[];
+    final a = channels.watch('p1').listen((_) {}, onError: errors.add);
+    final ch = factory.last('p1');
+    ch.send(live('p1'));
+    await t.pump();
+    ch.send(live('p1', version: 4, listed: false));
+    await t.pump();
+    expect(errors.single, isA<LiveUnavailable>());
+    expect(ch.closed, isTrue);
+    expect(channels.latest('p1'), isNull);
+    stop(a);
+    await t.pump(const Duration(seconds: 20));
+    // Kept until the next closeAll, even with nobody listening meanwhile.
+    final again = <Object>[];
+    final b = channels.watch('p1').listen((_) {}, onError: again.add);
+    await t.pump();
+    expect(again.single, isA<LiveUnavailable>());
+    expect(factory.channels, hasLength(1));
+    stop(b);
+    channels.closeAll();
+    await t.pump(const Duration(milliseconds: 300));
+    final c = channels.watch('p1').listen((_) {});
+    expect(factory.channels, hasLength(2));
+    stop(c);
+  });
+
+  channelsTest('the owner keeps an unlisted pro', (t) async {
+    final got = <LiveSnapshot>[];
+    final errors = <Object>[];
+    final a = channels
+        .watch('p1', own: true)
+        .listen(got.add, onError: errors.add);
+    factory.last('p1').send(live('p1', listed: false));
+    await t.pump();
+    expect(errors, isEmpty);
+    expect(got.single.listed, isFalse);
+    expect(factory.last('p1').closed, isFalse);
+    stop(a);
+  });
+
+  channelsTest('a topic removed after its linger forgets its snapshot', (
+    t,
+  ) async {
+    final a = channels.watch('p1').listen((_) {});
+    factory.last('p1').send(live('p1'));
+    await t.pump();
+    expect(channels.latest('p1'), isNotNull);
+    stop(a);
+    await t.pump(const Duration(seconds: 11));
+    expect(channels.latest('p1'), isNull);
+  });
+
+  channelsTest('a lingering channel closed by the server is just dropped', (
+    t,
+  ) async {
+    final a = channels.watch('p1').listen((_) {});
+    stop(a);
+    await t.pump();
+    factory.last('p1').onStatus(RealtimeSubscribeStatus.closed, null);
+    // Nobody is listening: no "Hors ligne", not even before the linger ends.
+    await t.pump(const Duration(seconds: 6));
+    expect(channels.connected, isTrue);
+    await t.pump(const Duration(seconds: 20));
+    expect(factory.channels, hasLength(1));
+  });
+
+  channelsTest('signed out: nothing joins until closeAll', (t) async {
+    channels.closeAll(rejoin: false);
+    final a = channels.watch('p1').listen((_) {});
+    channels.refreshAll();
+    await t.pump(const Duration(seconds: 1));
+    expect(factory.channels, isEmpty);
+    expect(fetches, isEmpty);
+    channels.closeAll();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(factory.open.map((c) => c.topic), ['pro:p1']);
+    stop(a);
   });
 
   channelsTest('resume re-fetches every watched pro', (t) async {

@@ -11,6 +11,7 @@ Map<String, Object?> snap({
   'auto_close_at': '2026-11-20T19:30:00+00:00',
   'status_age_from': '2026-11-20T09:55:00+00:00',
   'queue_mode': 'open',
+  'listed': true,
   'join_block': null,
   'waiting_count': 3,
   'wait_min': 40,
@@ -35,6 +36,15 @@ void main() {
     expect(a.joinBlock, isNull);
     expect(a.waitingCount, 3);
     expect(a.servingCalledAt, DateTime.utc(2026, 11, 20, 9, 50));
+  });
+
+  test('listed is read; an unpublish says false', () {
+    expect(LiveSnapshot.fromJson(snap()).listed, isTrue);
+    expect(LiveSnapshot.fromJson({...snap(), 'listed': false}).listed, isFalse);
+    expect(
+      LiveSnapshot.fromJson({...snap(), 'listed': false}),
+      isNot(LiveSnapshot.fromJson(snap())),
+    );
   });
 
   test('join_block values map, unknown ones do not throw', () {

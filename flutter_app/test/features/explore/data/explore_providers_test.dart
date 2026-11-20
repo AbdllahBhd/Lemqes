@@ -13,7 +13,7 @@ import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../live/data/live_channels_test.dart' show FakeFactory, live;
+import '../../live/data/live_fakes.dart';
 
 class _MockRepo extends Mock implements ExploreRepository {}
 
@@ -312,6 +312,44 @@ void main() {
       expect(next.read().requireValue.snapshot, _card(31).live);
       sub.close();
       next.close();
+    },
+  );
+
+  test(
+    'a men search answering after a switch to women seeds nothing',
+    () async {
+      final men = Completer<List<ProCard>>();
+      var calls = 0;
+      when(
+        () => repo.search(
+          any(),
+          offset: any(named: 'offset'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) {
+        // The first search is the men one; later ones are women's.
+        if (calls++ == 0) return men.future;
+        return Future.value([_card(100)]);
+      });
+      container = make();
+      await container.read(accountProvider.future);
+      container.read(exploreResultsProvider);
+      await container.pump();
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 1);
+
+      container.read(accountProvider.notifier).state = AsyncData(
+        _account(Space.women),
+      );
+      await container.pump();
+      final women = await container.read(exploreResultsProvider.future);
+      men.complete(_page(0, 30));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(women.space, Space.women);
+      final channels = container.read(liveChannelsProvider);
+      expect(channels.latest('p100'), isNotNull);
+      expect(channels.latest('p0'), isNull);
     },
   );
 

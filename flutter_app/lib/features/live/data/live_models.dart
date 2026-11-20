@@ -105,6 +105,7 @@ class LiveSnapshot {
     required this.autoCloseAt,
     required this.statusAgeFrom,
     required this.queueMode,
+    required this.listed,
     required this.joinBlock,
     required this.waitingCount,
     required this.waitMin,
@@ -122,6 +123,7 @@ class LiveSnapshot {
     autoCloseAt: _tsOrNull(j['auto_close_at']),
     statusAgeFrom: _ts(j['status_age_from']),
     queueMode: QueueMode.fromDb(j['queue_mode']! as String),
+    listed: j['listed']! as bool,
     joinBlock: JoinBlock.fromDb(j['join_block'] as String?),
     waitingCount: (j['waiting_count'] as num?)?.toInt(),
     waitMin: (j['wait_min'] as num?)?.toInt(),
@@ -140,6 +142,10 @@ class LiveSnapshot {
   /// Last barber activity, rounded down to 5 min by the server.
   final DateTime statusAgeFrom;
   final QueueMode queueMode;
+
+  /// False once the pro is unpublished: customers drop the pro (their
+  /// channel stays authorized until they leave it); the owner keeps it.
+  final bool listed;
   final JoinBlock? joinBlock;
 
   /// Null when the pro hides the count.
@@ -170,6 +176,7 @@ class LiveSnapshot {
       autoCloseAt == other.autoCloseAt &&
       statusAgeFrom == other.statusAgeFrom &&
       queueMode == other.queueMode &&
+      listed == other.listed &&
       joinBlock == other.joinBlock &&
       waitingCount == other.waitingCount &&
       waitMin == other.waitMin &&
@@ -187,6 +194,7 @@ class LiveSnapshot {
     autoCloseAt,
     statusAgeFrom,
     queueMode,
+    listed,
     joinBlock,
     waitingCount,
     waitMin,

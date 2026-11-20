@@ -11,7 +11,7 @@ import 'package:lemqes/features/live/data/live_providers.dart';
 import 'package:lemqes/features/live/data/live_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'live_channels_test.dart' show FakeFactory, live, snapshot, stop;
+import 'live_fakes.dart';
 
 class _MockRepo extends Mock implements LiveRepository {}
 
@@ -199,6 +199,18 @@ void main() {
       sub.close();
     });
 
+    providerTest('keeps working when its own pro is unpublished', (t, c) async {
+      when(() => repo.ownerQueue('p1')).thenAnswer((_) async => [row(1)]);
+      final sub = c.listen(ownerQueueProvider('p1'), (_, _) {});
+      await settle(t);
+      factory.last('p1').send(live('p1', version: 4, listed: false));
+      await settle(t);
+      expect(factory.last('p1').closed, isFalse);
+      expect(c.read(ownLiveSnapshotProvider('p1')).value?.listed, isFalse);
+      expect(sub.read().requireValue.rows, hasLength(1));
+      sub.close();
+    });
+
     providerTest('an action exposes its in-flight state and ignores taps', (
       t,
       c,
@@ -285,6 +297,19 @@ void main() {
       sub.close();
     });
 
+    providerTest('the first snapshot of its pro refetches once', (t, c) async {
+      when(() => repo.myTicket()).thenAnswer((_) async => ticket());
+      final sub = c.listen(myTicketProvider, (_, _) {});
+      await settle(t);
+      verify(() => repo.myTicket()).called(1);
+      factory.last('p1').send(live('p1', version: 3));
+      await settle(t);
+      await t.pump(const Duration(seconds: 1));
+      // Once: the rebuilt listener sees the same version and stays quiet.
+      verify(() => repo.myTicket()).called(1);
+      sub.close();
+    });
+
     providerTest('a ticket of the other space is hidden', (t, c) async {
       when(() => repo.myTicket())
           .thenAnswer((_) async => ticket(space: 'women'));
@@ -335,6 +360,24 @@ void main() {
       c.read(accountProvider.notifier).state = const AsyncData(null);
       await settle(t);
       expect(factory.last('p1').closed, isTrue);
+      stop(s);
+    });
+
+    providerTest('signed out, nothing re-joins until the next account', (
+      t,
+      c,
+    ) async {
+      final s = c.read(liveChannelsProvider).watch('p1').listen((_) {});
+      c.read(accountProvider.notifier).state = const AsyncData(null);
+      await t.pump(const Duration(seconds: 1));
+      expect(factory.open, isEmpty);
+      resumes.add(null);
+      await t.pump(const Duration(seconds: 1));
+      verifyNever(() => repo.snapshots(any()));
+
+      c.read(accountProvider.notifier).state = AsyncData(account());
+      await t.pump(const Duration(milliseconds: 300));
+      expect(factory.open.map((ch) => ch.topic), ['pro:p1']);
       stop(s);
     });
 

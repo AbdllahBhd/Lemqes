@@ -63,6 +63,9 @@ class _Topic {
 
   final String proId;
   final sinks = <StreamController<LiveSnapshot>>{};
+
+  /// The owner's listeners (a subset of [sinks]): they keep an unlisted pro.
+  final own = <StreamController<LiveSnapshot>>{};
   LiveChannel? channel;
 
   /// Identifies the current channel: callbacks of a closed one are dropped.
@@ -71,10 +74,6 @@ class _Topic {
   Timer? down;
   Timer? retry;
   bool isDown = false;
-
-  /// The server refused the join (Unauthorized): no channel, no data, until
-  /// [LiveChannels.closeAll].
-  bool refused = false;
 
   void cancelTimers() {
     linger?.cancel();
@@ -88,7 +87,8 @@ class _Topic {
 /// widget shows them.
 ///
 /// * A channel is shared by every listener of a pro and lingers [linger]
-///   after the last one leaves (scrolling back is free).
+///   after the last one leaves (scrolling back is free); its snapshot is
+///   forgotten when it goes.
 /// * Every (re)subscribe, and [refreshAll] (app resume), re-fetches
 ///   snapshots, batched over [batchWindow]: a message missed while the socket
 ///   was down is replaced by the server's current state.
@@ -96,11 +96,14 @@ class _Topic {
 ///   is dropped.
 /// * At most [maxChannels] channels (the server allows 100 per connection):
 ///   past it, lingering channels close first, then new pros are served by
-///   fetches only until a slot frees.
-/// * `Unauthorized` is final for that pro ([LiveUnavailable] on its streams,
-///   no retry) and does not count as a disconnection.
-/// * [connected] turns false once a channel has been failing for
-///   [downAfter].
+///   fetches only until a slot frees. A fetch-only pro refreshes on attach
+///   and on resume only: it gets no message in between.
+/// * `Unauthorized`, or a snapshot saying `listed: false` to a non-owner, is
+///   final for that pro until [closeAll] ([LiveUnavailable] on its streams,
+///   no channel, no retry) and does not count as a disconnection.
+/// * Any other failure closes the channel and joins a new one after
+///   [retryAfter]; [connected] turns false once a watched pro has been
+///   failing for [downAfter].
 class LiveChannels {
   LiveChannels({
     required LiveChannelFactory channelFactory,
@@ -124,6 +127,10 @@ class LiveChannels {
 
   final _topics = <String, _Topic>{};
   final _held = <String, LiveSnapshot>{};
+
+  /// Pros refused or unlisted for this caller; outlives their topics so a
+  /// returning listener does not wait ~5 s for the same refusal again.
+  final _refused = <String>{};
   final _toFetch = <String>{};
   Timer? _fetchTimer;
   Timer? _rejoinTimer;
@@ -131,6 +138,9 @@ class LiveChannels {
   // Bumped by closeAll: a fetch answered for the previous space is dropped.
   var _generation = 0;
   var _disposed = false;
+
+  // Signed out: nothing may join or fetch (every join would be refused).
+  var _suspended = false;
 
   var _connected = true;
   final _connectedController = StreamController<bool>.broadcast();
@@ -144,11 +154,12 @@ class LiveChannels {
   LiveSnapshot? latest(String proId) => _held[proId];
 
   /// Snapshots of [proId], starting with the held one. Errors with
-  /// [LiveUnavailable] when the server refuses the pro's channel.
-  Stream<LiveSnapshot> watch(String proId) {
+  /// [LiveUnavailable] when the pro is refused or unlisted for this caller.
+  /// The owner's screens pass [own]: an unpublished pro stays theirs.
+  Stream<LiveSnapshot> watch(String proId, {bool own = false}) {
     late final StreamController<LiveSnapshot> sink;
     sink = StreamController<LiveSnapshot>(
-      onListen: () => _attach(proId, sink),
+      onListen: () => _attach(proId, sink, own: own),
       onCancel: () => _detach(proId, sink),
     );
     return sink.stream;
@@ -160,30 +171,35 @@ class LiveChannels {
   /// Re-fetches every watched pro (app resume).
   void refreshAll() {
     for (final t in _topics.values) {
-      if (!t.refused) _queueFetch(t.proId);
+      if (!_refused.contains(t.proId)) _queueFetch(t.proId);
     }
   }
 
   /// Space, role or account change: the server authorizes a channel only
-  /// when it is joined, so every channel closes and every held snapshot is
-  /// forgotten. The listeners still there after [batchWindow] (the new
-  /// screen's) are joined again; the old screen's leave before that.
-  void closeAll() {
+  /// when it is joined, so every channel closes and every held snapshot and
+  /// refusal is forgotten. The listeners still there after [batchWindow]
+  /// (the new screen's) are joined again; the old screen's leave before
+  /// that. With [rejoin] false (signed out) nothing joins or fetches until
+  /// the next [closeAll].
+  void closeAll({bool rejoin = true}) {
     _generation++;
     _toFetch.clear();
     _fetchTimer?.cancel();
     _fetchTimer = null;
     _held.clear();
+    _refused.clear();
     for (final t in [..._topics.values]) {
       _closeChannel(t);
       t
         ..cancelTimers()
-        ..isDown = false
-        ..refused = false;
+        ..isDown = false;
       if (t.sinks.isEmpty) _topics.remove(t.proId);
     }
     _recomputeConnected();
     _rejoinTimer?.cancel();
+    _rejoinTimer = null;
+    _suspended = !rejoin;
+    if (!rejoin) return;
     _rejoinTimer = Timer(batchWindow, () {
       _rejoinTimer = null;
       for (final t in [..._topics.values]) {
@@ -212,13 +228,18 @@ class LiveChannels {
   int get _channelCount =>
       _topics.values.where((t) => t.channel != null).length;
 
-  void _attach(String proId, StreamController<LiveSnapshot> sink) {
+  void _attach(
+    String proId,
+    StreamController<LiveSnapshot> sink, {
+    required bool own,
+  }) {
     if (_disposed) return;
     final t = _topics.putIfAbsent(proId, () => _Topic(proId));
     t.sinks.add(sink);
+    if (own) t.own.add(sink);
     t.linger?.cancel();
     t.linger = null;
-    if (t.refused) {
+    if (_refused.contains(proId)) {
       sink.addError(const LiveUnavailable());
       return;
     }
@@ -231,24 +252,30 @@ class LiveChannels {
     final t = _topics[proId];
     if (t == null) return;
     t.sinks.remove(sink);
+    t.own.remove(sink);
     if (t.sinks.isNotEmpty) return;
     if (t.channel == null) {
-      t.cancelTimers();
-      _topics.remove(proId);
-      _recomputeConnected();
+      _removeTopic(t);
       return;
     }
     t.linger = Timer(linger, () {
-      _closeChannel(t);
-      t.cancelTimers();
-      _topics.remove(proId);
-      _recomputeConnected();
+      _removeTopic(t);
       _promote();
     });
   }
 
+  /// Forgets a pro nobody listens to: its channel, timers and snapshot.
+  void _removeTopic(_Topic t) {
+    _closeChannel(t);
+    t.cancelTimers();
+    _topics.remove(t.proId);
+    _held.remove(t.proId);
+    _recomputeConnected();
+  }
+
   void _open(_Topic t) {
-    if (_disposed || t.channel != null || t.refused) return;
+    if (_disposed || _suspended || t.channel != null) return;
+    if (_refused.contains(t.proId)) return;
     if (_channelCount >= maxChannels) _evictLingering();
     if (_channelCount >= maxChannels) {
       // Fetch-only until a slot frees ([_promote]).
@@ -271,10 +298,7 @@ class LiveChannels {
   void _evictLingering() {
     for (final t in [..._topics.values]) {
       if (t.sinks.isEmpty && t.channel != null) {
-        _closeChannel(t);
-        t.cancelTimers();
-        _topics.remove(t.proId);
-        _recomputeConnected();
+        _removeTopic(t);
         return;
       }
     }
@@ -283,9 +307,11 @@ class LiveChannels {
   /// Gives a freed slot to a pro served by fetches only.
   void _promote() {
     if (_rejoinTimer != null) return;
-    for (final t in _topics.values) {
+    for (final t in [..._topics.values]) {
       if (_channelCount >= maxChannels) return;
-      if (t.channel == null && t.sinks.isNotEmpty && !t.refused) _open(t);
+      if (t.channel == null && t.sinks.isNotEmpty && t.retry == null) {
+        _open(t);
+      }
     }
   }
 
@@ -312,21 +338,30 @@ class LiveChannels {
         _queueFetch(t.proId);
       case RealtimeSubscribeStatus.channelError
           when '$error'.contains('Unauthorized'):
-        _refuse(t);
-      case RealtimeSubscribeStatus.channelError:
+        _markUnavailable(t.proId);
       case RealtimeSubscribeStatus.timedOut:
-        // realtime_client rejoins these by itself.
+        // realtime_client re-sends a timed-out join by itself.
         _markFailing(t);
+      case RealtimeSubscribeStatus.channelError:
       case RealtimeSubscribeStatus.closed:
-        // Closed by the server (we drop our own channel's callbacks first):
-        // the client will not rejoin it, so join a new one.
-        _markFailing(t);
-        _closeChannel(t);
-        t.retry ??= Timer(retryAfter, () {
-          t.retry = null;
-          if (_topics[t.proId] == t && t.sinks.isNotEmpty) _open(t);
-        });
+        // An error join reply (rate limits) and a server close get no rejoin
+        // from realtime_client (2.13.2), so join a new channel ourselves.
+        _rejoinLater(t);
     }
+  }
+
+  void _rejoinLater(_Topic t) {
+    if (t.sinks.isEmpty) {
+      // Lingering: nobody to serve, so nothing to report or rejoin.
+      _removeTopic(t);
+      return;
+    }
+    _markFailing(t);
+    _closeChannel(t);
+    t.retry ??= Timer(retryAfter, () {
+      t.retry = null;
+      if (_topics[t.proId] == t && t.sinks.isNotEmpty) _open(t);
+    });
   }
 
   void _markFailing(_Topic t) {
@@ -337,17 +372,22 @@ class LiveChannels {
     });
   }
 
-  void _refuse(_Topic t) {
+  /// Refused or unlisted: no channel, no snapshot, an error for every
+  /// listener, until [closeAll].
+  void _markUnavailable(String proId) {
+    _refused.add(proId);
+    _held.remove(proId);
+    _toFetch.remove(proId);
+    final t = _topics[proId];
+    if (t == null) return;
     _closeChannel(t);
-    t.cancelTimers();
     t
-      ..isDown = false
-      ..refused = true;
-    _held.remove(t.proId);
+      ..cancelTimers()
+      ..isDown = false;
     for (final s in t.sinks) {
       s.addError(const LiveUnavailable());
     }
-    if (t.sinks.isEmpty) _topics.remove(t.proId);
+    if (t.sinks.isEmpty) _topics.remove(proId);
     _recomputeConnected();
     _promote();
   }
@@ -365,17 +405,23 @@ class LiveChannels {
   }
 
   void _apply(LiveSnapshot s) {
-    if (_disposed || (_topics[s.proId]?.refused ?? false)) return;
+    if (_disposed || _refused.contains(s.proId)) return;
     final held = _held[s.proId];
     if (held != null && !s.isNewerThan(held)) return;
+    final t = _topics[s.proId];
+    if (!s.listed && (t == null || t.own.isEmpty)) {
+      _markUnavailable(s.proId);
+      return;
+    }
     _held[s.proId] = s;
     _onServerNow?.call(s.serverNow);
-    for (final sink in [...?_topics[s.proId]?.sinks]) {
+    for (final sink in [...?t?.sinks]) {
       sink.add(s);
     }
   }
 
   void _queueFetch(String proId) {
+    if (_suspended) return;
     _toFetch.add(proId);
     _fetchTimer ??= Timer(batchWindow, _flush);
   }
@@ -384,7 +430,7 @@ class LiveChannels {
     _fetchTimer = null;
     final ids = [
       for (final id in _toFetch)
-        if (_topics.containsKey(id)) id,
+        if (_topics.containsKey(id) && !_refused.contains(id)) id,
     ];
     _toFetch.clear();
     final generation = _generation;

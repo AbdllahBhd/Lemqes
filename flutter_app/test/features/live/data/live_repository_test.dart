@@ -306,6 +306,7 @@ void main() {
             'auto_close_at': null,
             'status_age_from': '2026-11-20T09:55:00+00:00',
             'queue_mode': 'open',
+            'listed': true,
             'join_block': 'closed',
             'waiting_count': null,
             'wait_min': null,

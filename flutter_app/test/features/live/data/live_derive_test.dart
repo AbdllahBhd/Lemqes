@@ -20,6 +20,7 @@ LiveSnapshot snap({
   autoCloseAt: autoCloseAt ?? t0.add(const Duration(hours: 9)),
   statusAgeFrom: ageFrom ?? t0,
   queueMode: QueueMode.open,
+  listed: true,
   joinBlock: null,
   waitingCount: 1,
   waitMin: wait,
