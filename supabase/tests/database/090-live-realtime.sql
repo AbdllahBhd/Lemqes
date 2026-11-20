@@ -1,5 +1,5 @@
 begin;
-select plan(94);
+select plan(96);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday (create_pro gives Monday
 -- 09:00-18:00); time is frozen at 10:00, then at Tuesday 07:00 for the end-of-day job.
@@ -516,6 +516,13 @@ select is(tests.one_broadcast(current_setting('t.pb')::uuid), 'ok', 'R8 ... exac
 -- R9 ------------------------------------------------------------------------------------------
 
 select realtime.send(jsonb_build_object('probe', 1), 'live', 'pro:' || current_setting('t.pa'), true);
+select realtime.send(jsonb_build_object('probe', 2), 'live', 'pro:' || current_setting('t.pb'), true);
+select ok(
+  (select pg_get_expr(polqual, polrelid) ~ 'SELECT (public\.)?live_topic_allowed\('
+          and pg_get_expr(polqual, polrelid) ~ '(^|[ (.])topic = \( SELECT realtime\.topic\(\)'
+     from pg_policy where polname = 'live_topics' and polrelid = 'realtime.messages'::regclass),
+  'R9 live_topics evaluates the helper once (initPlan) and pins the row''s topic'
+);
 select ok(
   exists (select 1 from pg_policy
            where polname = 'live_topics' and polrelid = 'realtime.messages'::regclass
@@ -552,6 +559,9 @@ select ok(not coalesce(public.live_topic_allowed(null), false), 'R9 null refused
 select set_config('realtime.topic', 'pro:' || current_setting('t.pa'), true);
 select ok((select count(*) from realtime.messages) > 0,
   'R9 policy: a same-space customer reads the topic''s broadcasts');
+select is((select count(*)::int from realtime.messages m
+             where m.topic is distinct from 'pro:' || current_setting('t.pa')), 0,
+  'R9 policy: joined on one allowed topic, a customer reads no other topic''s rows');
 do $$ begin perform tests.clear_auth(); end; $$;
 
 do $$ begin perform tests.authenticate_as(current_setting('t.wc')::uuid); end; $$;

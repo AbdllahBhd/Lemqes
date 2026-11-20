@@ -189,7 +189,10 @@ create policy live_topics on realtime.messages
 for select to authenticated
 using (
   realtime.messages.extension = 'broadcast'
-  and public.live_topic_allowed((select realtime.topic()))
+  and realtime.messages.topic = (select realtime.topic())
+  and (select public.live_topic_allowed((select realtime.topic())))
+-- The helper is wrapped in a select so it runs once per query (initPlan), not per row; the row's
+-- own topic must be the joined one, so a client authorized on one topic reads no other's rows.
 );
 
 -- search_pros ------------------------------------------------------------------------------------
