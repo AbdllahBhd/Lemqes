@@ -77,6 +77,24 @@ $$;
 
 -- Join rules ------------------------------------------------------------------------------------
 
+-- The live-status half of the join rule, shared with live_snapshot's join_block (which must not
+-- raise): fresh and effective-open, or on a break before its return time. A break with no return
+-- time, or past it ("Pause prolongée"), is not joinable.
+create function public.live_status_joinable(p_live public.pro_live)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(
+    e.stale = false
+      and (e.status = 'open'
+           or (e.status = 'on_break' and p_live.break_until > public.live_now())),
+    false)
+  from public.live_effective(p_live) e;
+$$;
+
 -- Raises the first failing rule for the caller joining p_pro_id; returns when joining is allowed.
 -- Absents: blocked while a 2nd absent within 7 days of another one is less than 24 h old.
 create function public.can_join(p_pro_id uuid)
@@ -90,7 +108,6 @@ declare
   v_uid uuid := auth.uid();
   v_now timestamptz := public.live_now();
   v_live public.pro_live;
-  v_effective record;
   v_tz text;
 begin
   if not public.is_listable(p_pro_id) then
@@ -101,8 +118,7 @@ begin
   end if;
 
   select l.* into v_live from public.pro_live l where l.pro_id = p_pro_id;
-  select e.* into v_effective from public.live_effective(v_live) e;
-  if v_effective.status is distinct from 'open' or v_effective.stale is distinct from false then
+  if not found or not public.live_status_joinable(v_live) then
     raise exception 'pro_not_open';
   end if;
 
@@ -485,6 +501,7 @@ for select to authenticated
 using (customer_id = (select auth.uid()));
 
 revoke execute on function
+  public.live_status_joinable(public.pro_live),
   public.queue_ticket(uuid),
   public.can_join(uuid),
   public.join_queue(uuid, uuid, uuid),
@@ -497,7 +514,10 @@ revoke execute on function
   public.queue_unblock(uuid, uuid, uuid)
 from public, anon;
 
-revoke execute on function public.queue_ticket(uuid) from authenticated;
+revoke execute on function
+  public.live_status_joinable(public.pro_live),
+  public.queue_ticket(uuid)
+from authenticated;
 
 grant execute on function
   public.can_join(uuid),

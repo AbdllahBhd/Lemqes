@@ -25,8 +25,8 @@
 
 -- status is the effective status (closed once auto_close_at passed); break_until and
 -- auto_close_at are raw so the client derives "Pause prolongée" and the close on its own.
--- join_block: closed (effective-closed, stale or unpublished), on_break, paused, followers, else
--- null. status_age_from = last_activity_at rounded down to 5 min (coarse presence).
+-- join_block: closed (effective-closed, stale or unpublished), on_break (no return time or past
+-- it; live_status_joinable), paused, followers, else null. status_age_from = last_activity_at rounded down to 5 min (coarse presence).
 -- listed = published: an unpublish broadcast tells subscribed customers to drop the pro (the
 -- channel stays authorized until they leave, since authorization is checked at join only).
 -- serving_duration_min and ahead_minutes count the pro's average for an entry without a service,
@@ -78,7 +78,7 @@ begin
     'join_block', case
                     when v_published is not true or v_effective.status = 'closed'
                          or v_effective.stale then 'closed'
-                    when v_effective.status = 'on_break' then 'on_break'
+                    when not public.live_status_joinable(v_live) then 'on_break'
                     when v_live.queue_mode = 'paused' then 'paused'
                     when v_live.queue_mode = 'followers' then 'followers'
                   end,

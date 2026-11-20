@@ -1,5 +1,5 @@
 begin;
-select plan(92);
+select plan(94);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday; time starts frozen at 10:00.
 -- pa (Salon Amine) is where customers join; pb (Salon Bilal) carries the J1 status fixtures and
@@ -126,8 +126,19 @@ do $$ begin perform tests.clear_auth(); end; $$;
 update public.pro_live set break_until = '2026-11-23 10:30+01'
  where pro_id = current_setting('t.pb')::uuid;
 do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
+select lives_ok(format($$ select public.can_join(%L) $$, current_setting('t.pb')),
+  'J1 on break before its return time: joining is allowed');
+do $$ begin perform tests.clear_auth(); end; $$;
+update public.pro_live set queue_mode = 'paused' where pro_id = current_setting('t.pb')::uuid;
+do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
 select throws_ok(format($$ select public.can_join(%L) $$, current_setting('t.pb')),
-  'P0001', 'pro_not_open', 'J1 pro_not_open: on break with a return time');
+  'P0001', 'queue_paused', 'J1 queue_paused: on break before its return time, mode paused');
+do $$ begin perform tests.clear_auth(); end; $$;
+update public.pro_live set break_until = '2026-11-23 10:00+01', queue_mode = 'open'
+ where pro_id = current_setting('t.pb')::uuid;
+do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
+select throws_ok(format($$ select public.can_join(%L) $$, current_setting('t.pb')),
+  'P0001', 'pro_not_open', 'J1 pro_not_open: on break past its return time (Pause prolongée)');
 do $$ begin perform tests.clear_auth(); end; $$;
 update public.pro_live set status = 'open', break_until = null, queue_mode = 'paused'
  where pro_id = current_setting('t.pb')::uuid;

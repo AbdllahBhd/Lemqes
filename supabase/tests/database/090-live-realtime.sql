@@ -1,5 +1,5 @@
 begin;
-select plan(92);
+select plan(94);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday (create_pro gives Monday
 -- 09:00-18:00); time is frozen at 10:00, then at Tuesday 07:00 for the end-of-day job.
@@ -190,8 +190,15 @@ select is(
 update public.pro_live
    set status = 'on_break', break_until = '2026-11-23 10:30+01', last_activity_at = '2026-11-23 10:00+01'
  where pro_id = current_setting('t.pb')::uuid;
+select ok((public.live_snapshot(current_setting('t.pb')::uuid) -> 'join_block') = 'null'::jsonb,
+  'R3 on break before its return time, queue open -> join_block null (joinable)');
+update public.pro_live set queue_mode = 'paused' where pro_id = current_setting('t.pb')::uuid;
+select is(public.live_snapshot(current_setting('t.pb')::uuid) ->> 'join_block', 'paused',
+  'R3 on break before its return time, paused -> paused');
+update public.pro_live set break_until = '2026-11-23 10:00+01', queue_mode = 'open'
+ where pro_id = current_setting('t.pb')::uuid;
 select is(public.live_snapshot(current_setting('t.pb')::uuid) ->> 'join_block', 'on_break',
-  'R3 on break with a return time -> on_break');
+  'R3 on break past its return time -> on_break');
 update public.pro_live set break_until = null, queue_mode = 'paused'
  where pro_id = current_setting('t.pb')::uuid;
 select is(public.live_snapshot(current_setting('t.pb')::uuid) ->> 'join_block', 'on_break',
