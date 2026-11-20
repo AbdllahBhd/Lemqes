@@ -11,6 +11,7 @@ import '../../../core/l10n/gen/app_localizations.dart';
 import '../../../core/l10n/locale_controller.dart';
 import '../../../core/theme/lemqes_tokens.dart';
 import '../../../core/theme/lemqes_typography.dart';
+import '../../../core/time/clock_providers.dart';
 import '../../../shared/widgets/hours_table.dart';
 import '../../../shared/widgets/lagoon_header_band.dart';
 import '../../../shared/widgets/lemqes_primary_button.dart';
@@ -70,9 +71,6 @@ final proContactPhoneProvider = FutureProvider.autoDispose
 final phoneLauncherProvider = Provider<Future<bool> Function(Uri)>(
   (_) => launchUrl,
 );
-
-/// "Today" for the hours table; overridable for stable goldens.
-final profileClockProvider = Provider<DateTime Function()>((_) => DateTime.now);
 
 /// The experience band (b0..b3) that `proPublicExperience` words a year
 /// count in.
@@ -631,7 +629,7 @@ class _Hours extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      HoursTable(week: profile.hours, clock: ref.watch(profileClockProvider));
+      HoursTable(week: profile.hours, clock: ref.watch(countryClockProvider));
 }
 
 class _Photos extends ConsumerWidget {

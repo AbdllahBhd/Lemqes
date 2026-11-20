@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/app.dart' show appDelegates;
 import 'package:lemqes/core/l10n/gen/app_localizations.dart';
 import 'package:lemqes/core/theme/lemqes_theme.dart';
+import 'package:lemqes/core/time/country_clock.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:lemqes/shared/widgets/hours_table.dart';
 import 'package:lemqes/shared/widgets/photo_tile.dart';
@@ -57,7 +58,9 @@ void main() {
     testWidgets('shows Fermé for a missing day and the past-midnight range', (
       tester,
     ) async {
-      await tester.pumpWidget(host(HoursTable(week: week)));
+      await tester.pumpWidget(
+        host(HoursTable(week: week, clock: () => DateTime(2026, 11, 18))),
+      );
       expect(find.text('Fermé'), findsOneWidget); // Sunday
       expect(find.text('14:00 – 01:00'), findsOneWidget);
       expect(find.text('13:00 – 14:00'), findsOneWidget);
@@ -68,7 +71,9 @@ void main() {
       tester,
     ) async {
       final handle = tester.ensureSemantics();
-      await tester.pumpWidget(host(HoursTable(week: week)));
+      await tester.pumpWidget(
+        host(HoursTable(week: week, clock: () => DateTime(2026, 11, 14))),
+      );
       expect(
         tester.getSemantics(find.text('Mercredi')),
         matchesSemantics(
@@ -79,7 +84,9 @@ void main() {
     });
 
     testWidgets('lists Saturday first', (tester) async {
-      await tester.pumpWidget(host(HoursTable(week: week)));
+      await tester.pumpWidget(
+        host(HoursTable(week: week, clock: () => DateTime(2026, 11, 18))),
+      );
       final names = [
         'Samedi',
         'Dimanche',
@@ -101,6 +108,24 @@ void main() {
       expect(find.text('Aujourd\'hui'), findsOneWidget);
       expect(find.byKey(const Key('today_6')), findsOneWidget);
       expect(find.byKey(const Key('today_1')), findsNothing);
+    });
+
+    testWidgets('highlights the country weekday, not the device one', (
+      tester,
+    ) async {
+      // 23:30 UTC on Saturday 2026-11-14 is 18:30 Saturday for a device in
+      // UTC-5 but already Sunday 00:30 in Algiers.
+      final utc = DateTime.utc(2026, 11, 14, 23, 30);
+      await tester.pumpWidget(
+        host(
+          HoursTable(
+            week: week,
+            clock: () => countryNow('Africa/Algiers', utc),
+          ),
+        ),
+      );
+      expect(find.byKey(const Key('today_7')), findsOneWidget);
+      expect(find.byKey(const Key('today_6')), findsNothing);
     });
   });
 
@@ -187,7 +212,7 @@ void main() {
         host(
           Column(
             children: [
-              HoursTable(week: week),
+              HoursTable(week: week, clock: () => DateTime(2026, 11, 18)),
               const PriceText(125000),
               SizedBox(
                 width: 120,

@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../../core/l10n/locale_controller.dart';
 import '../../../../core/theme/lemqes_theme.dart';
 import '../../../../core/theme/lemqes_tokens.dart';
+import '../../../../core/time/clock_providers.dart';
 import '../../../../shared/widgets/hours_table.dart';
 import '../../../../shared/widgets/lemqes_primary_button.dart';
 import '../../../../shared/widgets/price_text.dart';
@@ -16,7 +17,7 @@ import '../../../account/data/account.dart';
 import '../../../explore/presentation/pro_avatar.dart';
 import '../../../explore/presentation/pro_labels.dart';
 import '../../../explore/presentation/pro_public_profile_screen.dart'
-    show experienceBandOf, profileClockProvider;
+    show experienceBandOf;
 import '../../../geo/data/geo_providers.dart';
 import '../../../home/presentation/home_header.dart';
 import '../../data/pro_models.dart';
@@ -308,7 +309,7 @@ class _DashboardBody extends StatelessWidget {
           child: Consumer(
             builder: (context, ref, _) => HoursTable(
               week: profile.hours,
-              clock: ref.watch(profileClockProvider),
+              clock: ref.watch(countryClockProvider),
             ),
           ),
         ),

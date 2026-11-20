@@ -6,6 +6,7 @@ import 'package:lemqes/core/l10n/locale_controller.dart';
 import 'package:lemqes/core/router/app_router.dart';
 import 'package:lemqes/core/storage/shared_preferences_provider.dart';
 import 'package:lemqes/core/theme/lemqes_theme.dart';
+import 'package:lemqes/core/time/clock_providers.dart';
 import 'package:lemqes/core/theme/theme_mode_controller.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
@@ -301,7 +302,7 @@ Future<ExploreHarness> pumpExplore(
       photoUploaderProvider.overrideWithValue(FakePhotoUploader()),
       geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
       // A Wednesday, so the hours table's "today" is stable.
-      profileClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
+      countryClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
       if (launcher != null) phoneLauncherProvider.overrideWithValue(launcher),
     ],
   );
