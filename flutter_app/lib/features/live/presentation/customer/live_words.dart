@@ -28,12 +28,17 @@ bool isLiveNow(LiveView v) => v.status != LiveStatus.closed && !v.stale;
 
 /// The queue line under the status: "3 en attente · ~40 min", "File ouverte
 /// · ~40 min" (count hidden), "File complète" (paused); null when closed or
-/// uncertain.
-String? queueLineText(AppLocalizations l10n, LiveView v) {
+/// uncertain. Without [withWait] (the customer holds a place there, and the
+/// ticket says their own wait) the line carries no wait.
+String? queueLineText(
+  AppLocalizations l10n,
+  LiveView v, {
+  bool withWait = true,
+}) {
   if (!isLiveNow(v)) return null;
   final s = v.snapshot;
   if (s.queueMode != QueueMode.open) return l10n.liveQueueFull;
-  final wait = liveWaitText(l10n, v.waitMin);
+  final wait = withWait ? liveWaitText(l10n, v.waitMin) : null;
   final count = s.waitingCount;
   if (count == null) {
     return wait == null ? l10n.liveQueueOpen : l10n.liveQueueOpenWait(wait);

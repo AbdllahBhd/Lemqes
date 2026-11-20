@@ -130,7 +130,7 @@ class _LiveBlockState extends ConsumerState<LiveBlock> {
         children: [
           LiveStatusLine(view: view, large: true),
           const SizedBox(height: 4),
-          LiveQueueLine(view: view, large: true),
+          LiveQueueLine(view: view, large: true, withWait: !holding),
           if (ticket != null) ...[
             const SizedBox(height: 16),
             TicketView(ticket: ticket, showPro: false),

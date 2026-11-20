@@ -137,15 +137,23 @@ class LiveStatusLine extends ConsumerWidget {
 /// "3 en attente · ~40 min" and its variants under the status; nothing when
 /// closed, uncertain, or while the live connection is down.
 class LiveQueueLine extends ConsumerWidget {
-  const LiveQueueLine({required this.view, this.large = false, super.key});
+  const LiveQueueLine({
+    required this.view,
+    this.large = false,
+    this.withWait = true,
+    super.key,
+  });
 
   final LiveView view;
   final bool large;
 
+  /// False under a ticket: one card, one wait (the ticket's).
+  final bool withWait;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final text = ref.watch(liveConnectedProvider)
-        ? queueLineText(context.l10n, view)
+        ? queueLineText(context.l10n, view, withWait: withWait)
         : null;
     if (text == null) return const SizedBox.shrink();
     final theme = Theme.of(context);

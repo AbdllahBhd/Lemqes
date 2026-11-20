@@ -193,6 +193,38 @@ void main() {
     await unmountLive(tester);
   });
 
+  // Finish review: "3 en attente · ~70 min" over "Vous êtes 3e · ~40 min"
+  // gave two waits in one card; the ticket's is the customer's.
+  testWidgets('holding a place, the profile shows one wait: the ticket\'s', (
+    tester,
+  ) async {
+    final live = CustomerLive()
+      ..repo.ticket = ticketFor(proId: proUuid)
+      ..repo.server[proUuid] = custSnap(proUuid);
+    final h = await pumpExplore(
+      tester,
+      explore: FakeExploreRepository(cards: threeLiveCards()),
+      pros: PublicProRepository(
+        listed: {proUuid: publicBarber()},
+        phones: {proUuid: '+213550123456'},
+      ),
+      live: live,
+    );
+    unawaited(h.router.push('/pro/$proUuid'));
+    await settleLive(tester);
+    final block = find.byKey(const Key('liveBlock'));
+    final line = find.descendant(
+      of: block,
+      matching: find.byKey(const Key('liveQueueLine')),
+    );
+    expect(tester.widget<Text>(line).data, isNot(contains('min')));
+    expect(
+      find.descendant(of: block, matching: find.textContaining('~25 min')),
+      findsOneWidget,
+    );
+    await unmountLive(tester);
+  });
+
   testWidgets('with the profile pushed over Explore, one announcement', (
     tester,
   ) async {
