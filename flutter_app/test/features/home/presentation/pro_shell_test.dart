@@ -1,6 +1,9 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_ar.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
+import 'package:lemqes/features/account/data/account.dart';
+import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/home/presentation/customer_home_screen.dart';
 import 'package:lemqes/features/home/presentation/home_screen.dart';
 import 'package:lemqes/features/home/presentation/pro_shell.dart';
@@ -10,6 +13,11 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../auth/presentation/harness.dart' show testAccount;
 import 'home_harness.dart';
+
+class _Account extends AccountController {
+  @override
+  Future<Account?> build() async => pro;
+}
 
 void main() {
   setUpAll(registerHarnessFallbacks);
@@ -41,6 +49,49 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.byType(TodayScreen), findsOneWidget);
   });
+
+  test(
+    'the tab goes back to Aujourd’hui on an account or role change',
+    () async {
+      final c = ProviderContainer(
+        overrides: [accountProvider.overrideWith(_Account.new)],
+      );
+      addTearDown(c.dispose);
+      c.listen(proTabProvider, (_, _) {});
+      await c.read(accountProvider.future);
+      final tab = c.read(proTabProvider.notifier)..select(ProTab.profile);
+      expect(c.read(proTabProvider), ProTab.profile);
+
+      // A refresh of the same account keeps the tab.
+      c.read(accountProvider.notifier).state = const AsyncData(pro);
+      expect(c.read(proTabProvider), ProTab.profile);
+
+      c.read(accountProvider.notifier).state = AsyncData(
+        Account(
+          id: pro.id,
+          fullName: pro.fullName,
+          customerSpace: pro.customerSpace,
+          proSpace: pro.proSpace,
+          activeRole: AppRole.homeArtist,
+          roles: const {AppRole.customer, AppRole.barber, AppRole.homeArtist},
+        ),
+      );
+      expect(c.read(proTabProvider), ProTab.today);
+
+      tab.select(ProTab.profile);
+      c.read(accountProvider.notifier).state = AsyncData(
+        Account(
+          id: 'u2',
+          fullName: 'Bilal',
+          customerSpace: Space.men,
+          proSpace: Space.men,
+          activeRole: AppRole.barber,
+          roles: const {AppRole.customer, AppRole.barber},
+        ),
+      );
+      expect(c.read(proTabProvider), ProTab.today);
+    },
+  );
 
   testWidgets('customers keep their home, with no pro navigation', (
     tester,

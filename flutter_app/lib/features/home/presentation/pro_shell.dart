@@ -3,13 +3,15 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/l10n/locale_controller.dart';
 import '../../account/data/account.dart';
+import '../../account/data/account_providers.dart';
 import '../../live/presentation/today/today_screen.dart';
 import '../../pro/presentation/dashboard/pro_dashboard_screen.dart';
 
 enum ProTab { today, profile }
 
 /// The pro's current tab; kept while the app runs so a rebuild of the home
-/// does not throw the barber back to Today.
+/// does not throw the barber back to Today, but back to it for another
+/// account or role (each lands on its own Today).
 final proTabProvider = NotifierProvider<ProTabController, ProTab>(
   ProTabController.new,
 );
@@ -20,7 +22,12 @@ class ProTabController extends Notifier<ProTab> {
   final ProTab initial;
 
   @override
-  ProTab build() => initial;
+  ProTab build() {
+    ref.watch(
+      accountProvider.select((a) => (a.value?.id, a.value?.activeRole)),
+    );
+    return initial;
+  }
 
   void select(ProTab tab) => state = tab;
 }
