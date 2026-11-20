@@ -100,6 +100,7 @@ Sources: Supabase docs "Broadcast" (`realtime.send(payload, event, topic, privat
 - While a customer's live connection is down, the status line says "Mis à jour il y a X min" instead of a confident status.
 - Cards re-derive closed / stale / break-over / wait locally on a 30 s ticker, because no message is sent when only time passes.
 - History rows keep `served_by` (M7), the price at the time (M9), and survive account deletion with the customer id cleared.
+- "Fermé" shows no age: an age counted from the barber's last action would mislead after an auto-close. While the connection is down the queue line is hidden too (amended during Task 6, 2026-11-20).
 
 ## 7. Left to the builder
 Exact column names, function signatures and channel event names beyond those fixed in the plan; widget decomposition; animation details (per the `motion` skill).
