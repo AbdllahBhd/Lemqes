@@ -1,5 +1,5 @@
 begin;
-select plan(61);
+select plan(62);
 
 -- Calendar used below (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday, 11-24 a Tuesday,
 -- 11-25 a Wednesday, 11-26 a Thursday. tests.create_pro gives Monday 09:00-18:00;
@@ -184,6 +184,18 @@ select is(
   'S9 extend never goes past now + 12 h'
 );
 select public.set_live_status(current_setting('t.pa')::uuid, 'closed', null, gen_random_uuid());
+-- A long shift can already close more than 12 h ahead: Wednesday 09:00-23:00 opened at 09:00
+-- closes at 23:30 (14 h 30 away); extending must never bring that earlier.
+select tests.set_hours(current_setting('t.pa')::uuid, 3, '09:00', '23:00');
+select tests.freeze_now('2026-11-25 09:00+01');
+select public.set_live_status(current_setting('t.pa')::uuid, 'open', null, gen_random_uuid());
+select is(
+  public.extend_auto_close(current_setting('t.pa')::uuid, gen_random_uuid()),
+  '2026-11-25 23:30+01'::timestamptz,
+  'S9 extend past the 12 h cap keeps a later auto_close_at unchanged (never earlier)'
+);
+select public.set_live_status(current_setting('t.pa')::uuid, 'closed', null, gen_random_uuid());
+select tests.freeze_now('2026-11-23 09:00+01');
 
 -- S10 -----------------------------------------------------------------------------------------
 select throws_ok(

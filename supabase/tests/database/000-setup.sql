@@ -147,6 +147,7 @@ create or replace function tests.freeze_now(ts timestamptz)
 returns void
 language plpgsql
 security definer
+set search_path = ''
 as $$
 begin
   execute format(
@@ -174,6 +175,8 @@ $$;
 -- Test-only schema (never shipped): tests switch to these roles and must still reach the helpers.
 grant usage on schema tests to anon, authenticated;
 grant execute on all functions in schema tests to anon, authenticated;
+-- freeze_now runs as its owner: only the authenticated test role may reach it.
+revoke execute on function tests.freeze_now(timestamptz) from public, anon;
 
 select plan(1);
 select has_schema('tests');

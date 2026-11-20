@@ -328,7 +328,7 @@ begin
 end;
 $$;
 
--- +60 min, capped at now + 12 h. Allowed while open or on break (not effective-closed).
+-- +60 min, capped at now + 12 h but never earlier than the current close. Allowed while open or on break (not effective-closed).
 create function public.extend_auto_close(p_pro_id uuid, p_request_id uuid)
 returns timestamptz
 language plpgsql
@@ -357,8 +357,11 @@ begin
     raise exception 'not_open';
   end if;
 
-  v_auto_close_at := least(v_live.auto_close_at + interval '60 minutes',
-                           v_now + interval '12 hours');
+  -- A long shift may already close beyond the cap: the cap limits the extension, it never
+  -- brings the close earlier.
+  v_auto_close_at := greatest(v_live.auto_close_at,
+                              least(v_live.auto_close_at + interval '60 minutes',
+                                    v_now + interval '12 hours'));
   update public.pro_live l set auto_close_at = v_auto_close_at where l.pro_id = p_pro_id;
   perform public.live_touch(p_pro_id);
   perform public.live_broadcast(p_pro_id);
