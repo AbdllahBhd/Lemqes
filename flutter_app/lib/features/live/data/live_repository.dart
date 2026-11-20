@@ -194,11 +194,6 @@ class LiveRepository {
 
   // Customer.
 
-  /// Raises the first failing join rule without joining.
-  Future<void> canJoin(String proId) => guardLive(() async {
-    await _api.rpc('can_join', {'p_pro_id': proId});
-  });
-
   Future<MyTicket> joinQueue(String proId, String serviceId) =>
       _act('join:$proId:$serviceId', (id) async {
         final raw = await _api.rpc('join_queue', {

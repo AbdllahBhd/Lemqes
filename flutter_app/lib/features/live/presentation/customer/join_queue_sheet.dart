@@ -30,8 +30,9 @@ class JoinService {
   final int? priceDzd;
 }
 
-/// One sentence per `can_join` refusal; `join_unavailable` stays neutral so
-/// a refusal never reveals a block.
+/// One sentence per `join_queue` refusal (the join rules are not callable
+/// on their own: the button follows the snapshot's `join_block`);
+/// `join_unavailable` stays neutral so a refusal never reveals a block.
 String joinFailureMessage(AppLocalizations l10n, LiveFailure f) => switch (f) {
   NotListable() => l10n.joinErrorNotListable,
   OwnQueue() => l10n.joinErrorOwnQueue,

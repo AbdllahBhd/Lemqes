@@ -1,7 +1,8 @@
 -- Live queue (M3 Task 2b): customers join remotely, the abuse limits that guard it, the owner's
 -- queue settings and blocks.
 --
---   * can_join is the one place the join rules live (M10 extends it). It raises the first
+--   * can_join is the one place the join rules live (M10 extends it); internal, join_queue runs
+--     it (the customer's own half, join_customer_check, also before the lock). It raises the first
 --     failing code in a fixed order the app maps to messages: not_listable, own_queue,
 --     pro_not_open, queue_paused, already_in_queue, join_limit_reached, absent_block,
 --     join_unavailable. join_unavailable is deliberately neutral: a refusal never reveals a block,
@@ -95,9 +96,11 @@ as $$
   from public.live_effective(p_live) e;
 $$;
 
--- Raises the first failing rule for the caller joining p_pro_id; returns when joining is allowed.
+-- The caller's own half of the join rule, in can_join's order: already_in_queue,
+-- join_limit_reached, absent_block, join_unavailable (blocked by this pro). It reads only the
+-- caller's rows and the pro's block list, so join_queue runs it before taking the pro's lock.
 -- Absents: blocked while a 2nd absent within 7 days of another one is less than 24 h old.
-create function public.can_join(p_pro_id uuid)
+create function public.join_customer_check(p_pro_id uuid)
 returns void
 language plpgsql
 stable
@@ -107,25 +110,8 @@ as $$
 declare
   v_uid uuid := auth.uid();
   v_now timestamptz := public.live_now();
-  v_live public.pro_live;
   v_tz text;
 begin
-  if not public.is_listable(p_pro_id) then
-    raise exception 'not_listable';
-  end if;
-  if public.owns_pro(p_pro_id) then
-    raise exception 'own_queue';
-  end if;
-
-  select l.* into v_live from public.pro_live l where l.pro_id = p_pro_id;
-  if not found or not public.live_status_joinable(v_live) then
-    raise exception 'pro_not_open';
-  end if;
-
-  if v_live.queue_mode is distinct from 'open' then
-    raise exception 'queue_paused';
-  end if;
-
   if exists (
     select 1 from public.queue_entries e
     where e.customer_id = v_uid and e.kind = 'remote' and e.state in ('waiting', 'serving')
@@ -167,6 +153,39 @@ begin
 end;
 $$;
 
+-- Raises the first failing rule for the caller joining p_pro_id; returns when joining is allowed.
+-- Internal (join_queue runs it under the pro's lock): a client-callable can_join would be a free
+-- probe of the rules, blocks included.
+create function public.can_join(p_pro_id uuid)
+returns void
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_live public.pro_live;
+begin
+  if not public.is_listable(p_pro_id) then
+    raise exception 'not_listable';
+  end if;
+  if public.owns_pro(p_pro_id) then
+    raise exception 'own_queue';
+  end if;
+
+  select l.* into v_live from public.pro_live l where l.pro_id = p_pro_id;
+  if not found or not public.live_status_joinable(v_live) then
+    raise exception 'pro_not_open';
+  end if;
+
+  if v_live.queue_mode is distinct from 'open' then
+    raise exception 'queue_paused';
+  end if;
+
+  perform public.join_customer_check(p_pro_id);
+end;
+$$;
+
 -- Customer RPCs ---------------------------------------------------------------------------------
 
 -- p_service_id: one of this pro's active, unarchived services, or null (= the average).
@@ -184,13 +203,20 @@ declare
   v_entry_id uuid;
   v_constraint text;
 begin
-  -- Before the lock, so no account can lock a pro it may not join (another space, unpublished).
-  -- The full can_join runs again under the lock for the state-dependent codes.
+  -- Before the lock, so no account can lock a pro it may not join (another space, unpublished,
+  -- or a customer refused on their own account: active ticket, limits, block; so a refused
+  -- customer hears their own code before pro_not_open). A replay skips the customer half: its
+  -- ticket is the active entry. The full can_join runs again under the lock.
   if not public.is_listable(p_pro_id) then
     raise exception 'not_listable';
   end if;
   if public.owns_pro(p_pro_id) then
     raise exception 'own_queue';
+  end if;
+  if not exists (
+    select 1 from public.queue_requests r where r.actor = v_uid and r.request_id = p_request_id
+  ) then
+    perform public.join_customer_check(p_pro_id);
   end if;
 
   select public.service_day(public.live_now(), c.timezone) into v_day
@@ -263,6 +289,11 @@ begin
   where e.id = p_entry_id and e.customer_id = auth.uid() and e.kind = 'remote';
   if not found then
     raise exception 'entry_not_active';
+  end if;
+  -- Already on the way: nothing to change, so no ledger row, no lock and no broadcast (a client
+  -- repeating the call cannot make the pro's subscribers re-render).
+  if v_entry.on_my_way_at is not null and v_entry.state in ('waiting', 'serving') then
+    return public.queue_ticket(p_entry_id);
   end if;
   perform 1 from public.pro_live l where l.pro_id = v_entry.pro_id for update;
   select e.* into v_entry from public.queue_entries e where e.id = p_entry_id;
@@ -503,6 +534,7 @@ using (customer_id = (select auth.uid()));
 revoke execute on function
   public.live_status_joinable(public.pro_live),
   public.queue_ticket(uuid),
+  public.join_customer_check(uuid),
   public.can_join(uuid),
   public.join_queue(uuid, uuid, uuid),
   public.queue_on_my_way(uuid, uuid),
@@ -516,11 +548,12 @@ from public, anon;
 
 revoke execute on function
   public.live_status_joinable(public.pro_live),
-  public.queue_ticket(uuid)
+  public.queue_ticket(uuid),
+  public.join_customer_check(uuid),
+  public.can_join(uuid)
 from authenticated;
 
 grant execute on function
-  public.can_join(uuid),
   public.join_queue(uuid, uuid, uuid),
   public.queue_on_my_way(uuid, uuid),
   public.leave_queue(uuid, uuid),
