@@ -33,7 +33,9 @@ create table public.pro_blocks (
 create index pro_blocks_customer_idx on public.pro_blocks (customer_id);
 
 -- What a customer sees of their own ticket and its pro. position: 0 serving, 1.. waiting, null
--- once ended; wait_min only while waiting.
+-- once ended; wait_min and ahead_minutes only while waiting. ahead_minutes is the unrounded sum
+-- queue_wait_min adds to the chair's remainder: the app recounts the wait between fetches from it
+-- and the pro snapshot's serving fields, as cards do.
 create type public.my_ticket_row as (
   entry_id uuid,
   pro_id uuid,
@@ -43,6 +45,7 @@ create type public.my_ticket_row as (
   end_reason public.queue_end_reason,
   position integer,
   wait_min integer,
+  ahead_minutes integer,
   on_my_way_at timestamptz,
   called_at timestamptz,
   ended_at timestamptz,
@@ -70,6 +73,12 @@ as $$
                and (o.sort_at, o.created_at, o.ticket_no) < (e.sort_at, e.created_at, e.ticket_no))
          end,
          case when e.state = 'waiting' then public.queue_wait_min(e.pro_id, e.sort_at) end,
+         case when e.state = 'waiting' then (
+           select coalesce(sum(coalesce(o.duration_min, l.avg_service_min)), 0)::integer
+           from public.queue_entries o
+           join public.pro_live l on l.pro_id = o.pro_id
+           where o.pro_id = e.pro_id and o.state = 'waiting' and o.sort_at < e.sort_at)
+         end,
          e.on_my_way_at, e.called_at, e.ended_at, p.display_name, p.avatar_path
   from public.queue_entries e
   join public.pro_profiles p on p.id = e.pro_id

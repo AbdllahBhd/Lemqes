@@ -156,6 +156,7 @@ class LiveSnapshot {
   final DateTime? servingCalledAt;
   final int? servingDurationMin;
   final int aheadMinutes;
+
   /// Moves when the queue changes: the owner queue and the ticket refetch
   /// on it.
   final int queueVersion;
@@ -268,6 +269,7 @@ class MyTicket {
     required this.endReason,
     required this.position,
     required this.waitMin,
+    required this.aheadMinutes,
     required this.onMyWayAt,
     required this.calledAt,
     required this.endedAt,
@@ -284,6 +286,7 @@ class MyTicket {
     endReason: EndReason.fromDb(j['end_reason'] as String?),
     position: (j['position'] as num?)?.toInt(),
     waitMin: (j['wait_min'] as num?)?.toInt(),
+    aheadMinutes: (j['ahead_minutes'] as num?)?.toInt(),
     onMyWayAt: _tsOrNull(j['on_my_way_at']),
     calledAt: _tsOrNull(j['called_at']),
     endedAt: _tsOrNull(j['ended_at']),
@@ -299,6 +302,10 @@ class MyTicket {
   final EndReason? endReason;
   final int? position;
   final int? waitMin;
+
+  /// The waiting minutes before this ticket (unrounded, the chair apart);
+  /// null once it is not waiting.
+  final int? aheadMinutes;
   final DateTime? onMyWayAt;
   final DateTime? calledAt;
   final DateTime? endedAt;

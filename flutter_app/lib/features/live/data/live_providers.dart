@@ -393,7 +393,10 @@ class OwnerBlockedController extends AsyncNotifier<List<BlockedCustomer>> {
 }
 
 /// The customer's ticket, only in its own space (null elsewhere, and when
-/// there is none). Refetched when its pro's queue moves and on resume.
+/// there is none). Refetched when its pro's queue moves, on resume, and on
+/// every tick while there is one: an ended ticket leaves after its 30 min,
+/// and a ticket whose pro stops sending (unpublished mid-queue, refused
+/// channel) still moves.
 final myTicketProvider = AsyncNotifierProvider<MyTicketController, MyTicket?>(
   MyTicketController.new,
   retry: _noRetry,
@@ -422,6 +425,9 @@ class MyTicketController extends AsyncNotifier<MyTicket?> {
       () => ref.read(liveRepositoryProvider).myTicket(),
     );
     if (ticket == null || ticket.proSpace != space.toDb()) return null;
+    ref.listen(liveTickerProvider, (previous, next) {
+      if (next.hasValue && next.value != previous?.value) ref.invalidateSelf();
+    });
     if (ticket.state == EntryState.waiting ||
         ticket.state == EntryState.serving) {
       ref.listen(liveSnapshotProvider(ticket.proId), (_, next) {

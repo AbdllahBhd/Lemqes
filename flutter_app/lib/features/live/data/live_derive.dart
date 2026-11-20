@@ -60,12 +60,26 @@ LiveView derive(LiveSnapshot s, DateTime serverNow) {
 
 int? _wait(LiveSnapshot s, DateTime now) {
   if (s.waitMin == null) return null;
+  return _ceil5(_chairLeft(s, now) + s.aheadMinutes);
+}
+
+/// Minutes left in the chair at [now] (never under 5 while someone sits),
+/// 0 when nobody is served: queue_wait_min's first term.
+int _chairLeft(LiveSnapshot s, DateTime now) {
   final called = s.servingCalledAt;
-  var serving = 0;
-  if (called != null) {
-    final elapsed = now.difference(called).inMinutes;
-    final remaining = (s.servingDurationMin ?? 0) - (elapsed < 0 ? 0 : elapsed);
-    serving = remaining < 5 ? 5 : remaining;
-  }
-  return _ceil5(serving + s.aheadMinutes);
+  if (called == null) return 0;
+  final elapsed = now.toUtc().difference(called).inMinutes;
+  final remaining = (s.servingDurationMin ?? 0) - (elapsed < 0 ? 0 : elapsed);
+  return remaining < 5 ? 5 : remaining;
+}
+
+/// The customer's wait at [serverNow], recounted like a card's from the
+/// pro's snapshot [s] and the minutes ahead of the ticket: between two
+/// fetches only the chair's remainder moves. Falls back to the fetched wait
+/// when either input is missing; null once the ticket is not waiting.
+int? ticketWait(MyTicket t, LiveSnapshot? s, DateTime serverNow) {
+  if (t.state != EntryState.waiting) return null;
+  final ahead = t.aheadMinutes;
+  if (s == null || ahead == null) return t.waitMin;
+  return _ceil5(_chairLeft(s, serverNow) + ahead);
 }

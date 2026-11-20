@@ -103,6 +103,7 @@ MyTicket ticketFor({
   String? endReason,
   int? position = 3,
   int? waitMin = 25,
+  int? ahead,
   bool onMyWay = false,
   String name = 'Amine Benali',
 }) => MyTicket.fromJson({
@@ -114,6 +115,7 @@ MyTicket ticketFor({
   'end_reason': endReason,
   'position': state == 'waiting' ? position : null,
   'wait_min': state == 'waiting' ? waitMin : null,
+  'ahead_minutes': state == 'waiting' ? ahead : null,
   'on_my_way_at': onMyWay ? '2026-11-20T09:58:00+00:00' : null,
   'called_at': state == 'serving' ? '2026-11-20T09:59:00+00:00' : null,
   'ended_at': state == 'waiting' || state == 'serving'

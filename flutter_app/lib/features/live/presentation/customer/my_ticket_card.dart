@@ -7,7 +7,9 @@ import '../../../../core/l10n/gen/app_localizations.dart';
 import '../../../../core/l10n/locale_controller.dart';
 import '../../../../core/theme/lemqes_tokens.dart';
 import '../../../../core/theme/lemqes_typography.dart';
+import '../../../../core/time/clock_providers.dart';
 import '../../../../shared/widgets/lemqes_primary_button.dart';
+import '../../data/live_derive.dart';
 import '../../data/live_failure.dart';
 import '../../data/live_models.dart';
 import '../../data/live_providers.dart';
@@ -24,11 +26,13 @@ String ticketPlaceText(AppLocalizations l10n, MyTicket t) =>
     l10n.ticketPlace(t.position ?? 0, t.proSpace);
 
 /// The ticket's headline: place and wait, the turn, or how it ended.
-String ticketHeadline(AppLocalizations l10n, MyTicket t) {
+/// [waitMin] is the wait recounted now ([ticketWait]); the fetched one
+/// otherwise.
+String ticketHeadline(AppLocalizations l10n, MyTicket t, {int? waitMin}) {
   switch (t.state) {
     case EntryState.waiting:
       final place = ticketPlaceText(l10n, t);
-      final wait = liveWaitText(l10n, t.waitMin);
+      final wait = liveWaitText(l10n, waitMin ?? t.waitMin);
       return wait == null
           ? l10n.ticketYouAre(place)
           : l10n.ticketYouAreWait(place, wait);
@@ -163,6 +167,14 @@ class _TicketViewState extends ConsumerState<TicketView> {
     final scheme = theme.colorScheme;
     final t = widget.ticket;
     final waiting = t.state == EntryState.waiting;
+    // The pro's snapshot re-derives on every tick: the chair's remainder,
+    // and so the wait, moves between two ticket fetches.
+    final proView = waiting ? ref.watch(proLiveProvider(t.proId)).value : null;
+    final waitMin = ticketWait(
+      t,
+      proView?.snapshot,
+      ref.watch(serverNowProvider)(),
+    );
     final muted = theme.textTheme.bodyMedium!.copyWith(
       color: scheme.onSurfaceVariant,
     );
@@ -180,7 +192,7 @@ class _TicketViewState extends ConsumerState<TicketView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      ticketHeadline(l10n, t),
+                      ticketHeadline(l10n, t, waitMin: waitMin),
                       key: const Key('ticketHeadline'),
                       style: lemqesWeight(
                         theme.textTheme.titleMedium!.merge(lemqesNumeric),

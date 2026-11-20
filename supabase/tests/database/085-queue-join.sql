@@ -1,5 +1,5 @@
 begin;
-select plan(99);
+select plan(101);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday; time starts frozen at 10:00.
 -- pa (Salon Amine) is where customers join; pb (Salon Bilal) carries the J1 status fixtures and
@@ -262,6 +262,8 @@ select ok(
      from j2),
   'J2 join returns ticket 3, position 3 behind two walk-ins, wait 40 (2 x average 20), the pro'
 );
+select is((select to_jsonb(j) -> 'ahead_minutes' from j2 j), '40'::jsonb,
+  'J2 the ticket carries ahead_minutes (W1 + W2) for the app to recount the wait');
 do $$ begin perform set_config('t.ec', (select entry_id from j2)::text, true); end; $$;
 do $$ begin perform tests.clear_auth(); end; $$;
 select ok(
@@ -301,6 +303,10 @@ do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$
 select ok(
   (select position = 2 and wait_min = 40 from public.my_ticket()),
   'J2 after W1 is called: position 2, wait 40 (20 left of W1 + W2)'
+);
+select is(
+  (select to_jsonb(t) -> 'ahead_minutes' from public.my_ticket() t), '20'::jsonb,
+  'J2 ahead_minutes: the waiting minutes before the ticket (W2), without the chair'
 );
 do $$ begin perform tests.authenticate_as(current_setting('t.k')::uuid); end; $$;
 select throws_ok(

@@ -44,22 +44,26 @@ OwnerQueueRow row(int n) => OwnerQueueRow.fromJson({
   'position': n,
 });
 
-MyTicket ticket({String space = 'men', String proId = 'p1'}) =>
-    MyTicket.fromJson({
-      'entry_id': 'e1',
-      'pro_id': proId,
-      'pro_space': space,
-      'ticket_no': 3,
-      'state': 'waiting',
-      'end_reason': null,
-      'position': 2,
-      'wait_min': 20,
-      'on_my_way_at': null,
-      'called_at': null,
-      'ended_at': null,
-      'display_name': 'Karim',
-      'avatar_path': null,
-    });
+MyTicket ticket({
+  String space = 'men',
+  String proId = 'p1',
+  String state = 'waiting',
+  String? endedAt,
+}) => MyTicket.fromJson({
+  'entry_id': 'e1',
+  'pro_id': proId,
+  'pro_space': space,
+  'ticket_no': 3,
+  'state': state,
+  'end_reason': null,
+  'position': state == 'waiting' ? 2 : null,
+  'wait_min': state == 'waiting' ? 20 : null,
+  'on_my_way_at': null,
+  'called_at': null,
+  'ended_at': endedAt,
+  'display_name': 'Karim',
+  'avatar_path': null,
+});
 
 /// A broadcast reaches a provider through a stream microtask, then
 /// Riverpod's zero-delay refresh timer, then the async build: zero-length
@@ -406,6 +410,58 @@ void main() {
       );
       await settle(t);
       expect(sub.read().requireValue!.proId, 'p1');
+      sub.close();
+    });
+
+    providerTest('while a place is held, the ticker refetches it', (
+      t,
+      c,
+    ) async {
+      when(() => repo.myTicket()).thenAnswer((_) async => ticket());
+      final sub = c.listen(myTicketProvider, (_, _) {});
+      await settle(t);
+      factory.last('p1').send(live('p1'));
+      await settle(t);
+      clearInteractions(repo);
+      ticks.add(1);
+      await settle(t);
+      verify(() => repo.myTicket()).called(1);
+      sub.close();
+    });
+
+    providerTest('an unavailable pro still lets the ticket refresh', (
+      t,
+      c,
+    ) async {
+      when(() => repo.myTicket()).thenAnswer((_) async => ticket());
+      final sub = c.listen(myTicketProvider, (_, _) {});
+      await settle(t);
+      // Unpublished mid-queue: the channel is refused, no snapshot comes.
+      factory.last('p1').refuse();
+      await settle(t);
+      clearInteractions(repo);
+      when(() => repo.myTicket()).thenAnswer(
+        (_) async => ticket(state: 'served', endedAt: '2026-11-20T10:00:00Z'),
+      );
+      ticks.add(1);
+      await settle(t);
+      verify(() => repo.myTicket()).called(1);
+      expect(sub.read().requireValue!.state, EntryState.served);
+      sub.close();
+    });
+
+    providerTest('an ended ticket goes once its 30 min are over', (t, c) async {
+      when(() => repo.myTicket()).thenAnswer(
+        (_) async => ticket(state: 'served', endedAt: '2026-11-20T09:45:00Z'),
+      );
+      final sub = c.listen(myTicketProvider, (_, _) {});
+      await settle(t);
+      expect(sub.read().requireValue!.state, EntryState.served);
+      when(() => repo.myTicket()).thenAnswer((_) async => null);
+      clock = DateTime.utc(2026, 11, 20, 10, 16);
+      ticks.add(1);
+      await settle(t);
+      expect(sub.read().requireValue, isNull);
       sub.close();
     });
 

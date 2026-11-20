@@ -105,4 +105,41 @@ void main() {
       Duration.zero,
     );
   });
+
+  group('ticketWait', () {
+    MyTicket ticket({String state = 'waiting', int? ahead = 20}) =>
+        MyTicket.fromJson({
+          'entry_id': 'e1',
+          'pro_id': 'p1',
+          'pro_space': 'men',
+          'ticket_no': 3,
+          'state': state,
+          'end_reason': null,
+          'position': state == 'waiting' ? 2 : null,
+          'wait_min': state == 'waiting' ? 30 : null,
+          'ahead_minutes': state == 'waiting' ? ahead : null,
+          'on_my_way_at': null,
+          'called_at': null,
+          'ended_at': null,
+          'display_name': 'Karim',
+          'avatar_path': null,
+        });
+
+    test('recounts the chair from the snapshot, as cards do', () {
+      // 20 min service called at 09:50: 10 left at 10:00, the floor of 5
+      // from 10:15 on.
+      final s = snap(servingCalledAt: t0.subtract(const Duration(minutes: 10)));
+      expect(ticketWait(ticket(), s, t0), 30);
+      expect(ticketWait(ticket(), s, t0.add(const Duration(minutes: 6))), 25);
+      expect(ticketWait(ticket(), s, t0.add(const Duration(hours: 1))), 25);
+      // Nobody in the chair: the minutes ahead alone.
+      expect(ticketWait(ticket(ahead: 0), snap(), t0), 0);
+    });
+
+    test('falls back to the fetched wait without a snapshot or inputs', () {
+      expect(ticketWait(ticket(), null, t0), 30);
+      expect(ticketWait(ticket(ahead: null), snap(), t0), 30);
+      expect(ticketWait(ticket(state: 'serving'), snap(), t0), isNull);
+    });
+  });
 }

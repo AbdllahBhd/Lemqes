@@ -160,6 +160,26 @@ void main() {
     await unmountLive(tester);
   });
 
+  testWidgets('the wait counts down with the chair between messages', (
+    tester,
+  ) async {
+    // 20 min ahead of the ticket; the chair's 20 min service began 09:50.
+    final h = await _explore(tester, ticketFor(waitMin: 30, ahead: 20));
+    h.live.broadcast('p1', {
+      ...custLive('p1', version: 4),
+      'serving_called_at': '2026-11-20T09:50:00Z',
+      'serving_duration_min': 20,
+    });
+    await settleLive(tester);
+    expect(_inCard(find.text('Vous êtes 3e · ~30 min')), findsOneWidget);
+
+    // Six minutes on, no message: 5 min left in the chair (the floor).
+    h.live.advanceTo(DateTime.utc(2026, 11, 20, 10, 6));
+    await settleLive(tester);
+    expect(_inCard(find.text('Vous êtes 3e · ~25 min')), findsOneWidget);
+    await unmountLive(tester);
+  });
+
   testWidgets('does not overflow at 2x text in Arabic', (tester) async {
     await _explore(
       tester,
