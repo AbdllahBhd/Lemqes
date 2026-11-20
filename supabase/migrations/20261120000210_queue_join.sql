@@ -5,7 +5,8 @@
 --     failing code in a fixed order the app maps to messages: not_listable, own_queue,
 --     pro_not_open, queue_paused, already_in_queue, join_limit_reached, absent_block,
 --     join_unavailable. join_unavailable is deliberately neutral: a refusal never reveals a block,
---     and a ticket cancelled by a block reads as 'cleared' in my_ticket.
+--     and a block ends the ticket 'cleared' (customers select their own rows, so 'blocked' would
+--     tell). queue_end_reason 'blocked' is unused since M3 (kept for compatibility).
 --   * Customer RPCs follow the owner pattern of 20261120000200: lock the pro's pro_live row
 --     (ticket numbers stay serialized with the owner's actions), record the request (a replay
 --     returns the current ticket and changes nothing), change, live_broadcast once, last. They
@@ -58,8 +59,7 @@ security definer
 set search_path = ''
 as $$
   select e.id, e.pro_id, p.space, e.ticket_no, e.state,
-         case when e.end_reason = 'blocked' then 'cleared'::public.queue_end_reason
-              else e.end_reason end,
+         e.end_reason,
          case e.state
            when 'serving' then 0
            when 'waiting' then (
@@ -102,11 +102,11 @@ begin
 
   select l.* into v_live from public.pro_live l where l.pro_id = p_pro_id;
   select e.* into v_effective from public.live_effective(v_live) e;
-  if v_effective.status <> 'open' or v_effective.stale then
+  if v_effective.status is distinct from 'open' or v_effective.stale is distinct from false then
     raise exception 'pro_not_open';
   end if;
 
-  if v_live.queue_mode <> 'open' then
+  if v_live.queue_mode is distinct from 'open' then
     raise exception 'queue_paused';
   end if;
 
@@ -121,6 +121,9 @@ begin
   from public.pro_profiles p
   join public.geo_countries c on c.code = p.country_code
   where p.id = p_pro_id;
+  if v_tz is null then
+    raise exception 'not_listable';
+  end if;
   if (select count(*) from public.queue_entries e
        where e.customer_id = v_uid and e.kind = 'remote'
          and e.service_day = public.service_day(v_now, v_tz)) >= 5 then
@@ -165,6 +168,15 @@ declare
   v_entry_id uuid;
   v_constraint text;
 begin
+  -- Before the lock, so no account can lock a pro it may not join (another space, unpublished).
+  -- The full can_join runs again under the lock for the state-dependent codes.
+  if not public.is_listable(p_pro_id) then
+    raise exception 'not_listable';
+  end if;
+  if public.owns_pro(p_pro_id) then
+    raise exception 'own_queue';
+  end if;
+
   select public.service_day(public.live_now(), c.timezone) into v_day
   from public.pro_live l
   join public.pro_profiles p on p.id = l.pro_id
@@ -354,7 +366,7 @@ end;
 $$;
 
 -- Blocks the customer of a remote entry from this pro's queue (any state: an absent customer can
--- be blocked afterwards) and cancels the entry 'blocked' when it is still active. An entry whose
+-- be blocked afterwards) and cancels the entry 'cleared' when it is still active. An entry whose
 -- customer deleted the account has nobody left to block.
 create function public.queue_block(p_entry_id uuid, p_request_id uuid)
 returns setof public.owner_queue_row
@@ -395,7 +407,7 @@ begin
 
   if v_entry.state in ('waiting', 'serving') then
     update public.queue_entries e
-       set state = 'cancelled', end_reason = 'blocked', ended_at = public.live_now()
+       set state = 'cancelled', end_reason = 'cleared', ended_at = public.live_now()
      where e.id = p_entry_id;
     v_cancelled := true;
   end if;
@@ -426,32 +438,37 @@ begin
 end;
 $$;
 
--- Returns the remaining blocks.
-create function public.queue_unblock(p_block_id uuid, p_request_id uuid)
+-- Returns the remaining blocks. The pro is an argument (not read from the block) so a replay
+-- after the delete still resolves it and returns the current list.
+create function public.queue_unblock(p_pro_id uuid, p_block_id uuid, p_request_id uuid)
 returns table (block_id uuid, ticket_label text, created_at timestamptz)
 language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_pro_id uuid;
 begin
-  select b.pro_id into v_pro_id
-  from public.pro_blocks b
-  join public.pro_profiles p on p.id = b.pro_id
-  where b.id = p_block_id and p.owner_id = auth.uid();
+  perform 1
+  from public.pro_live l
+  join public.pro_profiles p on p.id = l.pro_id
+  where l.pro_id = p_pro_id and p.owner_id = auth.uid()
+  for update of l;
   if not found then
     raise exception 'not_owner';
   end if;
-  perform 1 from public.pro_live l where l.pro_id = v_pro_id for update;
 
-  if not public.live_request_seen(auth.uid(), p_request_id, 'queue_unblock', v_pro_id) then
-    delete from public.pro_blocks b where b.id = p_block_id;
-    perform public.live_touch(v_pro_id);
-    perform public.live_broadcast(v_pro_id);
+  if public.live_request_seen(auth.uid(), p_request_id, 'queue_unblock', p_pro_id) then
+    return query select * from public.queue_blocked(p_pro_id);
+    return;
   end if;
 
-  return query select * from public.queue_blocked(v_pro_id);
+  delete from public.pro_blocks b where b.id = p_block_id and b.pro_id = p_pro_id;
+  if not found then
+    raise exception 'not_owner';
+  end if;
+
+  perform public.live_touch(p_pro_id);
+  perform public.live_broadcast(p_pro_id);
+  return query select * from public.queue_blocked(p_pro_id);
 end;
 $$;
 
@@ -477,7 +494,7 @@ revoke execute on function
   public.set_queue_settings(uuid, public.queue_mode, boolean, uuid),
   public.queue_block(uuid, uuid),
   public.queue_blocked(uuid),
-  public.queue_unblock(uuid, uuid)
+  public.queue_unblock(uuid, uuid, uuid)
 from public, anon;
 
 revoke execute on function public.queue_ticket(uuid) from authenticated;
@@ -491,5 +508,5 @@ grant execute on function
   public.set_queue_settings(uuid, public.queue_mode, boolean, uuid),
   public.queue_block(uuid, uuid),
   public.queue_blocked(uuid),
-  public.queue_unblock(uuid, uuid)
+  public.queue_unblock(uuid, uuid, uuid)
 to authenticated;

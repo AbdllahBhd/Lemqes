@@ -1,5 +1,5 @@
 begin;
-select plan(83);
+select plan(92);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday; time starts frozen at 10:00.
 -- pa (Salon Amine) is where customers join; pb (Salon Bilal) carries the J1 status fixtures and
@@ -228,6 +228,20 @@ select ok(
   'J2 join returns ticket 3, position 3 behind two walk-ins, wait 40 (2 x average 20), the pro'
 );
 do $$ begin perform set_config('t.ec', (select entry_id from j2)::text, true); end; $$;
+do $$ begin perform tests.clear_auth(); end; $$;
+select ok(
+  (select queue_version > current_setting('t.v0')::bigint
+          and last_activity_at = '2026-11-23 10:00+01'
+     from public.pro_live where pro_id = current_setting('t.pa')::uuid),
+  'J2 a join bumps queue_version and does not count as owner activity'
+);
+select ok(
+  (select position('public.is_listable' in d) > 0
+          and position('public.is_listable' in d) < position('for update' in d)
+          and position('public.owns_pro' in d) < position('for update' in d)
+     from pg_get_functiondef('public.join_queue(uuid, uuid, uuid)'::regprocedure) d),
+  'J2 join_queue checks listability and own_queue before taking the pro_live lock'
+);
 select tests.freeze_now('2026-11-23 10:06+01');
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 select count(*) from public.queue_add_walk_in(current_setting('t.pa')::uuid, gen_random_uuid());
@@ -244,12 +258,6 @@ select ok(
           and sort_at = '2026-11-23 10:05+01'
      from public.queue_entries where id = current_setting('t.ec')::uuid),
   'J2 the service duration and price are snapshotted, sort_at is the join time'
-);
-select ok(
-  (select queue_version > current_setting('t.v0')::bigint
-          and last_activity_at = '2026-11-23 10:06+01'
-     from public.pro_live where pro_id = current_setting('t.pa')::uuid),
-  'J2 a join bumps queue_version and does not count as owner activity'
 );
 select tests.freeze_now('2026-11-23 10:10+01');
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
@@ -305,10 +313,17 @@ select throws_ok(
 
 -- J4 ------------------------------------------------------------------------------------------
 select tests.freeze_now('2026-11-23 10:12+01');
+do $$ begin perform set_config('t.rw', gen_random_uuid()::text, true); end; $$;
 select ok(
   (select on_my_way_at = '2026-11-23 10:12+01' and state = 'waiting'
-     from public.queue_on_my_way(current_setting('t.ek')::uuid, gen_random_uuid())),
+     from public.queue_on_my_way(current_setting('t.ek')::uuid, current_setting('t.rw')::uuid)),
   'J4 on my way stamps on_my_way_at'
+);
+select tests.freeze_now('2026-11-23 10:13+01');
+select ok(
+  (select on_my_way_at = '2026-11-23 10:12+01'
+     from public.queue_on_my_way(current_setting('t.ek')::uuid, current_setting('t.rw')::uuid)),
+  'J4 replaying on my way returns the ticket and does not restamp'
 );
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 select is(
@@ -327,11 +342,18 @@ select throws_ok(
   format($$ select * from public.leave_queue(%L, gen_random_uuid()) $$, current_setting('t.ek')),
   'P0001', 'entry_not_active', 'J5 a customer cannot leave another customer''s entry');
 do $$ begin perform tests.authenticate_as(current_setting('t.k')::uuid); end; $$;
+do $$ begin perform set_config('t.rl', gen_random_uuid()::text, true); end; $$;
 select ok(
-  (select state = 'cancelled' and end_reason = 'left' and ended_at = '2026-11-23 10:12+01'
+  (select state = 'cancelled' and end_reason = 'left' and ended_at = '2026-11-23 10:13+01'
           and position is null and wait_min is null
-     from public.leave_queue(current_setting('t.ek')::uuid, gen_random_uuid())),
+     from public.leave_queue(current_setting('t.ek')::uuid, current_setting('t.rl')::uuid)),
   'J5 leave cancels the entry with end_reason left'
+);
+select tests.freeze_now('2026-11-23 10:14+01');
+select ok(
+  (select state = 'cancelled' and ended_at = '2026-11-23 10:13+01'
+     from public.leave_queue(current_setting('t.ek')::uuid, current_setting('t.rl')::uuid)),
+  'J5 replaying leave returns the ended ticket, no error, nothing changed'
 );
 select throws_ok(
   format($$ select * from public.leave_queue(%L, gen_random_uuid()) $$, current_setting('t.ek')),
@@ -406,10 +428,16 @@ select throws_ok(
 -- J8 ------------------------------------------------------------------------------------------
 select tests.freeze_now('2026-11-23 10:40+01');
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+do $$ begin perform set_config('t.rs', gen_random_uuid()::text, true); end; $$;
 select ok(
   (select queue_mode = 'paused' and hide_queue_count
-     from public.set_queue_settings(current_setting('t.pa')::uuid, 'paused', true, gen_random_uuid())),
+     from public.set_queue_settings(current_setting('t.pa')::uuid, 'paused', true, current_setting('t.rs')::uuid)),
   'J8 the owner sets mode paused and hides the count'
+);
+select ok(
+  (select queue_mode = 'paused' and hide_queue_count
+     from public.set_queue_settings(current_setting('t.pa')::uuid, 'open', false, current_setting('t.rs')::uuid)),
+  'J8 replaying the settings request changes nothing (still paused, count hidden)'
 );
 do $$ begin perform tests.authenticate_as(current_setting('t.k')::uuid); end; $$;
 select throws_ok(format($$ select public.can_join(%L) $$, current_setting('t.pa')),
@@ -431,17 +459,33 @@ select throws_ok(
 
 -- J9 ------------------------------------------------------------------------------------------
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+do $$ begin perform set_config('t.rb', gen_random_uuid()::text, true); end; $$;
 select is(
-  (select array_agg(ticket_no order by position) from public.queue_block(current_setting('t.ec')::uuid, gen_random_uuid())
+  (select array_agg(ticket_no order by position) from public.queue_block(current_setting('t.ec')::uuid, current_setting('t.rb')::uuid)
     where state = 'waiting'),
   array[2, 4], 'J9 blocking removes the entry from the queue'
 );
+select is(
+  (select array_agg(ticket_no order by position) from public.queue_block(current_setting('t.ec')::uuid, current_setting('t.rb')::uuid)
+    where state = 'waiting'),
+  array[2, 4], 'J9 replaying the block returns the same queue, no error'
+);
 do $$ begin perform tests.clear_auth(); end; $$;
 select ok(
-  (select state = 'cancelled' and end_reason = 'blocked' from public.queue_entries
+  (select state = 'cancelled' and end_reason = 'cleared' from public.queue_entries
     where id = current_setting('t.ec')::uuid),
-  'J9 the entry is cancelled with end_reason blocked'
+  'J9 the blocked entry is stored cancelled with end_reason cleared (no block oracle)'
 );
+select is(
+  (select count(*)::int from public.pro_blocks where pro_id = current_setting('t.pa')::uuid),
+  2, 'J9 the replayed block stored one block row'
+);
+do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
+select is(
+  (select end_reason::text from public.queue_entries where id = current_setting('t.ec')::uuid),
+  'cleared', 'J9 the customer''s own direct select reads cleared'
+);
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 select is(
   (select array_agg(ticket_label order by created_at, ticket_label) from public.queue_blocked(current_setting('t.pa')::uuid)),
@@ -467,7 +511,7 @@ select throws_ok(
 do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
 select ok(
   (select state = 'cancelled' and end_reason = 'cleared' from public.my_ticket()),
-  'J9 the blocked customer''s ticket reads as cleared, never blocked'
+  'J9 the blocked customer''s ticket reads as cleared'
 );
 select is(tests.error_detail(format($$ select public.can_join(%L) $$, current_setting('t.pa'))),
   'join_unavailable|', 'J9 the blocked customer gets the neutral join_unavailable');
@@ -480,12 +524,20 @@ end;
 $$;
 do $$ begin perform tests.authenticate_as(current_setting('t.b')::uuid); end; $$;
 select throws_ok(
-  format($$ select * from public.queue_unblock(%L, gen_random_uuid()) $$, current_setting('t.bc')),
+  format($$ select * from public.queue_unblock(%L, %L, gen_random_uuid()) $$, current_setting('t.pa'), current_setting('t.bc')),
   'P0001', 'not_owner', 'J9 another owner cannot unblock');
+select throws_ok(
+  format($$ select * from public.queue_unblock(%L, %L, gen_random_uuid()) $$, current_setting('t.pb'), current_setting('t.bc')),
+  'P0001', 'not_owner', 'J9 a block id of another pro is not_owner, even for an owner');
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+do $$ begin perform set_config('t.ru', gen_random_uuid()::text, true); end; $$;
 select is(
-  (select array_agg(ticket_label) from public.queue_unblock(current_setting('t.bc')::uuid, gen_random_uuid())),
+  (select array_agg(ticket_label) from public.queue_unblock(current_setting('t.pa')::uuid, current_setting('t.bc')::uuid, current_setting('t.ru')::uuid)),
   array['Hamid'], 'J9 unblock removes the block and returns the remaining list'
+);
+select is(
+  (select array_agg(ticket_label) from public.queue_unblock(current_setting('t.pa')::uuid, current_setting('t.bc')::uuid, current_setting('t.ru')::uuid)),
+  array['Hamid'], 'J9 replaying the unblock returns the same remaining list, no error'
 );
 do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
 select lives_ok(format($$ select public.can_join(%L) $$, current_setting('t.pa')),
@@ -546,7 +598,7 @@ select throws_ok(format($$ select * from public.queue_block(%L, gen_random_uuid(
   '42501', null, 'J12 anon cannot block');
 select throws_ok(format($$ select * from public.queue_blocked(%L) $$, current_setting('t.pa')),
   '42501', null, 'J12 anon cannot list blocks');
-select throws_ok(format($$ select * from public.queue_unblock(%L, gen_random_uuid()) $$, current_setting('t.ek')),
+select throws_ok(format($$ select * from public.queue_unblock(%L, %L, gen_random_uuid()) $$, current_setting('t.pa'), current_setting('t.ek')),
   '42501', null, 'J12 anon cannot unblock');
 select throws_ok($$ select * from public.queue_entries $$,
   '42501', null, 'J12 anon cannot select queue_entries');
