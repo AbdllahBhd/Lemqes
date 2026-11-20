@@ -217,11 +217,13 @@ void main() {
       timeout: liveDeadline,
     );
 
-    // A disconnect() tells no channel and a connect() rejoins none: the app
-    // must join again by itself and fetch what it missed.
+    // A disconnect() tells no channel and a bare connect() rejoins none
+    // (supabase_flutter's resume, 2.18.3, adds forceRejoin() after it; this
+    // path leaves it out): the app must join again by itself and fetch what
+    // it missed.
     await app.realtime.disconnect();
     await owner('queue_add_walk_in');
-    // supabase_flutter's own resume path calls it the same way.
+    // supabase_flutter's own resume path calls connect() the same way.
     // ignore: invalid_use_of_internal_member
     await app.realtime.connect();
     await waitFor(

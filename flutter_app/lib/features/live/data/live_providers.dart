@@ -102,6 +102,9 @@ final liveChannelsProvider = Provider<LiveChannels>((ref) {
     fetch: (ids) =>
         _tracked(ref, () => ref.read(liveRepositoryProvider).snapshots(ids)),
     onServerNow: (t) => ref.read(serverOffsetProvider.notifier).observe(t),
+    // One failed fetch must not keep "Hors ligne" (and the join off) while
+    // the channels plainly work.
+    onAlive: () => ref.read(liveRpcHealthProvider.notifier).report(ok: true),
   );
   // Signed out, every join would be refused (and the refusal would stick
   // for the next account): nothing joins until an account is there.
@@ -135,6 +138,13 @@ final liveChannelsProvider = Provider<LiveChannels>((ref) {
   });
   return channels;
 });
+
+/// The offline banner's Retry: failing channels rejoin now and every
+/// watched pro is fetched again. Overridable in tests.
+final liveRetryProvider = Provider<void Function()>(
+  (ref) =>
+      () => ref.read(liveChannelsProvider).retryNow(),
+);
 
 /// Raw snapshots of one pro. Errors with [LiveUnavailable] when the server
 /// refuses the pro's channel (another space, unpublished).

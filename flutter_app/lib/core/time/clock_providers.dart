@@ -22,9 +22,15 @@ class ServerOffset extends Notifier<Duration> {
   @override
   Duration build() => Duration.zero;
 
-  /// Records the offset seen when a snapshot stamped [serverNow] arrived.
-  void observe(DateTime serverNow) =>
-      state = serverNow.toUtc().difference(ref.read(utcClockProvider)());
+  /// Records the offset seen when a snapshot stamped [serverNow] arrived,
+  /// once it moved by more than [tolerance]: transit jitter would otherwise
+  /// rebuild every live view on each message.
+  void observe(DateTime serverNow) {
+    final next = serverNow.toUtc().difference(ref.read(utcClockProvider)());
+    if ((next - state).abs() > tolerance) state = next;
+  }
+
+  static const tolerance = Duration(seconds: 1);
 }
 
 /// The best known server instant: device clock corrected by the offset.

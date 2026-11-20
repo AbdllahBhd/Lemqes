@@ -46,12 +46,13 @@ class LiveRepository {
   final LiveApi _api;
   final String Function() _newId;
   final DateTime Function() _now;
-  final Map<String, ({String id, DateTime at})> _pending = {};
+  final Map<String, ({String id, DateTime at, bool queue})> _pending = {};
 
   Future<T> _act<T>(
     String key,
-    Future<T> Function(String requestId) body,
-  ) async {
+    Future<T> Function(String requestId) body, {
+    bool queue = false,
+  }) async {
     final now = _now();
     final held = _pending[key];
     final String id;
@@ -59,7 +60,7 @@ class LiveRepository {
       id = held.id;
     } else {
       id = _newId();
-      _pending[key] = (id: id, at: now);
+      _pending[key] = (id: id, at: now, queue: queue);
     }
     try {
       final out = await guardLive(() => body(id));
@@ -80,7 +81,7 @@ class LiveRepository {
     String fn,
     String key,
     Map<String, Object?> params,
-  ) => _act(key, (id) async {
+  ) => _act(key, queue: true, (id) async {
     return _rows(await _api.rpc(fn, {...params, 'p_request_id': id}));
   });
 
@@ -111,9 +112,15 @@ class LiveRepository {
 
   // Owner queue.
 
-  Future<List<OwnerQueueRow>> ownerQueue(String proId) => guardLive(
-    () async => _rows(await _api.rpc('owner_queue', {'p_pro_id': proId})),
-  );
+  /// A successful read ends every pending queue action: the queue on screen
+  /// now shows whether it applied, so the next tap is a new action, never
+  /// the silent replay of the old one. (An owner has one pro per role, so
+  /// the pending queue actions are this pro's.)
+  Future<List<OwnerQueueRow>> ownerQueue(String proId) => guardLive(() async {
+    final rows = _rows(await _api.rpc('owner_queue', {'p_pro_id': proId}));
+    _pending.removeWhere((_, p) => p.queue);
+    return rows;
+  });
 
   Future<List<OwnerQueueRow>> addWalkIn(String proId) => _queueAction(
     'queue_add_walk_in',

@@ -430,7 +430,12 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
             message: l10n.todayOffline,
             error: true,
             action: TextButton(
-              onPressed: () => ref.invalidate(ownerQueueProvider(_proId)),
+              onPressed: () {
+                // The channels too: a failing one rejoins now, every
+                // watched pro is fetched again (the status card's included).
+                ref.read(liveRetryProvider)();
+                ref.invalidate(ownerQueueProvider(_proId));
+              },
               child: Text(l10n.actionRetry),
             ),
           ),

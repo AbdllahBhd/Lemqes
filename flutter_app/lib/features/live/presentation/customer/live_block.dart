@@ -10,7 +10,6 @@ import '../../data/live_derive.dart';
 import '../../data/live_failure.dart';
 import '../../data/live_models.dart';
 import '../../data/live_providers.dart';
-import '../../data/live_repository.dart';
 import '../today/today_widgets.dart' show TodayCard;
 import 'join_queue_sheet.dart';
 import 'live_status_line.dart';
@@ -85,13 +84,12 @@ class _LiveBlockState extends ConsumerState<LiveBlock> {
   /// since republished) comes back without a new search. A listed snapshot
   /// clears the refusal, reaches the listeners refused meanwhile and joins
   /// the channel again.
+  ///
+  /// Through [LiveChannels.refresh], so an answer from before a space or
+  /// account switch is dropped there.
   Future<void> _refresh() async {
-    final proId = widget.proId;
     try {
-      final found = await ref.read(liveRepositoryProvider).snapshots([proId]);
-      final s = found[proId];
-      if (!mounted || s == null) return;
-      ref.read(liveChannelsProvider).seed(s);
+      await ref.read(liveChannelsProvider).refresh(widget.proId);
     } on LiveFailure catch (e, st) {
       // The channel's own fetch on join covers a listed pro; the cause
       // goes to the log.

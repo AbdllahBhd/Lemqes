@@ -110,6 +110,7 @@ class LiveChannels {
     required LiveChannelFactory channelFactory,
     required this._fetch,
     this._onServerNow,
+    this._onAlive,
     this.linger = const Duration(seconds: 10),
     this.batchWindow = const Duration(milliseconds: 250),
     this.downAfter = const Duration(seconds: 5),
@@ -120,6 +121,10 @@ class LiveChannels {
   final LiveChannelFactory _factory;
   final LiveSnapshotFetcher _fetch;
   final void Function(DateTime serverNow)? _onServerNow;
+
+  /// Told when the realtime path proves alive (a channel subscribed, a
+  /// broadcast was taken): an earlier RPC failure is no longer the state.
+  final void Function()? _onAlive;
   final Duration linger;
   final Duration batchWindow;
   final Duration downAfter;
@@ -173,6 +178,36 @@ class LiveChannels {
 
   /// A snapshot read elsewhere (the `live` column of `search_pros`).
   void seed(LiveSnapshot snapshot) => _apply(snapshot);
+
+  /// The user's Retry ("Hors ligne"): every watched pro whose channel is
+  /// failing or waiting to rejoin joins a new one now, and every watched pro
+  /// is fetched again, instead of waiting for [retryAfter] or a resume.
+  void retryNow() {
+    if (_disposed || _suspended || _rejoinTimer != null) return;
+    for (final t in [..._topics.values]) {
+      if (t.sinks.isEmpty || !_mayServe(t)) continue;
+      if (t.retry != null || t.down != null || t.isDown) {
+        t.retry?.cancel();
+        t.retry = null;
+        _closeChannel(t);
+        _open(t);
+      }
+      _queueFetch(t.proId);
+    }
+  }
+
+  /// Fetches [proId] now and applies it, even when this device last saw the
+  /// pro unlisted (a listed answer clears that: the profile's open brings a
+  /// republished pro back). An answer from before a [closeAll] is dropped,
+  /// as the batched fetches' are. Fetch failures are rethrown.
+  Future<void> refresh(String proId) async {
+    if (_disposed || _suspended || _unauthorized.contains(proId)) return;
+    final generation = _generation;
+    final found = await _fetch([proId]);
+    if (generation != _generation) return;
+    final s = found[proId];
+    if (s != null) _apply(s);
+  }
 
   /// Re-fetches every watched pro (app resume).
   void refreshAll() {
@@ -231,9 +266,11 @@ class LiveChannels {
     }
   }
 
-  /// The socket is open again after [socketClosed]. realtime_client rejoins
-  /// only the channels it saw error, and the server forgot the rest: every
-  /// watched pro joins a new channel, whose subscribe re-fetches.
+  /// The socket is open again after [socketClosed]. realtime_client's
+  /// `connect()` rejoins only the channels it saw error (supabase_flutter's
+  /// resume, 2.18.3, also calls `forceRejoin()` on the joined ones; a bare
+  /// reconnect does not): every watched pro joins a new channel, whose
+  /// subscribe re-fetches, whichever path reopened the socket.
   void socketOpened() {
     if (_disposed || !_socketWasClosed) return;
     _socketWasClosed = false;
@@ -374,6 +411,7 @@ class LiveChannels {
         t.down = null;
         t.isDown = false;
         _recomputeConnected();
+        _onAlive?.call();
         _queueFetch(t.proId);
       case RealtimeSubscribeStatus.channelError
           when '$error'.contains('Unauthorized'):
@@ -449,24 +487,25 @@ class LiveChannels {
     if (payload is! Map) return;
     try {
       final s = LiveSnapshot.fromJson(Map<String, Object?>.from(payload));
-      if (s.proId == t.proId) _apply(s);
+      if (s.proId == t.proId && _apply(s)) _onAlive?.call();
     } on Object catch (e, st) {
       // A malformed message must not kill the channel; the next fetch heals.
       developer.log('live broadcast dropped', error: e, stackTrace: st);
     }
   }
 
-  void _apply(LiveSnapshot s) {
-    if (_disposed || _unauthorized.contains(s.proId)) return;
+  /// Whether [s] was taken (newer than the held one).
+  bool _apply(LiveSnapshot s) {
+    if (_disposed || _unauthorized.contains(s.proId)) return false;
     final held = _held[s.proId];
-    if (held != null && !s.isNewerThan(held)) return;
+    if (held != null && !s.isNewerThan(held)) return false;
     final t = _topics[s.proId];
     final hasOwn = t != null && t.own.isNotEmpty;
     if (!s.listed) {
       final first = _unlisted.add(s.proId);
       if (!hasOwn) {
         _dropFor(s.proId, keepOwn: false);
-        return;
+        return true;
       }
       if (first) _dropFor(s.proId, keepOwn: true);
     } else if (_unlisted.contains(s.proId)) {
@@ -476,7 +515,7 @@ class LiveChannels {
     }
     _held[s.proId] = s;
     _onServerNow?.call(s.serverNow);
-    if (t == null) return;
+    if (t == null) return true;
     // Listeners refused while it was unlisted are still attached: they get
     // this snapshot below and a channel for the next ones.
     if (t.channel == null &&
@@ -488,6 +527,7 @@ class LiveChannels {
     for (final sink in [...t.sinks]) {
       if (s.listed || t.own.contains(sink)) sink.add(s);
     }
+    return true;
   }
 
   void _queueFetch(String proId) {

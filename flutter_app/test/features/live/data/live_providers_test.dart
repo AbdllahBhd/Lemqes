@@ -203,21 +203,26 @@ void main() {
       await settle(t);
       clearInteractions(repo);
 
-      // Status-only change: same version, later stamp.
+      // Status-only change: live_version moves, queue_version does not.
       ch.send(
         live(
           'p1',
-          version: 3,
+          version: 4,
+          queueVersion: 3,
           serverNow: '2026-11-20T10:01:00+00:00',
           status: 'on_break',
         ),
       );
       await settle(t);
+      expect(
+        c.read(ownLiveSnapshotProvider('p1')).value?.status,
+        LiveStatus.onBreak,
+      );
       verifyNever(() => repo.ownerQueue(any()));
 
       when(() => repo.ownerQueue('p1'))
           .thenAnswer((_) async => [row(1), row(2)]);
-      ch.send(live('p1', version: 4, serverNow: '2026-11-20T10:02:00+00:00'));
+      ch.send(live('p1', version: 5, serverNow: '2026-11-20T10:02:00+00:00'));
       await settle(t);
       verify(() => repo.ownerQueue('p1')).called(1);
       expect(sub.read().requireValue.rows, hasLength(2));
@@ -472,6 +477,56 @@ void main() {
       c.read(liveChannelsProvider).seed(snapshot('p1'));
       expect(c.read(serverOffsetProvider), const Duration(seconds: 30));
       expect(c.read(serverNowProvider)(), DateTime.utc(2026, 11, 20, 10));
+    });
+
+    providerTest('the server offset moves only past 1 s of drift', (
+      t,
+      c,
+    ) async {
+      final offsets = <Duration>[];
+      final sub = c.listen(
+        serverOffsetProvider,
+        (_, next) => offsets.add(next),
+      );
+      clock = DateTime.utc(2026, 11, 20, 9, 59, 30);
+      final channels = c.read(liveChannelsProvider)..seed(snapshot('p1'));
+      // Transit jitter: 0.4 s later is not a new offset.
+      clock = DateTime.utc(2026, 11, 20, 9, 59, 30, 400);
+      channels.seed(snapshot('p1', version: 4));
+      expect(c.read(serverOffsetProvider), const Duration(seconds: 30));
+      clock = DateTime.utc(2026, 11, 20, 9, 59, 28);
+      channels.seed(snapshot('p1', version: 5));
+      expect(offsets, const [Duration(seconds: 30), Duration(seconds: 32)]);
+      sub.close();
+    });
+
+    providerTest('a subscribed channel or a broadcast clears an RPC failure', (
+      t,
+      c,
+    ) async {
+      final health = c.read(liveRpcHealthProvider.notifier);
+      final s = c.read(liveChannelsProvider).watch('p1').listen((_) {});
+      health.report(ok: false);
+      expect(c.read(liveRpcHealthProvider), isFalse);
+      factory.last('p1').subscribed();
+      expect(c.read(liveRpcHealthProvider), isTrue);
+
+      health.report(ok: false);
+      factory.last('p1').send(live('p1', version: 7));
+      expect(c.read(liveRpcHealthProvider), isTrue);
+      stop(s);
+      await t.pump(const Duration(milliseconds: 300));
+    });
+
+    providerTest('liveRetry rejoins the channels and refetches', (t, c) async {
+      final s = c.read(liveChannelsProvider).watch('p1').listen((_) {});
+      final first = factory.last('p1')..error();
+      c.read(liveRetryProvider)();
+      expect(first.closed, isTrue);
+      expect(factory.last('p1'), isNot(same(first)));
+      await t.pump(const Duration(milliseconds: 300));
+      verify(() => repo.snapshots(['p1'])).called(1);
+      stop(s);
     });
 
     providerTest('connected goes false after 5 s of channel errors', (

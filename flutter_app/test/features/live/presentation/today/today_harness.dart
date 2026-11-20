@@ -59,8 +59,10 @@ List<Override> liveOverrides({
   required LiveRepository repo,
   required Stream<LiveSnapshot> Function(String proId) snapshots,
   bool connected = true,
+  void Function()? onRetry,
 }) => [
   liveRepositoryProvider.overrideWithValue(repo),
+  liveRetryProvider.overrideWithValue(onRetry ?? () {}),
   ownLiveSnapshotProvider.overrideWith((ref, proId) => snapshots(proId)),
   liveTickerProvider.overrideWith((ref) => const Stream<int>.empty()),
   liveConnectedProvider.overrideWith(() => FakeConnected(connected)),
@@ -199,11 +201,15 @@ ProProfile todayProfile({
 );
 
 class TodayHarness {
-  TodayHarness(this.repo, this.snapshots, this.container);
+  TodayHarness(this.repo, this.snapshots, this.container, this._retries);
 
   final MockLiveRepository repo;
   final StreamController<LiveSnapshot> snapshots;
   final ProviderContainer container;
+  final List<void> _retries;
+
+  /// How many times the offline banner's Retry asked the channels to retry.
+  int get retries => _retries.length;
 
   FakeConnected get connected =>
       container.read(liveConnectedProvider.notifier) as FakeConnected;
@@ -241,6 +247,7 @@ Future<TodayHarness> pumpToday(
   var latest = snapshot ?? openSnapshot(waiting: 0);
   snapshots.stream.listen((s) => latest = s);
 
+  final retries = <void>[];
   final container = ProviderContainer(
     retry: (_, _) => null,
     overrides: [
@@ -251,6 +258,7 @@ Future<TodayHarness> pumpToday(
           yield* snapshots.stream;
         },
         connected: connected,
+        onRetry: () => retries.add(null),
       ),
       myProProvider.overrideWith(
         () => FakeMyPro(noProfile ? null : (profile ?? todayProfile())),
@@ -281,7 +289,7 @@ Future<TodayHarness> pumpToday(
     ),
   );
   await settle(tester);
-  return TodayHarness(mock, snapshots, container);
+  return TodayHarness(mock, snapshots, container, retries);
 }
 
 /// Whether the button under [key] (the keyed widget or one inside it) is

@@ -158,6 +158,21 @@ void main() {
     expect(ids[1], isNot(ids[0]));
   });
 
+  test('a successful owner_queue read ends pending queue actions', () async {
+    final ids = <Object?>[];
+    when(() => api.rpc('queue_add_walk_in', any())).thenAnswer((i) async {
+      ids.add((i.positionalArguments[1] as Map)['p_request_id']);
+      throw const SocketException('down');
+    });
+    when(() => api.rpc('owner_queue', any())).thenAnswer((_) async => [_row]);
+    await expectLater(repo.addWalkIn('p1'), throwsA(isA<LiveNetworkFailure>()));
+    // The barber now sees the server's queue: a tap from here is a new +1,
+    // not the replay of one whose outcome the read already shows.
+    await repo.ownerQueue('p1');
+    await expectLater(repo.addWalkIn('p1'), throwsA(isA<LiveNetworkFailure>()));
+    expect(ids[1], isNot(ids[0]));
+  });
+
   test('a pending id older than 2 minutes is not reused', () async {
     var now = DateTime.utc(2026, 11, 20, 10);
     repo = LiveRepository(api, now: () => now);

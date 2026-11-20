@@ -286,6 +286,28 @@ void main() {
     expect(find.byKey(const Key('offlineBanner')), findsNothing);
   });
 
+  testWidgets('offline Retry rejoins the channels and reloads the queue', (
+    t,
+  ) async {
+    final repo = stubbed(rows: fourEntries());
+    final h = await pumpToday(
+      t,
+      repo: repo,
+      snapshot: openSnapshot(),
+      connected: false,
+    );
+    clearInteractions(repo);
+    await t.tap(
+      find.descendant(
+        of: find.byKey(const Key('offlineBanner')),
+        matching: find.text(fr.actionRetry),
+      ),
+    );
+    await settle(t);
+    expect(h.retries, 1);
+    verify(() => repo.ownerQueue('p1')).called(1);
+  });
+
   testWidgets('an unpublished profile says customers cannot see it', (t) async {
     await pumpToday(
       t,

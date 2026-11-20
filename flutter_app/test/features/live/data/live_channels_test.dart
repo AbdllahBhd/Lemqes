@@ -223,8 +223,67 @@ void main() {
     stop(a);
   });
 
-  // realtime_client reports a socket closed by `disconnect()` (supabase_flutter
-  // does it on pause) to no channel, and a later `connect()` rejoins none.
+  channelsTest('refresh: an answer from before closeAll is discarded', (
+    t,
+  ) async {
+    final gate = Completer<Map<String, LiveSnapshot>>();
+    channels.dispose();
+    channels = LiveChannels(
+      channelFactory: factory.call,
+      fetch: (_) => gate.future,
+    );
+    final done = channels.refresh('p1');
+    channels.closeAll();
+    gate.complete({'p1': snapshot('p1')});
+    await done;
+    expect(channels.latest('p1'), isNull);
+    await t.pump(const Duration(milliseconds: 300));
+  });
+
+  channelsTest('refresh brings back a pro last seen unlisted', (t) async {
+    final got = <LiveSnapshot>[];
+    final a = channels.watch('p1').listen(got.add, onError: (_) {});
+    factory.last('p1').send(live('p1', version: 4, listed: false));
+    await t.pump();
+    server['p1'] = snapshot('p1', version: 5);
+    await channels.refresh('p1');
+    await t.pump();
+    expect(got.map((s) => s.liveVersion), [5]);
+    expect(fetches, [
+      ['p1'],
+    ]);
+    stop(a);
+  });
+
+  channelsTest('retryNow rejoins failing channels and refetches', (t) async {
+    final alive = <int>[];
+    channels.dispose();
+    channels = LiveChannels(
+      channelFactory: factory.call,
+      fetch: (ids) async => {
+        for (final id in ids)
+          if (server[id] != null) id: server[id]!,
+      },
+      onAlive: () => alive.add(1),
+    );
+    final a = channels.watch('p1').listen((_) {});
+    final first = factory.last('p1')..error();
+    channels.retryNow();
+    final second = factory.last('p1');
+    expect(second, isNot(same(first)));
+    // No second join when the old retry timer would have fired.
+    await t.pump(const Duration(seconds: 4));
+    expect(factory.channels, hasLength(2));
+    second.subscribed();
+    expect(alive, [1]);
+    second.send(live('p1', version: 9));
+    expect(alive, [1, 1]);
+    stop(a);
+  });
+
+  // realtime_client reports a socket closed by `disconnect()` to no channel,
+  // and a bare `connect()` rejoins none (supabase_flutter's resume adds a
+  // forceRejoin() of the joined channels after it; this covers the rest).
   channelsTest('a closed socket marks watched pros down after 5 s', (t) async {
     final a = channels.watch('p1').listen((_) {});
     factory.last('p1').subscribed();

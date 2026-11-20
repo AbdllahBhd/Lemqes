@@ -150,7 +150,7 @@ void main() {
     expect(canCallNext(), isFalse);
     await shot('today_offline');
 
-    // supabase_flutter's own resume path calls it the same way.
+    // supabase_flutter's own resume path calls connect() the same way.
     // ignore: invalid_use_of_internal_member
     await app.realtime.connect();
     await waitForGone(tester, find.byKey(const Key('offlineBanner')));

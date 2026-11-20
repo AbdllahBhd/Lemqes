@@ -68,17 +68,15 @@ void main() {
     expect(LiveSnapshot.fromJson(snap(version: 2)).isNewerThan(base), isFalse);
     // A status-only broadcast moves live_version, not queue_version.
     expect(
-      LiveSnapshot.fromJson(
-        snap(version: 4, queueVersion: 3),
-      ).isNewerThan(base),
+      LiveSnapshot.fromJson(snap(version: 4, queueVersion: 3))
+          .isNewerThan(base),
       isTrue,
     );
     // server_now is a transaction start: a later stamp at the same
     // live_version is the same state, an earlier one can still be newer.
     expect(
-      LiveSnapshot.fromJson(
-        snap(serverNow: '2026-11-20T10:00:05+00:00'),
-      ).isNewerThan(base),
+      LiveSnapshot.fromJson(snap(serverNow: '2026-11-20T10:00:05+00:00'))
+          .isNewerThan(base),
       isFalse,
     );
     expect(
