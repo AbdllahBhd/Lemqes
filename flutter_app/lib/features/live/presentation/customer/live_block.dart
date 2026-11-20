@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/l10n/locale_controller.dart';
 import '../../../../shared/widgets/lemqes_primary_button.dart';
+import '../../data/live_derive.dart';
 import '../../data/live_failure.dart';
 import '../../data/live_models.dart';
 import '../../data/live_providers.dart';
@@ -15,6 +16,35 @@ import 'join_queue_sheet.dart';
 import 'live_status_line.dart';
 import 'live_words.dart';
 import 'my_ticket_card.dart';
+
+bool _holding(MyTicket t) =>
+    t.state == EntryState.waiting || t.state == EntryState.serving;
+
+/// The customer's ticket at [proId], if that is where they hold one.
+MyTicket? _ticketAt(WidgetRef ref, String proId) {
+  final mine = ref.watch(myTicketProvider).value;
+  return mine?.proId == proId ? mine : null;
+}
+
+bool _joinEnabled(WidgetRef ref, LiveView view) =>
+    canTryJoin(view) && ref.watch(liveConnectedProvider);
+
+/// Whether the customer's live block for [proId] offers a tap right now
+/// (an enabled join, or "Je suis en route"): the profile's call then steps
+/// down so one primary action leads.
+bool liveBlockOffersAction(
+  WidgetRef ref,
+  String proId, {
+  required bool hasServices,
+}) {
+  final view = ref.watch(proLiveProvider(proId)).value;
+  if (view == null) return false;
+  final ticket = _ticketAt(ref, proId);
+  if (ticket != null && _holding(ticket)) {
+    return ticket.state == EntryState.waiting && ticket.onMyWayAt == null;
+  }
+  return hasServices && _joinEnabled(ref, view);
+}
 
 /// The live part of a public profile, under the hero: the status and queue,
 /// larger than on a card, then "Rejoindre la file" or the customer's ticket
@@ -52,8 +82,9 @@ class _LiveBlockState extends ConsumerState<LiveBlock> {
   }
 
   /// A fresh snapshot on open: a pro this device last saw unlisted (and has
-  /// since republished) comes back without a new search, since a listed
-  /// snapshot clears the refusal.
+  /// since republished) comes back without a new search. A listed snapshot
+  /// clears the refusal, reaches the listeners refused meanwhile and joins
+  /// the channel again.
   Future<void> _refresh() async {
     final proId = widget.proId;
     try {
@@ -61,9 +92,6 @@ class _LiveBlockState extends ConsumerState<LiveBlock> {
       final s = found[proId];
       if (!mounted || s == null) return;
       ref.read(liveChannelsProvider).seed(s);
-      if (ref.read(liveSnapshotProvider(proId)).hasError) {
-        ref.invalidate(liveSnapshotProvider(proId));
-      }
     } on LiveFailure catch (e, st) {
       // The channel's own fetch on join covers a listed pro; the cause
       // goes to the log.
@@ -88,16 +116,12 @@ class _LiveBlockState extends ConsumerState<LiveBlock> {
         .watch(owner ? ownProLiveProvider(proId) : proLiveProvider(proId))
         .value;
     if (!owner) listenTicketPlace(ref, context);
-    final mine = owner ? null : ref.watch(myTicketProvider).value;
-    final ticket = mine?.proId == proId ? mine : null;
+    final ticket = owner ? null : _ticketAt(ref, proId);
     // Loading, or no live line for this caller (unlisted, refused).
     if (view == null) return const SizedBox.shrink();
 
     final l10n = context.l10n;
-    final holding =
-        ticket != null &&
-        (ticket.state == EntryState.waiting ||
-            ticket.state == EntryState.serving);
+    final holding = ticket != null && _holding(ticket);
     final services = widget.services ?? const [];
     return TodayCard(
       key: const Key('liveBlock'),
@@ -118,9 +142,7 @@ class _LiveBlockState extends ConsumerState<LiveBlock> {
               label: l10n.liveJoin,
               icon: Icons.group_add_outlined,
               expand: true,
-              onPressed: canTryJoin(view) && ref.watch(liveConnectedProvider)
-                  ? _join
-                  : null,
+              onPressed: _joinEnabled(ref, view) ? _join : null,
             ),
           ],
         ],

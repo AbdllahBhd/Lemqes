@@ -409,6 +409,48 @@ void main() {
       });
     }
 
+    testWidgets('the hero photo wears the live ring: open', (tester) async {
+      await live(tester, custSnap(proUuid));
+      expect(find.byKey(const Key('liveRing_open')), findsOneWidget);
+      await unmountLive(tester);
+    });
+
+    testWidgets('the hero photo wears the live ring: on break', (tester) async {
+      await live(tester, breakSnap(proUuid));
+      expect(find.byKey(const Key('liveRing_onBreak')), findsOneWidget);
+      await unmountLive(tester);
+    });
+
+    testWidgets('with a join to offer, the call steps down to outlined', (
+      tester,
+    ) async {
+      await live(tester, custSnap(proUuid));
+      expect(
+        tester.widget(find.byKey(const Key('callPro'))),
+        isA<OutlinedButton>(),
+      );
+      expect(find.text('+213 550 12 34 56'), findsOneWidget);
+      await unmountLive(tester);
+    });
+
+    testWidgets('with nothing to do in the block, the call stays primary', (
+      tester,
+    ) async {
+      await live(tester, closedSnap(proUuid));
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('callPro')),
+          matching: find.byType(OutlinedButton),
+        ),
+        findsNothing,
+      );
+      expect(
+        tester.widget(find.byKey(const Key('callPro'))),
+        isA<LemqesPrimaryButton>(),
+      );
+      await unmountLive(tester);
+    });
+
     testWidgets('holding a place here shows the ticket, not the join', (
       tester,
     ) async {
@@ -469,6 +511,7 @@ void main() {
       expect(find.byKey(const Key('liveBlock')), findsOneWidget);
       expect(find.text('3 en attente · ~40 min'), findsOneWidget);
       expect(find.byKey(const Key('liveJoin')), findsNothing);
+      expect(find.byKey(const Key('liveRing_open')), findsOneWidget);
       // The owner's own channel only: never the customer one.
       expect(l.repo.snapshotCalls, isEmpty);
       expect(l.factory.channels, isEmpty);

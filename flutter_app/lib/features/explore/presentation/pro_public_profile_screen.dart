@@ -23,7 +23,9 @@ import '../../account/data/account_providers.dart';
 import '../../auth/presentation/auth_widgets.dart' show formatAlgerianPhone;
 import '../../geo/data/geo_providers.dart';
 import '../../live/presentation/customer/join_queue_sheet.dart';
+import '../../live/data/live_providers.dart';
 import '../../live/presentation/customer/live_block.dart';
+import '../../live/presentation/customer/live_ring.dart';
 import '../../pro/data/photo_uploader.dart';
 import '../../pro/data/pro_models.dart';
 import '../../pro/data/pro_providers.dart';
@@ -108,7 +110,15 @@ class ProPublicProfileScreen extends ConsumerWidget {
       AsyncValue(hasError: true) => _PhoneUnavailableBar(
         onRetry: () => ref.invalidate(proContactPhoneProvider(proId)),
       ),
-      AsyncValue(value: final String number) => _CallBar(phone: number),
+      AsyncValue(value: final String number) => _CallBar(
+        phone: number,
+        // One primary action leads: the live block's, when it has one.
+        primary: !liveBlockOffersAction(
+          ref,
+          proId,
+          hasServices: profile!.services.isNotEmpty,
+        ),
+      ),
       _ => null,
     };
 
@@ -161,8 +171,8 @@ class ProPublicProfileView extends StatelessWidget {
   const ProPublicProfileView({
     required this.profile,
     this.marker,
+    required this.asCustomer,
     this.bottomBar,
-    this.asCustomer = false,
     super.key,
   });
 
@@ -170,9 +180,9 @@ class ProPublicProfileView extends StatelessWidget {
   final Widget? marker;
   final Widget? bottomBar;
 
-  /// A customer's view: the live block follows the customer channel and
-  /// offers the join. Otherwise (the owner's preview) it reads the owner's
-  /// own channel and offers nothing to tap.
+  /// A customer's view: the live block and the hero ring follow the
+  /// customer channel, and the block offers the join. The owner's preview
+  /// passes false: both read the owner's own channel, with nothing to tap.
   final bool asCustomer;
 
   @override
@@ -272,7 +282,7 @@ class _ProfileBody extends StatelessWidget {
             height: _bandHeight(context) + LagoonHeaderBand.overlapRise,
             overlap: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _Hero(profile: p),
+              child: _Hero(profile: p, asCustomer: asCustomer),
             ),
             child: _BackRow(marker: marker),
           ),
@@ -370,9 +380,10 @@ class _Section extends StatelessWidget {
 }
 
 class _Hero extends ConsumerStatefulWidget {
-  const _Hero({required this.profile});
+  const _Hero({required this.profile, required this.asCustomer});
 
   final ProProfile profile;
+  final bool asCustomer;
 
   @override
   ConsumerState<_Hero> createState() => _HeroState();
@@ -427,7 +438,20 @@ class _HeroState extends ConsumerState<_Hero> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ProAvatar(name: p.displayName, path: p.avatarPath, size: 72),
+            LiveRing(
+              view: ref
+                  .watch(
+                    widget.asCustomer
+                        ? proLiveProvider(p.id)
+                        : ownProLiveProvider(p.id),
+                  )
+                  .value,
+              child: ProAvatar(
+                name: p.displayName,
+                path: p.avatarPath,
+                size: 72,
+              ),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -771,9 +795,13 @@ class _PhoneUnavailableBar extends StatelessWidget {
 
 /// The one primary action, under the thumb: the number, then the call.
 class _CallBar extends ConsumerWidget {
-  const _CallBar({required this.phone});
+  const _CallBar({required this.phone, required this.primary});
 
   final String phone;
+
+  /// False while the live block offers its own action: the call is then an
+  /// outlined 48 dp button under it.
+  final bool primary;
 
   Future<void> _call(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -814,13 +842,30 @@ class _CallBar extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            LemqesPrimaryButton(
-              key: const Key('callPro'),
-              label: l10n.proPublicCall,
-              icon: Icons.call_outlined,
-              expand: true,
-              onPressed: () => _call(context, ref),
-            ),
+            if (primary)
+              LemqesPrimaryButton(
+                key: const Key('callPro'),
+                label: l10n.proPublicCall,
+                icon: Icons.call_outlined,
+                expand: true,
+                onPressed: () => _call(context, ref),
+              )
+            else
+              OutlinedButton(
+                key: const Key('callPro'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: () => _call(context, ref),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.call_outlined, size: 20),
+                    const SizedBox(width: 8),
+                    Flexible(child: Text(l10n.proPublicCall)),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

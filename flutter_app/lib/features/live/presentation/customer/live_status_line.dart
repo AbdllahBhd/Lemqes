@@ -5,6 +5,7 @@ import '../../../../core/l10n/locale_controller.dart';
 import '../../../../core/theme/lemqes_typography.dart';
 import '../../../../core/theme/status_colors.dart';
 import '../../../../core/time/clock_providers.dart';
+import '../../../account/data/account_providers.dart';
 import '../../data/live_derive.dart';
 import '../../data/live_models.dart';
 import '../../data/live_providers.dart';
@@ -88,7 +89,16 @@ class LiveStatusLine extends ConsumerWidget {
       word = v.breakOverdue ? l10n.todayBreakOverdue : l10n.liveStatusOnBreak;
       final until = v.snapshot.breakUntil;
       if (until != null && !v.breakOverdue) {
-        details.add(l10n.liveBreakReturn(ltrIsolate(wallTime(until))));
+        // The pro is in the caller's space: its wording follows it.
+        final space = ref.watch(
+          accountProvider.select((a) => a.value?.currentSpace),
+        );
+        details.add(
+          l10n.liveBreakReturn(
+            ltrIsolate(wallTime(until)),
+            space?.toDb() ?? 'men',
+          ),
+        );
       }
       details.add(liveAgeText(l10n, v.age));
     } else {
@@ -113,10 +123,10 @@ class LiveStatusLine extends ConsumerWidget {
             ),
           ),
           TextSpan(text: word, style: wordStyle),
-          // Each detail stays whole ("il y a 5 min"); the line breaks
-          // between them.
+          // Each detail stays whole ("il y a 5 min"), and "·" stays with
+          // what precedes it: the line breaks only after a separator.
           for (final d in details)
-            TextSpan(text: ' · ${d.replaceAll(' ', '\u00a0')}'),
+            TextSpan(text: '\u00a0· ${d.replaceAll(' ', '\u00a0')}'),
         ],
       ),
       style: base,

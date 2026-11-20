@@ -309,6 +309,30 @@ void main() {
     stop(c);
   });
 
+  channelsTest('a listed seed serves a refused listener and joins again', (
+    t,
+  ) async {
+    final got = <LiveSnapshot>[];
+    final errors = <Object>[];
+    final a = channels.watch('p1').listen((_) {}, onError: (_) {});
+    factory.last('p1').send(live('p1', version: 4, listed: false));
+    await t.pump();
+    // A listener that arrives while the pro is unlisted is refused...
+    final b = channels.watch('p1').listen(got.add, onError: errors.add);
+    await t.pump();
+    expect(errors.single, isA<LiveUnavailable>());
+    final before = factory.channels.length;
+
+    // ...until a fresh listed snapshot says it is back (republished).
+    channels.seed(snapshot('p1', version: 5));
+    await t.pump();
+    expect(got.single.queueVersion, 5);
+    expect(factory.channels.length, before + 1);
+    expect(factory.channels.last.closed, isFalse);
+    stop(a);
+    stop(b);
+  });
+
   channelsTest('the owner keeps an unlisted pro', (t) async {
     final got = <LiveSnapshot>[];
     final errors = <Object>[];

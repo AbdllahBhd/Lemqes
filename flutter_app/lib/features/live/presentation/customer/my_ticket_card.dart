@@ -53,17 +53,24 @@ String ticketHeadline(AppLocalizations l10n, MyTicket t) {
 /// state: both the Explore card and the profile listen, and only the first
 /// to see a change may say it.
 class TicketPlaceMemory {
-  ({String entryId, int position})? _last;
+  ({String entryId, EntryState state, int? position})? _last;
 
-  /// True when [t]'s place moved since the last call for the same entry.
-  bool moved(MyTicket t) {
-    final position = t.position;
-    if (t.state != EntryState.waiting || position == null) return false;
+  /// What to say for [t]: its new place while waiting, or the turn when
+  /// waiting gave way to serving; null when nothing changed for the same
+  /// entry (the first sighting is never news).
+  String? news(AppLocalizations l10n, MyTicket t) {
     final last = _last;
-    _last = (entryId: t.entryId, position: position);
-    return last != null &&
-        last.entryId == t.entryId &&
-        last.position != position;
+    _last = (entryId: t.entryId, state: t.state, position: t.position);
+    if (last == null || last.entryId != t.entryId) return null;
+    if (t.state == EntryState.serving && last.state == EntryState.waiting) {
+      return l10n.ticketYourTurn;
+    }
+    if (t.state == EntryState.waiting &&
+        t.position != null &&
+        t.position != last.position) {
+      return l10n.ticketYouAre(ticketPlaceText(l10n, t));
+    }
+    return null;
   }
 }
 
@@ -71,20 +78,23 @@ final ticketPlaceMemoryProvider = Provider<TicketPlaceMemory>(
   (_) => TicketPlaceMemory(),
 );
 
-/// Says "Vous êtes 2e" when the customer's place changes (G5), never on a
-/// rebuild with the same place. Call from a build method.
+/// Says "Vous êtes 2e" when the customer's place changes and "C'est votre
+/// tour" when it comes (G5), never on a rebuild with nothing new. Call from
+/// a build method.
 void listenTicketPlace(WidgetRef ref, BuildContext context) {
   final memory = ref.read(ticketPlaceMemoryProvider);
-  // The place on screen when this widget builds is known, not news.
+  final l10n = context.l10n;
+  // What is on screen when this widget builds is known, not news.
   if (ref.read(myTicketProvider).value case final current?) {
-    memory.moved(current);
+    memory.news(l10n, current);
   }
   ref.listen(myTicketProvider.select((s) => s.value), (_, next) {
-    if (next == null || !memory.moved(next)) return;
-    final l10n = context.l10n;
+    if (next == null) return;
+    final message = memory.news(context.l10n, next);
+    if (message == null) return;
     SemanticsService.sendAnnouncement(
       View.of(context),
-      l10n.ticketYouAre(ticketPlaceText(l10n, next)),
+      message,
       Directionality.of(context),
     );
   });
@@ -207,7 +217,12 @@ class _TicketViewState extends ConsumerState<TicketView> {
                     color: muted.color,
                   ),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(l10n.ticketOnMyWayDone, style: muted)),
+                  Expanded(
+                    child: Text(
+                      l10n.ticketOnMyWayDone(t.proSpace),
+                      style: muted,
+                    ),
+                  ),
                 ],
               ),
             ),

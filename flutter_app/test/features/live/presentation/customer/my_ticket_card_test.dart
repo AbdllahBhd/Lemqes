@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lemqes/core/l10n/gen/app_localizations_ar.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/live/data/live_models.dart';
@@ -108,7 +111,7 @@ void main() {
     await settleLive(tester);
 
     expect(h.live.repo.onMyWays, ['e1']);
-    expect(_inCard(find.text(_fr.ticketOnMyWayDone)), findsOneWidget);
+    expect(_inCard(find.text(_fr.ticketOnMyWayDone('men'))), findsOneWidget);
     expect(find.byKey(const Key('ticketOnMyWay')), findsNothing);
     await unmountLive(tester);
   });
@@ -171,5 +174,54 @@ void main() {
       expect(tester.takeException(), isNull);
     }
     await unmountLive(tester);
+  });
+
+  testWidgets('the turn is announced once when it comes', (tester) async {
+    final h = await _explore(tester, ticketFor());
+    tester.takeAnnouncements();
+
+    h.live.repo.ticket = ticketFor(state: 'serving');
+    h.live.broadcast('p1', custLive('p1', version: 4));
+    await settleLive(tester);
+    expect(tester.takeAnnouncements().map((a) => a.message), [
+      _fr.ticketYourTurn,
+    ]);
+
+    h.live.broadcast('p1', custLive('p1', version: 5));
+    await settleLive(tester);
+    expect(tester.takeAnnouncements(), isEmpty);
+    await unmountLive(tester);
+  });
+
+  testWidgets('with the profile pushed over Explore, one announcement', (
+    tester,
+  ) async {
+    final live = CustomerLive()
+      ..repo.ticket = ticketFor(proId: proUuid)
+      ..repo.server[proUuid] = custSnap(proUuid);
+    final h = await pumpExplore(
+      tester,
+      explore: FakeExploreRepository(cards: threeLiveCards()),
+      pros: PublicProRepository(
+        listed: {proUuid: publicBarber()},
+        phones: {proUuid: '+213550123456'},
+      ),
+      live: live,
+    );
+    unawaited(h.router.push('/pro/$proUuid'));
+    await settleLive(tester);
+    expect(find.byKey(const Key('liveBlock')), findsOneWidget);
+    tester.takeAnnouncements();
+
+    live.repo.ticket = ticketFor(proId: proUuid, position: 2, waitMin: 15);
+    live.broadcast(proUuid, custLive(proUuid, version: 4));
+    await settleLive(tester);
+    expect(tester.takeAnnouncements().map((a) => a.message), ['Vous êtes 2e']);
+    await unmountLive(tester);
+  });
+
+  test('Arabic: the card title is not the turn', () {
+    final ar = AppLocalizationsAr();
+    expect(ar.ticketTitle, isNot(contains('دور')));
   });
 }

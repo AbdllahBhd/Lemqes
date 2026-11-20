@@ -438,13 +438,21 @@ class LiveChannels {
       }
       if (first) _dropFor(s.proId, keepOwn: true);
     } else if (_unlisted.contains(s.proId)) {
-      // Republished, seen through the owner's channel: customers may join
-      // again (they re-watch to get it).
+      // Republished (seen through the owner's channel, or a fresh fetch):
+      // customers may follow it again.
       _unlisted.remove(s.proId);
     }
     _held[s.proId] = s;
     _onServerNow?.call(s.serverNow);
     if (t == null) return;
+    // Listeners refused while it was unlisted are still attached: they get
+    // this snapshot below and a channel for the next ones.
+    if (t.channel == null &&
+        t.retry == null &&
+        _rejoinTimer == null &&
+        t.sinks.isNotEmpty) {
+      _open(t);
+    }
     for (final sink in [...t.sinks]) {
       if (s.listed || t.own.contains(sink)) sink.add(s);
     }

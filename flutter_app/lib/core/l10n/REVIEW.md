@@ -339,13 +339,14 @@
 | `liveAgeNow` | final | final | draft | draft |
 | `liveAgeMinutes` | final | final | draft | draft |
 | `liveAgeHours` | final | final | draft | draft |
-| `liveBreakReturn` | final | final | draft | draft |
+| `liveBreakReturn` | final | final | draft (native review: space forms / wording) | draft (native review: space forms / wording) |
 | `liveUpdatedNow` | final | final | draft | draft |
 | `liveUpdatedAgo` | final | final | draft | draft |
 | `liveWaitApprox` | final | final | draft | draft |
 | `liveQueueWaiting` | final | final | draft | draft |
 | `liveQueueCount` | final | final | draft | draft |
 | `liveQueueNoWait` | final | final | draft | draft |
+| `liveQueueNoWaitWait` | final | final | draft | draft |
 | `liveQueueOpen` | final | final | draft | draft |
 | `liveQueueOpenWait` | final | final | draft | draft |
 | `liveQueueFull` | final | final | draft | draft |
@@ -361,14 +362,14 @@
 | `joinErrorLimit` | final | final | draft | draft |
 | `joinErrorAbsentBlock` | final | final | draft | draft |
 | `joinErrorUnavailable` | final | final | draft | draft |
-| `ticketTitle` | final | final | draft | draft |
+| `ticketTitle` | final | final | draft (native review: space forms / wording) | draft (native review: space forms / wording) |
 | `ticketPlace` | final | final | draft | draft |
 | `ticketYouAre` | final | final | draft | draft |
 | `ticketYouAreWait` | final | final | draft | draft |
 | `ticketAt` | final | final | draft | draft |
 | `ticketYourTurn` | final | final | draft | draft |
 | `ticketOnMyWay` | final | final | draft | draft |
-| `ticketOnMyWayDone` | final | final | draft | draft |
+| `ticketOnMyWayDone` | final | final | draft (native review: space forms / wording) | draft (native review: space forms / wording) |
 | `ticketLeave` | final | final | draft | draft |
 | `ticketLeaveTitle` | final | final | draft | draft |
 | `ticketLeaveBody` | final | final | draft | draft |

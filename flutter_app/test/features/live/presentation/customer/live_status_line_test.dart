@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/app.dart' show appDelegates;
 import 'package:lemqes/core/l10n/gen/app_localizations.dart';
 import 'package:lemqes/core/theme/lemqes_theme.dart';
+import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/live/data/live_models.dart';
 import 'package:lemqes/features/live/data/live_providers.dart';
@@ -207,6 +208,66 @@ void main() {
     expect(_line(tester), contains('\u206611:30\u2069'));
     expect(_queue(tester), '2 في الانتظار · حوالي 25 دقيقة');
     expect(_queue(tester), isNot(contains('~')));
+    await unmountLive(tester);
+  });
+
+  testWidgets('nobody waiting but someone in the chair: "Pas d’attente"', (
+    tester,
+  ) async {
+    final (_, c) = await _pump(tester);
+    await _seed(tester, c, custSnap('p1', waiting: 0, waitMin: 10));
+    expect(_queue(tester), 'Pas d’attente · ~10 min');
+    await unmountLive(tester);
+  });
+
+  testWidgets('a wrap never leaves "·" dangling at a line end', (tester) async {
+    final (_, c) = await _pump(tester);
+    await _seed(tester, c, breakSnap('p1'));
+    final spans = tester
+        .widget<Text>(find.byKey(const Key('liveStatusLine')))
+        .textSpan!
+        .toPlainText(includePlaceholders: false);
+    // No-break space before each separator, a breaking one after.
+    expect(spans, contains(' · '));
+    expect(spans, isNot(contains(' ·')));
+    await unmountLive(tester);
+  });
+
+  testWidgets('Arabic break return agrees with the space', (tester) async {
+    final live = CustomerLive();
+    addTearDown(live.dispose);
+    final container = ProviderContainer(
+      retry: (_, _) => null,
+      overrides: [
+        ...live.overrides(),
+        customerAccountOverride(liveCustomer(space: Space.women)),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: lemqesTheme(Brightness.light),
+          locale: const Locale('ar'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: appDelegates,
+          home: Scaffold(
+            body: Consumer(
+              builder: (context, ref, _) {
+                final view = ref.watch(proLiveProvider('p1')).value;
+                return view == null
+                    ? const SizedBox.shrink()
+                    : LiveStatusLine(view: view);
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await container.read(accountProvider.future);
+    await _seed(tester, container, breakSnap('p1'));
+    expect(_line(tester), contains('تعود'));
     await unmountLive(tester);
   });
 }

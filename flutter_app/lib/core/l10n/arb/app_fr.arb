@@ -1494,11 +1494,14 @@
       }
     }
   },
-  "liveBreakReturn": "retour {time}",
+  "liveBreakReturn": "{space, select, women{retour {time}} other{retour {time}}}",
   "@liveBreakReturn": {
-    "description": "Customer live line: break return time (the time is an LTR island, e.g. 14:30)",
+    "description": "Customer live line: break return time (the time is an LTR island, e.g. 14:30); worded per space (the pro’s gender in ar/kab)",
     "placeholders": {
       "time": {
+        "type": "String"
+      },
+      "space": {
         "type": "String"
       }
     }
@@ -1547,8 +1550,17 @@
     }
   },
   "liveQueueNoWait": "Pas d’attente",
+  "liveQueueNoWaitWait": "Pas d’attente · {wait}",
   "@liveQueueNoWait": {
     "description": "Customer queue line: nobody waiting and nobody in the chair"
+  },
+  "@liveQueueNoWaitWait": {
+    "description": "Customer queue line: nobody waiting, someone in the chair",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
   },
   "liveQueueOpen": "File ouverte",
   "@liveQueueOpen": {
@@ -1669,9 +1681,14 @@
   "@ticketOnMyWay": {
     "description": "Ticket: tells the pro you are coming (never reorders)"
   },
-  "ticketOnMyWayDone": "En route, c’est noté",
+  "ticketOnMyWayDone": "{space, select, women{En route, c’est noté} other{En route, c’est noté}}",
   "@ticketOnMyWayDone": {
-    "description": "Ticket: the pro was told you are on your way"
+    "description": "Ticket: the pro was told you are on your way; worded per space (the pro’s gender in ar/kab)",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
   },
   "ticketLeave": "Quitter la file",
   "@ticketLeave": {

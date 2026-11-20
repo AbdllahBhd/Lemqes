@@ -38,10 +38,13 @@ String? queueLineText(AppLocalizations l10n, LiveView v) {
   if (count == null) {
     return wait == null ? l10n.liveQueueOpen : l10n.liveQueueOpenWait(wait);
   }
-  if (wait == null) {
-    return count == 0 ? l10n.liveQueueNoWait : l10n.liveQueueCount(count);
+  if (count == 0) {
+    // Nobody waiting, someone in the chair: the wait is that chair's.
+    return wait == null ? l10n.liveQueueNoWait : l10n.liveQueueNoWaitWait(wait);
   }
-  return l10n.liveQueueWaiting(count, wait);
+  return wait == null
+      ? l10n.liveQueueCount(count)
+      : l10n.liveQueueWaiting(count, wait);
 }
 
 /// Whether a customer may try to join: the server's pro-side conditions
