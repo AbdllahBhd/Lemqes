@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 # Runs the app's integration paths on Linux desktop against the local stack.
 # Resets the local database before each file so every file starts from the
-# seed (both sign up with test_otp numbers that must still be free).
+# seed (they sign up with test_otp numbers that must still be free); the live
+# files also get supabase/tests/fixtures/live_seed.sql.
 #
 # LEMQES_ENV overrides the app env file (default flutter_app/env/local.json).
 set -eu
@@ -42,10 +43,35 @@ wait_for_auth() {
   done
 }
 
+# realtime.send inserts into today's realtime.messages partition and drops the
+# message silently when it is missing (spike f: the reset creates it). Dates
+# are the partition's own (UTC).
+wait_for_partition() {
+  part="messages_$(date -u +%Y_%m_%d)"
+  tries=0
+  until [ "$(docker exec supabase_db_lemqes psql -U postgres -Atc \
+    "select to_regclass('realtime.$part') is not null")" = "t" ]; do
+    tries=$((tries + 1))
+    if [ "$tries" -ge 60 ]; then
+      echo "integration: realtime.$part missing 60 s after the reset" >&2
+      exit 1
+    fi
+    sleep 1
+  done
+}
+
 env_arg="$(cd "$(dirname "$env_file")" && pwd)/$(basename "$env_file")"
-for file in auth_flow_test.dart pro_profile_flow_test.dart; do
+for file in auth_flow_test.dart pro_profile_flow_test.dart \
+  live_queue_customer_test.dart live_queue_barber_test.dart; do
   supabase db reset
   wait_for_auth
+  case "$file" in
+    live_*)
+      docker exec -i supabase_db_lemqes psql -U postgres -v ON_ERROR_STOP=1 -q \
+        < supabase/tests/fixtures/live_seed.sql
+      wait_for_partition
+      ;;
+  esac
   scripts/sdk flutter test "integration_test/$file" -d linux \
     --dart-define-from-file="$env_arg"
 done
