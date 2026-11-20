@@ -15,6 +15,7 @@ import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/data/explore_repository.dart';
 import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
+import 'package:lemqes/features/live/data/live_models.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
 import 'package:lemqes/features/geo/data/geo_repository.dart';
 import 'package:lemqes/features/pro/data/photo_uploader.dart';
@@ -26,8 +27,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/presentation/harness.dart';
-import '../../live/presentation/today/today_harness.dart'
-    show quietLiveOverrides;
+import '../../live/presentation/customer/customer_live_harness.dart';
 import '../../pro/presentation/setup/setup_harness.dart'
     show FakeGeoRepository, FakeProRepository, settle;
 
@@ -59,6 +59,7 @@ ProCard card(
   String? workplaceName,
   CustomerMix? mix = CustomerMix.adults,
   int? minPrice = 600,
+  LiveSnapshot? live,
 }) => ProCard(
   proId: cardId(i),
   kind: workplace == WorkplaceType.mobile ? ProKind.homeArtist : ProKind.barber,
@@ -73,6 +74,7 @@ ProCard card(
   localityNameFr: 'Bab Ezzouar',
   customerMix: mix,
   minPriceDzd: minPrice,
+  live: live,
 );
 
 /// Three cards that cover the variants: verified with a workplace name,
@@ -98,6 +100,35 @@ List<ProCard> threeCards({bool arabic = false}) => [
     minPrice: 1500,
   ),
 ];
+
+/// [threeCards] with a live object each: open, on break, closed.
+List<ProCard> threeLiveCards({bool arabic = false}) {
+  final cards = threeCards(arabic: arabic);
+  final lives = [
+    custSnap(cardId(1)),
+    breakSnap(cardId(2)),
+    closedSnap(cardId(3)),
+  ];
+  return [
+    for (final (i, c) in cards.indexed)
+      ProCard(
+        proId: c.proId,
+        kind: c.kind,
+        displayName: c.displayName,
+        workplaceType: c.workplaceType,
+        workplaceName: c.workplaceName,
+        isVerified: c.isVerified,
+        regionCode: c.regionCode,
+        regionNameAr: c.regionNameAr,
+        regionNameFr: c.regionNameFr,
+        localityNameAr: c.localityNameAr,
+        localityNameFr: c.localityNameFr,
+        customerMix: c.customerMix,
+        minPriceDzd: c.minPriceDzd,
+        live: lives[i],
+      ),
+  ];
+}
 
 /// In-memory `search_pros`: [answer] decides each page.
 class FakeExploreRepository extends Fake implements ExploreRepository {
@@ -241,6 +272,7 @@ class ExploreHarness {
     this.explore,
     this.pros,
     this.accounts,
+    this.live,
   );
 
   final GoRouter router;
@@ -248,6 +280,9 @@ class ExploreHarness {
   final FakeExploreRepository explore;
   final PublicProRepository pros;
   final MockAccountRepository accounts;
+
+  /// The live backend: snapshots, channels, ticket, clock.
+  final CustomerLive live;
 
   /// The top-most route, pushed ones included.
   String get location => router.state.uri.path;
@@ -270,7 +305,10 @@ Future<ExploreHarness> pumpExplore(
   ThemeMode themeMode = ThemeMode.light,
   double textScale = 1,
   Size size = const Size(390, 844),
+  CustomerLive? live,
 }) async {
+  final customerLive = live ?? CustomerLive();
+  addTearDown(customerLive.dispose);
   tester.view.physicalSize = size * 2;
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
@@ -305,8 +343,9 @@ Future<ExploreHarness> pumpExplore(
       geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
       // A Wednesday, so the hours table's "today" is stable.
       countryClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
-      // A pro passing through /home mounts the Today tab.
-      ...quietLiveOverrides(),
+      // Cards and the ticket run on the real channels over fakes; a pro
+      // passing through /home mounts the Today tab on its own snapshot.
+      ...customerLive.overrides(),
       if (launcher != null) phoneLauncherProvider.overrideWithValue(launcher),
     ],
   );
@@ -340,5 +379,42 @@ Future<ExploreHarness> pumpExplore(
     router.go(location);
     await settle(tester);
   }
-  return ExploreHarness(router, container, fakeExplore, fakePros, accounts);
+  return ExploreHarness(
+    router,
+    container,
+    fakeExplore,
+    fakePros,
+    accounts,
+    customerLive,
+  );
+}
+
+/// The public profile of an open, joinable barber.
+Future<ExploreHarness> pumpJoinable(
+  WidgetTester tester, {
+  Locale locale = const Locale('fr'),
+  ThemeMode themeMode = ThemeMode.light,
+  double textScale = 1,
+}) {
+  final live = CustomerLive();
+  live.repo.server[proUuid] = custSnap(proUuid);
+  return pumpExplore(
+    tester,
+    pros: PublicProRepository(
+      listed: {proUuid: publicBarber(arabic: locale.languageCode == 'ar')},
+      phones: {proUuid: '+213550123456'},
+    ),
+    location: '/pro/$proUuid',
+    live: live,
+    locale: locale,
+    themeMode: themeMode,
+    textScale: textScale,
+  );
+}
+
+Future<void> openJoinSheet(WidgetTester tester) async {
+  await tester.ensureVisible(find.byKey(const Key('liveJoin')));
+  await tester.pump();
+  await tester.tap(find.byKey(const Key('liveJoin')));
+  await settleLive(tester);
 }

@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_ar.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
+import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/explore/data/explore_models.dart';
+import 'package:lemqes/features/live/data/live_providers.dart';
 import 'package:lemqes/features/explore/presentation/pro_avatar.dart';
 import 'package:lemqes/features/explore/presentation/pro_card_tile.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
@@ -11,27 +13,55 @@ import 'package:lemqes/shared/widgets/price_text.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../pro/presentation/pro_test_host.dart';
+import '../../live/presentation/customer/customer_live_harness.dart';
 import 'explore_harness.dart';
 
-Future<void> _pump(
+/// Pumps [c] over the real live channels, seeded with [c]'s live object
+/// as a search would.
+Future<ProviderContainer> _pump(
   WidgetTester tester,
   ProCard c, {
   Locale locale = const Locale('fr'),
   double textScale = 1,
   VoidCallback? onTap,
-}) => pumpLocalized(
-  tester,
-  ProviderScope(
-    overrides: [photoUploaderProvider.overrideWithValue(FakePhotoUploader())],
-    child: ProCardTile(card: c, onTap: onTap ?? () {}),
-  ),
-  locale: locale,
-  textScale: textScale,
-);
+}) async {
+  final live = CustomerLive();
+  addTearDown(live.dispose);
+  final container = ProviderContainer(
+    overrides: [
+      photoUploaderProvider.overrideWithValue(FakePhotoUploader()),
+      ...live.overrides(),
+      customerAccountOverride(),
+    ],
+  );
+  addTearDown(container.dispose);
+  await container.read(accountProvider.future);
+  if (c.live case final s?) container.read(liveChannelsProvider).seed(s);
+  await pumpLocalized(
+    tester,
+    UncontrolledProviderScope(
+      container: container,
+      child: ProCardTile(card: c, onTap: onTap ?? () {}),
+    ),
+    locale: locale,
+    textScale: textScale,
+  );
+  await settleLive(tester);
+  return container;
+}
+
+String _statusLine(WidgetTester tester) => tester
+    .widget<Text>(find.byKey(const Key('liveStatusLine')))
+    .textSpan!
+    .toPlainText(includePlaceholders: false)
+    // Details are kept whole with no-break spaces.
+    .replaceAll('\u00a0', ' ');
 
 void main() {
   final fr = AppLocalizationsFr();
   final ar = AppLocalizationsAr();
+
+  setUpAll(registerHarnessFallbacks);
 
   testWidgets('shows who, where and the starting price', (tester) async {
     await _pump(tester, threeCards().first);
@@ -128,9 +158,91 @@ void main() {
   });
 
   testWidgets('does not overflow at 2x text in Arabic', (tester) async {
-    for (final c in threeCards(arabic: true)) {
+    for (final c in threeLiveCards(arabic: true)) {
       await _pump(tester, c, locale: const Locale('ar'), textScale: 2);
       expect(tester.takeException(), isNull);
     }
+    await unmountLive(tester);
+  });
+
+  group('live', () {
+    testWidgets('open: ring, status with age, count and wait', (tester) async {
+      await _pump(tester, card(1, live: custSnap(cardId(1))));
+
+      expect(_statusLine(tester), 'Ouvert · il y a 5 min');
+      expect(find.text('3 en attente · ~40 min'), findsOneWidget);
+      expect(find.byKey(const Key('liveRing_open')), findsOneWidget);
+      await unmountLive(tester);
+    });
+
+    testWidgets('a hidden count reads "File ouverte"', (tester) async {
+      await _pump(tester, card(1, live: custSnap(cardId(1), waiting: null)));
+
+      expect(find.text('File ouverte · ~40 min'), findsOneWidget);
+      expect(find.textContaining('en attente'), findsNothing);
+      await unmountLive(tester);
+    });
+
+    testWidgets('a paused queue reads "File complète"', (tester) async {
+      await _pump(
+        tester,
+        card(
+          1,
+          live: custSnap(cardId(1), mode: 'paused', joinBlock: 'paused'),
+        ),
+      );
+
+      expect(find.text('File complète'), findsOneWidget);
+      await unmountLive(tester);
+    });
+
+    testWidgets('on break: dashed ring and the return time', (tester) async {
+      await _pump(tester, card(1, live: breakSnap(cardId(1))));
+
+      expect(find.byKey(const Key('liveRing_onBreak')), findsOneWidget);
+      expect(_statusLine(tester), contains('retour \u206611:30\u2069'));
+      await unmountLive(tester);
+    });
+
+    testWidgets('closed: no ring and no queue line', (tester) async {
+      await _pump(tester, card(1, live: closedSnap(cardId(1))));
+
+      expect(_statusLine(tester), 'Fermé');
+      expect(find.byKey(const Key('liveQueueLine')), findsNothing);
+      expect(find.byKey(const Key('liveRing_none')), findsOneWidget);
+      await unmountLive(tester);
+    });
+
+    testWidgets('a broadcast updates a card on screen with no new search', (
+      tester,
+    ) async {
+      final h = await pumpExplore(
+        tester,
+        explore: FakeExploreRepository(cards: threeLiveCards()),
+      );
+      expect(find.text('3 en attente · ~40 min'), findsOneWidget);
+      final searches = h.explore.queries.length;
+
+      h.live.broadcast(
+        cardId(1),
+        custLive(cardId(1), waiting: 5, waitMin: 60, version: 4),
+      );
+      await settleLive(tester);
+
+      expect(find.text('5 en attente · ~60 min'), findsOneWidget);
+      expect(find.text('3 en attente · ~40 min'), findsNothing);
+      expect(h.explore.queries.length, searches);
+      await unmountLive(tester);
+    });
+
+    testWidgets('no live object: the card still reads, with no live line', (
+      tester,
+    ) async {
+      await _pump(tester, card(1));
+
+      expect(find.text('Pro 1'), findsOneWidget);
+      expect(find.byKey(const Key('liveStatusLine')), findsNothing);
+      await unmountLive(tester);
+    });
   });
 }

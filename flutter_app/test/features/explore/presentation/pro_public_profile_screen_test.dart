@@ -1,14 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.dart';
+import 'package:lemqes/features/live/data/live_providers.dart';
 import 'package:lemqes/features/pro/data/price_parse.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/presentation/setup/pro_setup_flow.dart';
+import 'package:lemqes/features/live/data/live_models.dart';
 import 'package:lemqes/shared/widgets/hours_table.dart';
+import 'package:lemqes/shared/widgets/lemqes_primary_button.dart';
 import 'package:lemqes/shared/widgets/price_text.dart';
 import 'package:lemqes/shared/widgets/state_views.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../live/presentation/customer/customer_live_harness.dart';
 import 'explore_harness.dart';
 
 const _phone = '+213550123456';
@@ -334,5 +338,160 @@ void main() {
       await settle(tester);
       expect(tester.takeException(), isNull);
     }
+  });
+
+  group('live block', () {
+    Future<ExploreHarness> live(
+      WidgetTester tester,
+      LiveSnapshot snapshot, {
+      MyTicket? ticket,
+      Locale locale = const Locale('fr'),
+      double textScale = 1,
+    }) {
+      final l = CustomerLive()
+        ..repo.server[proUuid] = snapshot
+        ..repo.ticket = ticket;
+      return pumpExplore(
+        tester,
+        pros: PublicProRepository(
+          listed: {proUuid: publicBarber(arabic: locale.languageCode == 'ar')},
+          phones: {proUuid: _phone},
+        ),
+        location: '/pro/$proUuid',
+        live: l,
+        locale: locale,
+        textScale: textScale,
+      );
+    }
+
+    VoidCallback? join(WidgetTester tester) => tester
+        .widget<LemqesPrimaryButton>(find.byKey(const Key('liveJoin')))
+        .onPressed;
+
+    testWidgets('shows status, queue and an enabled join when joinable', (
+      tester,
+    ) async {
+      final h = await live(tester, custSnap(proUuid));
+
+      final block = find.byKey(const Key('liveBlock'));
+      expect(
+        find.descendant(
+          of: block,
+          matching: find.text('3 en attente · ~40 min'),
+        ),
+        findsOneWidget,
+      );
+      expect(join(tester), isNotNull);
+      // Opening the profile asks the server for a fresh snapshot.
+      expect(h.live.repo.snapshotCalls, contains(equals([proUuid])));
+      await unmountLive(tester);
+    });
+
+    final blocked = <String, LiveSnapshot>{
+      'closed': closedSnap(proUuid),
+      'on break': breakSnap(proUuid),
+      'paused': custSnap(proUuid, mode: 'paused', joinBlock: 'paused'),
+      'followers': custSnap(proUuid, mode: 'followers', joinBlock: 'followers'),
+      'uncertain': custSnap(
+        proUuid,
+        ageFrom: DateTime.utc(2026, 11, 20, 7, 55),
+      ),
+      'past auto-close': custSnap(
+        proUuid,
+        autoCloseAt: DateTime.utc(2026, 11, 20, 9, 59),
+      ),
+    };
+    for (final MapEntry(key: name, value: snapshot) in blocked.entries) {
+      testWidgets('join is disabled: $name', (tester) async {
+        await live(tester, snapshot);
+        expect(join(tester), isNull);
+        await unmountLive(tester);
+      });
+    }
+
+    testWidgets('holding a place here shows the ticket, not the join', (
+      tester,
+    ) async {
+      await live(tester, custSnap(proUuid), ticket: ticketFor(proId: proUuid));
+
+      final block = find.byKey(const Key('liveBlock'));
+      expect(
+        find.descendant(
+          of: block,
+          matching: find.text('Vous êtes 3e · ~25 min'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('liveJoin')), findsNothing);
+      await unmountLive(tester);
+    });
+
+    testWidgets('a pro seen unlisted, then republished, recovers on open', (
+      tester,
+    ) async {
+      final l = CustomerLive()
+        ..repo.server[proUuid] = custSnap(proUuid, version: 4);
+      final h = await pumpExplore(
+        tester,
+        explore: FakeExploreRepository(
+          cards: [card(1, live: custSnap(cardId(1)))],
+        ),
+        pros: PublicProRepository(
+          listed: {proUuid: publicBarber()},
+          phones: {proUuid: _phone},
+        ),
+        live: l,
+      );
+      // An unpublish seen by this device: customers drop the pro.
+      h.container
+          .read(liveChannelsProvider)
+          .seed(custSnap(proUuid, listed: false, version: 3));
+      h.router.push('/pro/$proUuid');
+      await settleLive(tester);
+
+      expect(find.byKey(const Key('liveBlock')), findsOneWidget);
+      expect(join(tester), isNotNull);
+      await unmountLive(tester);
+    });
+
+    testWidgets('the owner preview shows the live block, read-only', (
+      tester,
+    ) async {
+      final l = CustomerLive()..own = (id) => custSnap(id, version: 1);
+      await pumpExplore(
+        tester,
+        account: proAccount(),
+        pros: PublicProRepository(profile: barberProfile()),
+        location: '/pro/me/preview',
+        live: l,
+      );
+
+      expect(find.byKey(const Key('liveBlock')), findsOneWidget);
+      expect(find.text('3 en attente · ~40 min'), findsOneWidget);
+      expect(find.byKey(const Key('liveJoin')), findsNothing);
+      // The owner's own channel only: never the customer one.
+      expect(l.repo.snapshotCalls, isEmpty);
+      expect(l.factory.channels, isEmpty);
+      await unmountLive(tester);
+    });
+
+    testWidgets('does not overflow at 2x text in Arabic with a ticket', (
+      tester,
+    ) async {
+      await live(
+        tester,
+        breakSnap(proUuid),
+        ticket: ticketFor(proId: proUuid),
+        locale: const Locale('ar'),
+        textScale: 2,
+      );
+      expect(tester.takeException(), isNull);
+      for (var i = 0; i < 6; i++) {
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+        await settleLive(tester);
+        expect(tester.takeException(), isNull);
+      }
+      await unmountLive(tester);
+    });
   });
 }

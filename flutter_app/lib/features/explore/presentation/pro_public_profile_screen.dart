@@ -22,6 +22,8 @@ import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account_providers.dart';
 import '../../auth/presentation/auth_widgets.dart' show formatAlgerianPhone;
 import '../../geo/data/geo_providers.dart';
+import '../../live/presentation/customer/join_queue_sheet.dart';
+import '../../live/presentation/customer/live_block.dart';
 import '../../pro/data/photo_uploader.dart';
 import '../../pro/data/pro_models.dart';
 import '../../pro/data/pro_providers.dart';
@@ -111,7 +113,11 @@ class ProPublicProfileScreen extends ConsumerWidget {
     };
 
     if (!state.hasError && profile != null) {
-      return ProPublicProfileView(profile: profile, bottomBar: callBar);
+      return ProPublicProfileView(
+        profile: profile,
+        bottomBar: callBar,
+        asCustomer: true,
+      );
     }
 
     final Widget body;
@@ -156,6 +162,7 @@ class ProPublicProfileView extends StatelessWidget {
     required this.profile,
     this.marker,
     this.bottomBar,
+    this.asCustomer = false,
     super.key,
   });
 
@@ -163,12 +170,21 @@ class ProPublicProfileView extends StatelessWidget {
   final Widget? marker;
   final Widget? bottomBar;
 
+  /// A customer's view: the live block follows the customer channel and
+  /// offers the join. Otherwise (the owner's preview) it reads the owner's
+  /// own channel and offers nothing to tap.
+  final bool asCustomer;
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        body: _ProfileBody(profile: profile, marker: marker),
+        body: _ProfileBody(
+          profile: profile,
+          marker: marker,
+          asCustomer: asCustomer,
+        ),
         bottomNavigationBar: bottomBar,
       ),
     );
@@ -231,9 +247,14 @@ class _StatePage extends StatelessWidget {
 }
 
 class _ProfileBody extends StatelessWidget {
-  const _ProfileBody({required this.profile, this.marker});
+  const _ProfileBody({
+    required this.profile,
+    required this.asCustomer,
+    this.marker,
+  });
 
   final ProProfile profile;
+  final bool asCustomer;
   final Widget? marker;
 
   @override
@@ -261,6 +282,12 @@ class _ProfileBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: asCustomer
+                      ? _CustomerLiveBlock(profile: p)
+                      : LiveBlock.owner(proId: p.id),
+                ),
                 if (hasBio || mix != null)
                   _Section(
                     title: l10n.proPublicAbout,
@@ -522,6 +549,54 @@ class _CustomerMixLine extends StatelessWidget {
   }
 }
 
+/// A service's name as customers read it. Until the presets load (or if
+/// they fail), the category names a preset service rather than its raw key.
+String _serviceName(
+  AppLocalizations l10n,
+  Locale locale,
+  ProService s,
+  Map<String, ServicePreset> byKey,
+) =>
+    s.customName ??
+    byKey[s.presetKey]?.name(locale) ??
+    l10n.serviceCategoryName(s.category.toDb());
+
+Map<String, ServicePreset> _presetsOf(WidgetRef ref, ProProfile p) {
+  final presets = ref
+      .watch(
+        presetsProvider((space: p.space, home: p.kind == ProKind.homeArtist)),
+      )
+      .value;
+  return {for (final s in presets ?? const <ServicePreset>[]) s.key: s};
+}
+
+class _CustomerLiveBlock extends ConsumerWidget {
+  const _CustomerLiveBlock({required this.profile});
+
+  final ProProfile profile;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
+    final p = profile;
+    final byKey = _presetsOf(ref, p);
+    return LiveBlock.customer(
+      proId: p.id,
+      priceHiddenLabel: l10n.proPriceHidden(p.workplaceType.toDb()),
+      services: [
+        for (final s in p.services)
+          JoinService(
+            id: s.id,
+            name: _serviceName(l10n, locale, s, byKey),
+            durationMin: s.durationMin,
+            priceDzd: s.priceDzd,
+          ),
+      ],
+    );
+  }
+}
+
 class _Services extends ConsumerWidget {
   const _Services({required this.profile});
 
@@ -532,14 +607,7 @@ class _Services extends ConsumerWidget {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final p = profile;
-    final presets = ref
-        .watch(
-          presetsProvider((space: p.space, home: p.kind == ProKind.homeArtist)),
-        )
-        .value;
-    final byKey = {
-      for (final s in presets ?? const <ServicePreset>[]) s.key: s,
-    };
+    final byKey = _presetsOf(ref, p);
     final divider = Theme.of(context).colorScheme.outlineVariant;
     return Column(
       children: [
@@ -554,18 +622,6 @@ class _Services extends ConsumerWidget {
       ],
     );
   }
-
-  // Until the presets load (or if they fail), the category names a preset
-  // service rather than its raw key.
-  String _serviceName(
-    AppLocalizations l10n,
-    Locale locale,
-    ProService s,
-    Map<String, ServicePreset> byKey,
-  ) =>
-      s.customName ??
-      byKey[s.presetKey]?.name(locale) ??
-      l10n.serviceCategoryName(s.category.toDb());
 }
 
 class _ServiceRow extends StatelessWidget {

@@ -7,6 +7,7 @@ import '../../../core/theme/lemqes_tokens.dart';
 import '../../../shared/widgets/lemqes_primary_button.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account.dart';
+import '../../live/presentation/customer/my_ticket_card.dart';
 import '../../pro/presentation/pro_failure_message.dart';
 import '../data/explore_models.dart';
 import '../data/explore_providers.dart';
@@ -74,6 +75,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             onNotification: _onScroll,
             child: CustomScrollView(
               slivers: [
+                // The customer's place, above everything they browse.
+                const SliverToBoxAdapter(child: ExploreTicketCard()),
                 SliverToBoxAdapter(child: ExploreFilters(space: widget.space)),
                 ..._results(context, results, query),
               ],
