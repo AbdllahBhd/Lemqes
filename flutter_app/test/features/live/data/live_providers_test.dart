@@ -154,6 +154,19 @@ void main() {
       sub.close();
     });
 
+    providerTest('socket events reach the channels', (t, c) async {
+      final sub = c.listen(proLiveProvider('p1'), (_, _) {});
+      await settle(t);
+      final first = factory.last('p1')..subscribed();
+      final socket = c.read(liveSocketEventsProvider)..add(false);
+      await settle(t);
+      socket.add(true);
+      await settle(t);
+      expect(first.closed, isTrue);
+      expect(factory.open.map((ch) => ch.topic), ['pro:p1']);
+      sub.close();
+    });
+
     providerTest('the owner view keeps an unpublished pro', (t, c) async {
       final own = c.listen(ownProLiveProvider('p1'), (_, _) {});
       final customer = c.listen(proLiveProvider('p1'), (_, _) {});

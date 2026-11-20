@@ -34,17 +34,36 @@ final liveTickerProvider = StreamProvider.autoDispose<int>(
   retry: _noRetry,
 );
 
+/// The realtime socket opening (true) and closing (false), fed by the real
+/// channel factory once it has joined a channel.
+final liveSocketEventsProvider = Provider<StreamController<bool>>((ref) {
+  final events = StreamController<bool>.broadcast();
+  ref.onDispose(() => unawaited(events.close()));
+  return events;
+});
+
 /// Joins a private `pro:<id>` channel. Reads the client only when a channel
-/// is joined, so a container that never joins one needs no Supabase.
-final liveChannelFactoryProvider = Provider<LiveChannelFactory>(
-  (ref) =>
-      (topic, onBroadcast, onStatus) => SupabaseLiveChannel.join(
-        ref.read(supabaseClientProvider),
-        topic,
-        onBroadcast,
-        onStatus,
-      ),
-);
+/// is joined, so a container that never joins one needs no Supabase. The
+/// first join also reports the socket's state to [liveSocketEventsProvider]
+/// (realtime_client cannot unregister a callback, so it is added once).
+final liveChannelFactoryProvider = Provider<LiveChannelFactory>((ref) {
+  var watchingSocket = false;
+  return (topic, onBroadcast, onStatus) {
+    final client = ref.read(supabaseClientProvider);
+    if (!watchingSocket) {
+      watchingSocket = true;
+      final events = ref.read(liveSocketEventsProvider);
+      void report(bool open) {
+        if (!events.isClosed) events.add(open);
+      }
+
+      client.realtime
+        ..onOpen(() => report(true))
+        ..onClose((_) => report(false));
+    }
+    return SupabaseLiveChannel.join(client, topic, onBroadcast, onStatus);
+  };
+});
 
 /// Whether the last live RPC reached the server: a network failure is half
 /// of "Hors ligne", the other half is [LiveChannels.connected].
@@ -102,8 +121,16 @@ final liveChannelsProvider = Provider<LiveChannels>((ref) {
   final resumes = ref.watch(appResumesProvider).listen((_) {
     channels.refreshAll();
   });
+  final socket = ref.watch(liveSocketEventsProvider).stream.listen((open) {
+    if (open) {
+      channels.socketOpened();
+    } else {
+      channels.socketClosed();
+    }
+  });
   ref.onDispose(() {
     unawaited(resumes.cancel());
+    unawaited(socket.cancel());
     channels.dispose();
   });
   return channels;

@@ -192,6 +192,57 @@ void main() {
     stop(a);
   });
 
+  // realtime_client reports a socket closed by `disconnect()` (supabase_flutter
+  // does it on pause) to no channel, and a later `connect()` rejoins none.
+  channelsTest('a closed socket marks watched pros down after 5 s', (t) async {
+    final a = channels.watch('p1').listen((_) {});
+    factory.last('p1').subscribed();
+    channels.socketClosed();
+    await t.pump(const Duration(seconds: 4));
+    expect(channels.connected, isTrue);
+    await t.pump(const Duration(seconds: 2));
+    expect(channels.connected, isFalse);
+    stop(a);
+  });
+
+  channelsTest('a reopened socket joins every watched pro again', (t) async {
+    server['p1'] = snapshot('p1');
+    final got = <LiveSnapshot>[];
+    final a = channels.watch('p1').listen(got.add);
+    final b = channels.watch('p2').listen((_) {});
+    factory.last('p1').subscribed();
+    factory.last('p2').subscribed();
+    await t.pump(const Duration(milliseconds: 300));
+    final before = [factory.last('p1'), factory.last('p2')];
+
+    channels.socketClosed();
+    await t.pump(const Duration(seconds: 6));
+    expect(channels.connected, isFalse);
+    server['p1'] = snapshot('p1', version: 4);
+    channels.socketOpened();
+    expect(before.every((c) => c.closed), isTrue);
+    expect(factory.open.map((c) => c.topic), ['pro:p1', 'pro:p2']);
+    // The old channel's callbacks no longer count.
+    before.first.error();
+    factory.last('p1').subscribed();
+    factory.last('p2').subscribed();
+    expect(channels.connected, isTrue);
+    await t.pump(const Duration(milliseconds: 300));
+    expect(fetches.last, ['p1', 'p2']);
+    expect(got.last.queueVersion, 4);
+    await t.pump(const Duration(seconds: 6));
+    expect(channels.connected, isTrue);
+    stop(a);
+    stop(b);
+  });
+
+  channelsTest('the first socket open rejoins nothing', (t) async {
+    final a = channels.watch('p1').listen((_) {});
+    channels.socketOpened();
+    expect(factory.channels, hasLength(1));
+    stop(a);
+  });
+
   channelsTest('a channel error marks disconnected after 5 s', (t) async {
     final flips = <bool>[];
     final s = channels.connectedChanges.listen(flips.add);

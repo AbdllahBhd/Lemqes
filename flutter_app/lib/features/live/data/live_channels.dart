@@ -144,6 +144,7 @@ class LiveChannels {
   // Bumped by closeAll: a fetch answered for the previous space is dropped.
   var _generation = 0;
   var _disposed = false;
+  var _socketWasClosed = false;
 
   // Signed out: nothing may join or fetch (every join would be refused).
   var _suspended = false;
@@ -213,6 +214,38 @@ class LiveChannels {
         if (t.sinks.isNotEmpty) _open(t);
       }
     });
+  }
+
+  /// The socket closed. A drop also errors every channel, but a
+  /// `disconnect()` (supabase_flutter's pause, a lost network seen by the
+  /// client) tells no channel: every watched pro is failing from here.
+  void socketClosed() {
+    if (_disposed) return;
+    _socketWasClosed = true;
+    for (final t in [..._topics.values]) {
+      if (t.channel == null) continue;
+      if (t.sinks.isEmpty) {
+        _removeTopic(t);
+      } else {
+        _markFailing(t);
+      }
+    }
+  }
+
+  /// The socket is open again after [socketClosed]. realtime_client rejoins
+  /// only the channels it saw error, and the server forgot the rest: every
+  /// watched pro joins a new channel, whose subscribe re-fetches.
+  void socketOpened() {
+    if (_disposed || !_socketWasClosed) return;
+    _socketWasClosed = false;
+    if (_rejoinTimer != null) return;
+    for (final t in [..._topics.values]) {
+      if (t.sinks.isEmpty || !_mayServe(t)) continue;
+      t.retry?.cancel();
+      t.retry = null;
+      _closeChannel(t);
+      _open(t);
+    }
   }
 
   void dispose() {
