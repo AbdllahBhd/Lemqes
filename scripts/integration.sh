@@ -2,7 +2,7 @@
 # Runs the app's integration paths on Linux desktop against the local stack.
 # Resets the local database before each file so every file starts from the
 # seed (they sign up with test_otp numbers that must still be free); the live
-# files also get supabase/tests/fixtures/live_seed.sql.
+# files also get supabase/fixtures/live_seed.sql.
 #
 # LEMQES_ENV overrides the app env file (default flutter_app/env/local.json).
 set -eu
@@ -68,7 +68,7 @@ for file in auth_flow_test.dart pro_profile_flow_test.dart \
   case "$file" in
     live_*)
       docker exec -i supabase_db_lemqes psql -U postgres -v ON_ERROR_STOP=1 -q \
-        < supabase/tests/fixtures/live_seed.sql
+        < supabase/fixtures/live_seed.sql
       wait_for_partition
       ;;
   esac

@@ -297,9 +297,15 @@ begin
      set status = 'on_break', auto_close_at = '2026-11-23 21:00+01'
    where pro_id = current_setting('t.pb')::uuid;
   perform tests.freeze_now('2026-11-23 19:30+01');
+  -- Rows outside this file (leftover fixtures) that are expired too: the job closes them as well.
+  perform set_config('t.others', (
+    select count(*)::text from public.pro_live l
+    where l.pro_id not in (current_setting('t.pa')::uuid, current_setting('t.pb')::uuid)
+      and l.status <> 'closed' and l.auto_close_at <= public.live_now()), true);
 end;
 $$;
-select is(public.live_auto_close(), 1, 'S14 live_auto_close closes one expired row and returns 1');
+select is(public.live_auto_close() - current_setting('t.others')::int, 1,
+  'S14 live_auto_close closes one expired row of this file and counts it');
 select ok(
   (select status = 'closed' and auto_close_at is null and break_until is null
           and status_changed_at = '2026-11-23 19:30+01'

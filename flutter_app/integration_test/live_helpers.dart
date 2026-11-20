@@ -12,7 +12,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Test OTP numbers (supabase/config.toml, code 123456) and the seed's
-/// accounts (supabase/tests/fixtures/live_seed.sql).
+/// accounts (supabase/fixtures/live_seed.sql).
 const code = '123456';
 const password = 'lemqes-test-1';
 const barberPhone = '0550000004';

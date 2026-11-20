@@ -307,8 +307,12 @@ do $$ begin perform tests.clear_auth(); end; $$;
 select is(current_setting('t.search')::jsonb, public.live_snapshot(current_setting('t.pb')::uuid),
   'R6 search_pros live equals live_snapshot for the same pro');
 do $$ begin perform tests.authenticate_as(current_setting('t.wc')::uuid); end; $$;
+-- Scoped to this file's pros: a DB with leftover fixtures (live_seed.sql) has other women pros.
 select results_eq(
-  $$ select s.pro_id, s.live ->> 'pro_id' from public.search_pros() s $$,
+  format($$ select s.pro_id, s.live ->> 'pro_id' from public.search_pros() s
+            where s.pro_id in (%L, %L, %L, %L) $$,
+         current_setting('t.pa'), current_setting('t.pb'), current_setting('t.pu'),
+         current_setting('t.pw')),
   format($$ values (%L::uuid, %L::text) $$, current_setting('t.pw'), current_setting('t.pw')),
   'R6 a women customer gets only the women pro and its live object'
 );
