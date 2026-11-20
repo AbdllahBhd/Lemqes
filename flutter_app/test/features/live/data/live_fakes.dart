@@ -87,3 +87,11 @@ LiveSnapshot snapshot(
 /// Not awaited: inside testWidgets, awaiting a cancel resumes outside the
 /// fake-async zone and the next pump never returns.
 void stop(StreamSubscription<Object?> s) => unawaited(s.cancel());
+
+extension CopyListed on LiveSnapshot {
+  /// The same snapshot with another `listed` value.
+  LiveSnapshot copyWithListed(bool listed) => LiveSnapshot.fromJson({
+    ...live(proId, version: queueVersion, listed: listed),
+    'server_now': serverNow.toIso8601String(),
+  });
+}

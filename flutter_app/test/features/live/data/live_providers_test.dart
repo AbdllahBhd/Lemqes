@@ -154,6 +154,18 @@ void main() {
       sub.close();
     });
 
+    providerTest('the owner view keeps an unpublished pro', (t, c) async {
+      final own = c.listen(ownProLiveProvider('p1'), (_, _) {});
+      final customer = c.listen(proLiveProvider('p1'), (_, _) {});
+      await settle(t);
+      factory.last('p1').send(live('p1', listed: false));
+      await settle(t);
+      expect(own.read().requireValue.snapshot.listed, isFalse);
+      expect(customer.read().error, isA<LiveUnavailable>());
+      own.close();
+      customer.close();
+    });
+
     providerTest('a refused channel makes the pro unavailable', (t, c) async {
       final sub = c.listen(proLiveProvider('p1'), (_, _) {});
       await settle(t);

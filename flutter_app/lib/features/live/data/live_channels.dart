@@ -98,9 +98,11 @@ class _Topic {
 ///   past it, lingering channels close first, then new pros are served by
 ///   fetches only until a slot frees. A fetch-only pro refreshes on attach
 ///   and on resume only: it gets no message in between.
-/// * `Unauthorized`, or a snapshot saying `listed: false` to a non-owner, is
-///   final for that pro until [closeAll] ([LiveUnavailable] on its streams,
-///   no channel, no retry) and does not count as a disconnection.
+/// * `Unauthorized` is final for that pro until [closeAll], for everyone
+///   ([LiveUnavailable], no channel, no retry). A snapshot saying
+///   `listed: false` does the same for customers only: the owner's listeners
+///   ([watch] with `own`) keep receiving and fetching their pro. Neither
+///   counts as a disconnection.
 /// * Any other failure closes the channel and joins a new one after
 ///   [retryAfter]; [connected] turns false once a watched pro has been
 ///   failing for [downAfter].
@@ -128,9 +130,13 @@ class LiveChannels {
   final _topics = <String, _Topic>{};
   final _held = <String, LiveSnapshot>{};
 
-  /// Pros refused or unlisted for this caller; outlives their topics so a
-  /// returning listener does not wait ~5 s for the same refusal again.
-  final _refused = <String>{};
+  // Both outlive their topics (a returning listener must not wait ~5 s for
+  // the same refusal) and are cleared by closeAll only.
+  /// Refused at join: for everyone.
+  final _unauthorized = <String>{};
+
+  /// Unpublished: for customers; the owner's listeners bypass it.
+  final _unlisted = <String>{};
   final _toFetch = <String>{};
   Timer? _fetchTimer;
   Timer? _rejoinTimer;
@@ -171,7 +177,7 @@ class LiveChannels {
   /// Re-fetches every watched pro (app resume).
   void refreshAll() {
     for (final t in _topics.values) {
-      if (!_refused.contains(t.proId)) _queueFetch(t.proId);
+      if (_mayServe(t)) _queueFetch(t.proId);
     }
   }
 
@@ -187,7 +193,8 @@ class LiveChannels {
     _fetchTimer?.cancel();
     _fetchTimer = null;
     _held.clear();
-    _refused.clear();
+    _unauthorized.clear();
+    _unlisted.clear();
     for (final t in [..._topics.values]) {
       _closeChannel(t);
       t
@@ -239,7 +246,7 @@ class LiveChannels {
     if (own) t.own.add(sink);
     t.linger?.cancel();
     t.linger = null;
-    if (_refused.contains(proId)) {
+    if (_unauthorized.contains(proId) || (!own && _unlisted.contains(proId))) {
       sink.addError(const LiveUnavailable());
       return;
     }
@@ -275,7 +282,7 @@ class LiveChannels {
 
   void _open(_Topic t) {
     if (_disposed || _suspended || t.channel != null) return;
-    if (_refused.contains(t.proId)) return;
+    if (!_mayServe(t)) return;
     if (_channelCount >= maxChannels) _evictLingering();
     if (_channelCount >= maxChannels) {
       // Fetch-only until a slot frees ([_promote]).
@@ -338,7 +345,8 @@ class LiveChannels {
         _queueFetch(t.proId);
       case RealtimeSubscribeStatus.channelError
           when '$error'.contains('Unauthorized'):
-        _markUnavailable(t.proId);
+        _unauthorized.add(t.proId);
+        _dropFor(t.proId, keepOwn: false);
       case RealtimeSubscribeStatus.timedOut:
         // realtime_client re-sends a timed-out join by itself.
         _markFailing(t);
@@ -354,6 +362,7 @@ class LiveChannels {
     if (t.sinks.isEmpty) {
       // Lingering: nobody to serve, so nothing to report or rejoin.
       _removeTopic(t);
+      _promote();
       return;
     }
     _markFailing(t);
@@ -372,21 +381,32 @@ class LiveChannels {
     });
   }
 
-  /// Refused or unlisted: no channel, no snapshot, an error for every
-  /// listener, until [closeAll].
-  void _markUnavailable(String proId) {
-    _refused.add(proId);
-    _held.remove(proId);
+  /// Whether this topic may join and fetch: never when refused at join,
+  /// and when unlisted only for the owner's listeners.
+  bool _mayServe(_Topic t) =>
+      !_unauthorized.contains(t.proId) &&
+      (!_unlisted.contains(t.proId) || t.own.isNotEmpty);
+
+  /// Gives every listener not entitled to [proId] a [LiveUnavailable]. With
+  /// [keepOwn] the owner's listeners keep the channel; otherwise (or when
+  /// none is attached) the channel, timers and snapshot go.
+  void _dropFor(String proId, {required bool keepOwn}) {
     _toFetch.remove(proId);
     final t = _topics[proId];
+    if (t != null) {
+      for (final s in t.sinks) {
+        if (!keepOwn || !t.own.contains(s)) {
+          s.addError(const LiveUnavailable());
+        }
+      }
+      if (keepOwn && t.own.isNotEmpty) return;
+    }
+    _held.remove(proId);
     if (t == null) return;
     _closeChannel(t);
     t
       ..cancelTimers()
       ..isDown = false;
-    for (final s in t.sinks) {
-      s.addError(const LiveUnavailable());
-    }
     if (t.sinks.isEmpty) _topics.remove(proId);
     _recomputeConnected();
     _promote();
@@ -405,18 +425,28 @@ class LiveChannels {
   }
 
   void _apply(LiveSnapshot s) {
-    if (_disposed || _refused.contains(s.proId)) return;
+    if (_disposed || _unauthorized.contains(s.proId)) return;
     final held = _held[s.proId];
     if (held != null && !s.isNewerThan(held)) return;
     final t = _topics[s.proId];
-    if (!s.listed && (t == null || t.own.isEmpty)) {
-      _markUnavailable(s.proId);
-      return;
+    final hasOwn = t != null && t.own.isNotEmpty;
+    if (!s.listed) {
+      final first = _unlisted.add(s.proId);
+      if (!hasOwn) {
+        _dropFor(s.proId, keepOwn: false);
+        return;
+      }
+      if (first) _dropFor(s.proId, keepOwn: true);
+    } else if (_unlisted.contains(s.proId)) {
+      // Republished, seen through the owner's channel: customers may join
+      // again (they re-watch to get it).
+      _unlisted.remove(s.proId);
     }
     _held[s.proId] = s;
     _onServerNow?.call(s.serverNow);
-    for (final sink in [...?t?.sinks]) {
-      sink.add(s);
+    if (t == null) return;
+    for (final sink in [...t.sinks]) {
+      if (s.listed || t.own.contains(sink)) sink.add(s);
     }
   }
 
@@ -430,7 +460,7 @@ class LiveChannels {
     _fetchTimer = null;
     final ids = [
       for (final id in _toFetch)
-        if (_topics.containsKey(id) && !_refused.contains(id)) id,
+        if (_topics[id] case final t? when _mayServe(t)) id,
     ];
     _toFetch.clear();
     final generation = _generation;

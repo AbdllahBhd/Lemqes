@@ -136,6 +136,17 @@ final proLiveProvider = Provider.autoDispose
           .whenData((s) => derive(s, now()));
     }, retry: _noRetry);
 
+/// [proLiveProvider] for the owner's own pro (status card): stays live
+/// through an unpublish.
+final ownProLiveProvider = Provider.autoDispose
+    .family<AsyncValue<LiveView>, String>((ref, proId) {
+      ref.watch(liveTickerProvider);
+      final now = ref.watch(serverNowProvider);
+      return ref
+          .watch(ownLiveSnapshotProvider(proId))
+          .whenData((s) => derive(s, now()));
+    }, retry: _noRetry);
+
 /// "Hors ligne" when false: a channel failing for over 5 s, or the last live
 /// RPC hit the network.
 final liveConnectedProvider = NotifierProvider<LiveConnected, bool>(

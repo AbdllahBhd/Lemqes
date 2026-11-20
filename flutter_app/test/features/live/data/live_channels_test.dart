@@ -323,6 +323,81 @@ void main() {
     stop(a);
   });
 
+  channelsTest('an unpublish during the linger does not lock the owner out', (
+    t,
+  ) async {
+    final a = channels.watch('p1', own: true).listen((_) {});
+    final first = factory.last('p1');
+    first.send(live('p1'));
+    await t.pump();
+    // The dashboard unmounts (redirect to setup); the channel lingers.
+    stop(a);
+    await t.pump(const Duration(seconds: 1));
+    first.send(live('p1', version: 4, listed: false));
+    await t.pump();
+    expect(first.closed, isTrue);
+
+    // Back on the dashboard: the owner gets their pro again.
+    server['p1'] = snapshot('p1', version: 4).copyWithListed(false);
+    final got = <LiveSnapshot>[];
+    final errors = <Object>[];
+    final b = channels
+        .watch('p1', own: true)
+        .listen(got.add, onError: errors.add);
+    final second = factory.last('p1');
+    expect(second, isNot(same(first)));
+    second.subscribed();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(errors, isEmpty);
+    expect(got.single.listed, isFalse);
+    expect(fetches.last, ['p1']);
+
+    // A customer view of the same pro is still unavailable.
+    final customer = <Object>[];
+    final c = channels.watch('p1').listen((_) {}, onError: customer.add);
+    await t.pump();
+    expect(customer.single, isA<LiveUnavailable>());
+    stop(b);
+    stop(c);
+  });
+
+  channelsTest('own and customer listeners split on an unpublish', (t) async {
+    final own = <LiveSnapshot>[];
+    final customer = <Object>[];
+    final a = channels.watch('p1', own: true).listen(own.add);
+    final b = channels.watch('p1').listen((_) {}, onError: customer.add);
+    factory.last('p1').send(live('p1', listed: false));
+    await t.pump();
+    expect(own.single.listed, isFalse);
+    expect(customer.single, isA<LiveUnavailable>());
+    expect(factory.last('p1').closed, isFalse);
+    // Fetches still serve the owner.
+    channels.refreshAll();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(fetches.last, ['p1']);
+    stop(a);
+    stop(b);
+  });
+
+  channelsTest('Unauthorized applies to the owner too', (t) async {
+    final errors = <Object>[];
+    final a = channels
+        .watch('p1', own: true)
+        .listen((_) {}, onError: errors.add);
+    factory.last('p1').refuse();
+    await t.pump();
+    expect(errors.single, isA<LiveUnavailable>());
+    stop(a);
+    final again = <Object>[];
+    final b = channels
+        .watch('p1', own: true)
+        .listen((_) {}, onError: again.add);
+    await t.pump();
+    expect(again.single, isA<LiveUnavailable>());
+    expect(factory.channels, hasLength(1));
+    stop(b);
+  });
+
   channelsTest('a topic removed after its linger forgets its snapshot', (
     t,
   ) async {
@@ -347,6 +422,21 @@ void main() {
     expect(channels.connected, isTrue);
     await t.pump(const Duration(seconds: 20));
     expect(factory.channels, hasLength(1));
+  });
+
+  testWidgets('a lingering channel closed by the server frees its slot', (
+    t,
+  ) async {
+    channels = make(maxChannels: 1);
+    final a = channels.watch('a').listen((_) {});
+    final b = channels.watch('b').listen((_) {});
+    expect(factory.open.map((c) => c.topic), ['pro:a']);
+    stop(a);
+    await t.pump();
+    factory.last('a').onStatus(RealtimeSubscribeStatus.closed, null);
+    expect(factory.open.map((c) => c.topic), ['pro:b']);
+    stop(b);
+    channels.dispose();
   });
 
   channelsTest('signed out: nothing joins until closeAll', (t) async {
