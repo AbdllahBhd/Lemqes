@@ -7,7 +7,7 @@
 
 - **Name:** LEMQES
 - **What it does:** Live status and live queue for Maghreb barbering (men's and women's spaces); Milestone 1 is phone sign-up, login, reset, roles and spaces.
-- **Tech stack:** Flutter 3.47.5 (Dart, Riverpod 3, go_router) + Supabase (Postgres, GoTrue phone auth, RLS).
+- **Tech stack:** Flutter 3.50.0 (Dart, Riverpod 3, go_router) + Supabase (Postgres, GoTrue phone auth, RLS).
 - **Package manager:** npm only as a task runner; Flutter/Dart only through `scripts/sdk` (pinned SDK, cds into `flutter_app/`).
 
 ## Essential Commands
@@ -29,6 +29,7 @@ supabase start | db reset     # local stack on ports 553xx (repo root only)
 - l10n: ARBs in `core/l10n/arb/` (ar, fr, en, kab); translation status in `core/l10n/REVIEW.md`; generated code is git-ignored.
 - Visual language: `DESIGN.md` at the repo root.
 - Pro profiles (M2): a `pro_profiles` row per (owner, kind) owns its `space` (never client-writable); listed only once published. Setup is `/pro/setup/{profile,services,hours}` (redirect resumes at the first gap), the pro home is the dashboard in `features/pro/presentation/dashboard/`; customers browse through `search_pros` (security invoker, caller's space) in `features/explore/`, open `/pro/:id`, read services via `pro_public_services`. Photos: Storage buckets `avatars`/`work-photos`, paths `<pro id>/<uuid>.<ext>`.
+- Live status + queue (M3): `pro_live` (one row per pro) and `queue_entries` (history, never deleted) are written only by definer RPCs that lock `pro_live` `for update`, take a `p_request_id`, and end with exactly one `live_broadcast` (`realtime.send` of `live_snapshot` to the private topic `pro:<id>`; `live_topic_allowed` authorizes at join only). Client: `features/live/`; `LiveChannels` ref-counts channels, re-fetches on (re)subscribe, socket reopen and resume, and closes all on space/role/account change. Owners use `ownProLiveProvider`/`ownerQueueProvider`, customers `proLiveProvider`/`myTicketProvider`. Integration seeds: `supabase/tests/fixtures/live_seed.sql`.
 - `supabase/config.toml` carries local-only `test_otp` numbers and a dummy Twilio provider: never push them to a hosted project.
 - Local secrets in `flutter_app/env/local.json` (git-ignored); never commit it.
 
