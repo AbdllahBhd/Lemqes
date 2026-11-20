@@ -31,6 +31,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../auth/presentation/harness.dart';
+import '../../../live/presentation/today/today_harness.dart'
+    show quietLiveOverrides;
 
 export '../../../auth/presentation/harness.dart'
     show byKey, fieldText, registerHarnessFallbacks, testSession;
@@ -518,6 +520,8 @@ Future<SetupHarness> pumpSetup(
       photoUploaderProvider.overrideWithValue(fakePhotos),
       // A Wednesday, so the hours table's "today" is stable.
       countryClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
+      // A pro reaching /home lands on the Today tab, which reads live state.
+      ...quietLiveOverrides(),
       ...overrides,
       if (timeAnswers != null)
         timePickProvider.overrideWithValue(

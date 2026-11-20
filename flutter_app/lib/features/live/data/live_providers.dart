@@ -272,6 +272,89 @@ class OwnerQueueController extends AsyncNotifier<OwnerQueue> {
   }
 }
 
+enum OwnerLiveAction { status, extend, settings }
+
+/// The owner's status and settings writes, one at a time; the new state
+/// arrives through the pro's own channel. Tracked for "Hors ligne".
+final ownerLiveProvider = NotifierProvider.autoDispose
+    .family<OwnerLiveController, OwnerLiveAction?, String>(
+      OwnerLiveController.new,
+    );
+
+class OwnerLiveController extends Notifier<OwnerLiveAction?> {
+  OwnerLiveController(this.proId);
+
+  final String proId;
+
+  @override
+  OwnerLiveAction? build() => null;
+
+  Future<void> setStatus(LiveStatus status, {DateTime? breakUntil}) => _run(
+    OwnerLiveAction.status,
+    (r) => r.setStatus(proId, status, breakUntil: breakUntil),
+  );
+
+  Future<void> extendAutoClose() =>
+      _run(OwnerLiveAction.extend, (r) => r.extendAutoClose(proId));
+
+  Future<void> setQueueSettings({
+    required QueueMode mode,
+    required bool hideCount,
+  }) => _run(
+    OwnerLiveAction.settings,
+    (r) => r.setQueueSettings(proId, mode: mode, hideCount: hideCount),
+  );
+
+  /// Ignored while another write is in flight; failures are rethrown for
+  /// the screen to show.
+  Future<void> _run(
+    OwnerLiveAction action,
+    Future<Object?> Function(LiveRepository repo) body,
+  ) async {
+    if (state != null) return;
+    state = action;
+    try {
+      await _tracked(ref, () => body(ref.read(liveRepositoryProvider)));
+    } finally {
+      if (ref.mounted) state = null;
+    }
+  }
+}
+
+/// The customers this pro blocked ("Clients bloqués"); [unblock] replaces
+/// the list with the server's answer.
+final ownerBlockedProvider = AsyncNotifierProvider.autoDispose
+    .family<OwnerBlockedController, List<BlockedCustomer>, String>(
+      OwnerBlockedController.new,
+      retry: _noRetry,
+    );
+
+class OwnerBlockedController extends AsyncNotifier<List<BlockedCustomer>> {
+  OwnerBlockedController(this.proId);
+
+  final String proId;
+  bool _busy = false;
+
+  @override
+  Future<List<BlockedCustomer>> build() =>
+      _tracked(ref, () => ref.read(liveRepositoryProvider).blocked(proId));
+
+  /// Ignored while another unblock is in flight; failures are rethrown.
+  Future<void> unblock(String blockId) async {
+    if (_busy) return;
+    _busy = true;
+    try {
+      final left = await _tracked(
+        ref,
+        () => ref.read(liveRepositoryProvider).unblock(proId, blockId),
+      );
+      if (ref.mounted) state = AsyncData(left);
+    } finally {
+      _busy = false;
+    }
+  }
+}
+
 /// The customer's ticket, only in its own space (null elsewhere, and when
 /// there is none). Refetched when its pro's queue moves and on resume.
 final myTicketProvider = AsyncNotifierProvider<MyTicketController, MyTicket?>(

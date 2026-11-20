@@ -26,6 +26,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/presentation/harness.dart';
+import '../../live/presentation/today/today_harness.dart'
+    show quietLiveOverrides;
 import '../../pro/presentation/setup/setup_harness.dart'
     show FakeGeoRepository, FakeProRepository, settle;
 
@@ -303,6 +305,8 @@ Future<ExploreHarness> pumpExplore(
       geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
       // A Wednesday, so the hours table's "today" is stable.
       countryClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
+      // A pro passing through /home mounts the Today tab.
+      ...quietLiveOverrides(),
       if (launcher != null) phoneLauncherProvider.overrideWithValue(launcher),
     ],
   );

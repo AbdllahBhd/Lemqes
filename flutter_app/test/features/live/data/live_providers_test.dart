@@ -270,6 +270,59 @@ void main() {
       sub.close();
     });
 
+    providerTest('owner status writes run one at a time', (t, c) async {
+      final gate = Completer<void>();
+      when(() => repo.setStatus('p1', LiveStatus.open, breakUntil: null))
+          .thenAnswer((_) => gate.future);
+      final sub = c.listen(ownerLiveProvider('p1'), (_, _) {});
+      final owner = c.read(ownerLiveProvider('p1').notifier);
+      final first = owner.setStatus(LiveStatus.open);
+      expect(sub.read(), OwnerLiveAction.status);
+      await owner.extendAutoClose();
+      verifyNever(() => repo.extendAutoClose(any()));
+      gate.complete();
+      await first;
+      expect(sub.read(), isNull);
+      sub.close();
+    });
+
+    providerTest('a failed owner write rethrows and reads as offline', (
+      t,
+      c,
+    ) async {
+      when(() => repo.extendAutoClose('p1'))
+          .thenAnswer((_) async => throw const LiveNetworkFailure());
+      final sub = c.listen(ownerLiveProvider('p1'), (_, _) {});
+      await expectLater(
+        c.read(ownerLiveProvider('p1').notifier).extendAutoClose(),
+        throwsA(isA<LiveNetworkFailure>()),
+      );
+      expect(sub.read(), isNull);
+      expect(c.read(liveRpcHealthProvider), isFalse);
+      sub.close();
+    });
+
+    providerTest('unblock replaces the blocked list', (t, c) async {
+      final a = BlockedCustomer(
+        blockId: 'b1',
+        ticketLabel: null,
+        createdAt: DateTime.utc(2026, 11, 19),
+      );
+      final b = BlockedCustomer(
+        blockId: 'b2',
+        ticketLabel: 'Karim',
+        createdAt: DateTime.utc(2026, 11, 19),
+      );
+      when(() => repo.blocked('p1')).thenAnswer((_) async => [a, b]);
+      when(() => repo.unblock('p1', 'b1')).thenAnswer((_) async => [b]);
+      final sub = c.listen(ownerBlockedProvider('p1'), (_, _) {});
+      await settle(t);
+      expect(sub.read().requireValue, hasLength(2));
+      await c.read(ownerBlockedProvider('p1').notifier).unblock('b1');
+      expect(sub.read().requireValue.single.blockId, 'b2');
+      sub.close();
+    });
+
     providerTest('a failing fetch is not retried automatically', (t, c) async {
       when(() => repo.ownerQueue('p1'))
           .thenAnswer((_) async => throw const LiveNetworkFailure());

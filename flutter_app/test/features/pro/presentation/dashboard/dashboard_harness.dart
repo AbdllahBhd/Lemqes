@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
+import 'package:lemqes/features/home/presentation/pro_shell.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:lemqes/features/pro/presentation/edit/photo_gallery_editor.dart';
 import 'package:lemqes/features/pro/presentation/setup/profile_step.dart';
@@ -79,6 +80,8 @@ Future<SetupHarness> pumpDashboard(
     location: '/home',
     timeAnswers: timeAnswers,
     overrides: [
+      // The dashboard is the pro shell's "Mon profil" tab.
+      proTabProvider.overrideWith(() => ProTabController(ProTab.profile)),
       workPhotoPickerProvider.overrideWithValue(choose),
       avatarPickerProvider.overrideWithValue(choose),
       exploreRepositoryProvider.overrideWithValue(FakeExploreRepository()),

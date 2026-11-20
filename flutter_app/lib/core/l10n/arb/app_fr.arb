@@ -1188,5 +1188,284 @@
   "photoPickFailed": "Impossible d’ouvrir vos photos. Vérifiez l’accès aux photos dans les réglages.",
   "@photoPickFailed": {
     "description": "The photo picker or reading the picked file failed"
+  },
+  "proNavToday": "Aujourd’hui",
+  "@proNavToday": {
+    "description": "Pro bottom navigation: the live Today tab"
+  },
+  "proNavProfile": "Mon profil",
+  "@proNavProfile": {
+    "description": "Pro bottom navigation: the profile dashboard tab"
+  },
+  "liveStatusOpen": "Ouvert",
+  "@liveStatusOpen": {
+    "description": "Live status word: open"
+  },
+  "liveStatusOnBreak": "En pause",
+  "@liveStatusOnBreak": {
+    "description": "Live status word: on break"
+  },
+  "liveStatusClosed": "Fermé",
+  "@liveStatusClosed": {
+    "description": "Live status word: closed"
+  },
+  "todayStatusLabel": "Votre statut",
+  "@todayStatusLabel": {
+    "description": "Today: screen-reader name of the status control"
+  },
+  "todayBreakTitle": "Retour dans…",
+  "@todayBreakTitle": {
+    "description": "Today: title of the break return-time sheet"
+  },
+  "todayBreakNoTime": "Sans heure",
+  "@todayBreakNoTime": {
+    "description": "Today: break chip without a return time"
+  },
+  "todayBreakBack": "Retour vers",
+  "@todayBreakBack": {
+    "description": "Today: before the break return time (the time follows, LTR)"
+  },
+  "todayBreakOpenEnded": "Pause sans heure de retour",
+  "@todayBreakOpenEnded": {
+    "description": "Today: on break with no return time"
+  },
+  "todayBreakOverdue": "Pause prolongée",
+  "@todayBreakOverdue": {
+    "description": "Today: the break return time has passed"
+  },
+  "todayAutoClose": "Fermeture auto à",
+  "@todayAutoClose": {
+    "description": "Today: before the automatic closing time (the time follows, LTR)"
+  },
+  "todayExtend": "Prolonger d’1 h",
+  "@todayExtend": {
+    "description": "Today: pushes the automatic closing one hour later"
+  },
+  "todayStaleNote": "Aucune action depuis 2 h : les clients voient « Statut incertain ».",
+  "@todayStaleNote": {
+    "description": "Today: no barber action for 2 hours"
+  },
+  "todayCloseTitle": "Fermer maintenant ?",
+  "@todayCloseTitle": {
+    "description": "Today: confirm closing while customers wait"
+  },
+  "todayCloseBody": "{count, plural, =1{1 client attend encore. Il reste dans votre file jusqu’à ce que vous le serviez ou vidiez la file.} other{{count} clients attendent encore. Ils restent dans votre file jusqu’à ce que vous les serviez ou vidiez la file.}}",
+  "@todayCloseBody": {
+    "description": "Today: closing keeps the waiting customers",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayCloseConfirm": "Fermer",
+  "@todayCloseConfirm": {
+    "description": "Today: confirms closing"
+  },
+  "todayWaiting": "En attente",
+  "@todayWaiting": {
+    "description": "Today: label over the waiting count"
+  },
+  "todayWait": "~{minutes} min d’attente",
+  "@todayWait": {
+    "description": "Today: estimated wait for a new arrival",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "todayAddWalkIn": "Ajouter un client sur place",
+  "@todayAddWalkIn": {
+    "description": "Today: screen-reader name of +1"
+  },
+  "todayUndoWalkIn": "Retirer le dernier client sur place",
+  "@todayUndoWalkIn": {
+    "description": "Today: screen-reader name of −1"
+  },
+  "todayCallNext": "Appeler le suivant",
+  "@todayCallNext": {
+    "description": "Today: the primary action"
+  },
+  "todayServing": "En cours",
+  "@todayServing": {
+    "description": "Today: tag of the customer in the chair"
+  },
+  "todayFinish": "Terminé",
+  "@todayFinish": {
+    "description": "Today: ends the current customer without calling"
+  },
+  "todayQueueTitle": "File d’attente",
+  "@todayQueueTitle": {
+    "description": "Today: queue list heading"
+  },
+  "todayQueueEmpty": "Personne n’attend. Touchez +1 quand un client arrive.",
+  "@todayQueueEmpty": {
+    "description": "Today: nobody waiting"
+  },
+  "todayClientN": "Client {n}",
+  "@todayClientN": {
+    "description": "Today: a customer with no name, by ticket number",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "todayKindWalkIn": "Sur place",
+  "@todayKindWalkIn": {
+    "description": "Today: entry came in person"
+  },
+  "todayKindRemote": "À distance",
+  "@todayKindRemote": {
+    "description": "Today: entry joined from the app"
+  },
+  "todayOnTheWay": "En route",
+  "@todayOnTheWay": {
+    "description": "Today: remote customer said they are on the way"
+  },
+  "todayNoService": "Service à préciser",
+  "@todayNoService": {
+    "description": "Today: entry without a service yet"
+  },
+  "todayClear": "Vider la file",
+  "@todayClear": {
+    "description": "Today: clears the whole queue"
+  },
+  "todayClearTitle": "Vider la file ?",
+  "@todayClearTitle": {
+    "description": "Today: confirm clearing the queue"
+  },
+  "todayClearBody": "Chaque client en attente quitte la file. Les clients à distance sont prévenus.",
+  "@todayClearBody": {
+    "description": "Today: what clearing does"
+  },
+  "todayClearConfirm": "Vider",
+  "@todayClearConfirm": {
+    "description": "Today: confirms clearing"
+  },
+  "todayOffline": "Hors ligne. Vos actions reviennent avec la connexion.",
+  "@todayOffline": {
+    "description": "Today: banner while the live connection is down"
+  },
+  "todayUnpublished": "Les clients ne voient pas votre statut : votre profil est masqué.",
+  "@todayUnpublished": {
+    "description": "Today: banner while the profile is not published"
+  },
+  "todaySettings": "Réglages de la file",
+  "@todaySettings": {
+    "description": "Today: opens the queue settings"
+  },
+  "todayEntryName": "Nom (facultatif)",
+  "@todayEntryName": {
+    "description": "Entry sheet: optional walk-in name"
+  },
+  "todayEntryService": "Service",
+  "@todayEntryService": {
+    "description": "Entry sheet: service chips heading"
+  },
+  "todayAbsent": "Absent",
+  "@todayAbsent": {
+    "description": "Entry sheet: marks a remote customer as a no-show"
+  },
+  "todayAbsentTitle": "Marquer absent ?",
+  "@todayAbsentTitle": {
+    "description": "Entry sheet: confirm the no-show"
+  },
+  "todayAbsentBody": "Il quitte la file. Deux absences en 7 jours bloquent ses places à distance pendant 24 h.",
+  "@todayAbsentBody": {
+    "description": "Entry sheet: what a no-show does"
+  },
+  "todayBlock": "Bloquer",
+  "@todayBlock": {
+    "description": "Entry sheet: blocks a remote customer"
+  },
+  "todayBlockTitle": "Bloquer ce client ?",
+  "@todayBlockTitle": {
+    "description": "Entry sheet: confirm the block"
+  },
+  "todayBlockBody": "Il quitte la file et ne pourra plus la rejoindre à distance. Vous pourrez le débloquer dans les réglages de la file.",
+  "@todayBlockBody": {
+    "description": "Entry sheet: what a block does"
+  },
+  "queueModeTitle": "Qui peut rejoindre à distance",
+  "@queueModeTitle": {
+    "description": "Queue settings: who can join remotely"
+  },
+  "queueModeOpen": "Ouvert à tous",
+  "@queueModeOpen": {
+    "description": "Queue mode: open to all"
+  },
+  "queueModeOpenHint": "Chaque client de votre espace peut prendre une place.",
+  "@queueModeOpenHint": {
+    "description": "Queue mode: open hint"
+  },
+  "queueModeFollowers": "Abonnés seulement",
+  "@queueModeFollowers": {
+    "description": "Queue mode: followers only"
+  },
+  "queueModeFollowersHint": "Fonctionne comme « En pause » tant que les abonnés n’existent pas encore.",
+  "@queueModeFollowersHint": {
+    "description": "Queue mode: followers works like paused until follows ship"
+  },
+  "queueModePaused": "En pause",
+  "@queueModePaused": {
+    "description": "Queue mode: paused"
+  },
+  "queueModePausedHint": "Les clients lisent « File complète ». +1 reste disponible.",
+  "@queueModePausedHint": {
+    "description": "Queue mode: paused hint"
+  },
+  "queueHideCount": "Masquer le nombre",
+  "@queueHideCount": {
+    "description": "Queue settings: hide the waiting count"
+  },
+  "queueHideCountHint": "Les clients lisent « File ouverte · ~40 min ».",
+  "@queueHideCountHint": {
+    "description": "Queue settings: what customers read with the count hidden"
+  },
+  "queueBlockedTitle": "Clients bloqués",
+  "@queueBlockedTitle": {
+    "description": "Queue settings: blocked customers heading"
+  },
+  "queueBlockedEmpty": "Aucun client bloqué.",
+  "@queueBlockedEmpty": {
+    "description": "Queue settings: nobody blocked"
+  },
+  "queueBlockedUnnamed": "Client bloqué",
+  "@queueBlockedUnnamed": {
+    "description": "Queue settings: a blocked customer with no name"
+  },
+  "queueUnblock": "Débloquer",
+  "@queueUnblock": {
+    "description": "Queue settings: lifts a block"
+  },
+  "liveErrorQueueEmpty": "Personne n’attend.",
+  "@liveErrorQueueEmpty": {
+    "description": "Live failure: nobody waiting"
+  },
+  "liveErrorNothingServing": "Personne n’est en cours.",
+  "@liveErrorNothingServing": {
+    "description": "Live failure: nobody in the chair"
+  },
+  "liveErrorNothingToUndo": "Aucun client sur place à retirer.",
+  "@liveErrorNothingToUndo": {
+    "description": "Live failure: no walk-in to remove"
+  },
+  "liveErrorEntryGone": "Ce client n’est plus dans la file.",
+  "@liveErrorEntryGone": {
+    "description": "Live failure: the entry already left"
+  },
+  "liveErrorInvalidName": "Un nom de 40 caractères au plus, sans symboles spéciaux.",
+  "@liveErrorInvalidName": {
+    "description": "Live failure: walk-in name refused"
+  },
+  "liveErrorInvalidService": "Ce service n’est plus proposé.",
+  "@liveErrorInvalidService": {
+    "description": "Live failure: service no longer offered"
+  },
+  "liveErrorNotOpen": "Ouvrez d’abord pour prolonger.",
+  "@liveErrorNotOpen": {
+    "description": "Live failure: extend while closed"
   }
 }
