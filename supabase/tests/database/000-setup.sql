@@ -140,6 +140,37 @@ exception when others then
 end;
 $$;
 
+-- Freezes public.live_now() at `ts` by redefining it; the redefinition is transactional, so it
+-- rolls back with the test (never a GUC: a client could set one). Security definer so a test can
+-- call it while acting as a client role. Dynamic SQL: live_now() comes from a later migration.
+create or replace function tests.freeze_now(ts timestamptz)
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  execute format(
+    'create or replace function public.live_now() returns timestamptz language sql stable '
+    'set search_path = '''' as %L',
+    format('select %L::timestamptz', ts)
+  );
+end;
+$$;
+
+-- Sets one weekday's hours (no break) for a pro, replacing any existing row for that day.
+create or replace function tests.set_hours(pro uuid, weekday int, opens time, closes time)
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  insert into public.pro_hours (pro_id, weekday, opens, closes)
+  values (pro, weekday, opens, closes)
+  on conflict on constraint pro_hours_pkey do update
+    set opens = excluded.opens, closes = excluded.closes, break_start = null, break_end = null;
+end;
+$$;
+
 -- Test-only schema (never shipped): tests switch to these roles and must still reach the helpers.
 grant usage on schema tests to anon, authenticated;
 grant execute on all functions in schema tests to anon, authenticated;
