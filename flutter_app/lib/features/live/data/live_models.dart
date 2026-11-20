@@ -218,7 +218,7 @@ class OwnerQueueRow {
     entryId: j['entry_id']! as String,
     ticketNo: (j['ticket_no']! as num).toInt(),
     kind: QueueKind.fromDb(j['kind']! as String),
-    label: j['label']! as String,
+    label: j['label'] as String?,
     serviceId: j['service_id'] as String?,
     durationMin: (j['duration_min'] as num?)?.toInt(),
     state: EntryState.fromDb(j['state']! as String),
@@ -231,7 +231,10 @@ class OwnerQueueRow {
   final String entryId;
   final int ticketNo;
   final QueueKind kind;
-  final String label;
+
+  /// Walk-in name or the customer's name; null when there is none (the UI
+  /// shows a localized `Client <ticketNo>`).
+  final String? label;
   final String? serviceId;
   final int? durationMin;
   final EntryState state;
@@ -299,11 +302,11 @@ class BlockedCustomer {
 
   factory BlockedCustomer.fromJson(Map<String, Object?> j) => BlockedCustomer(
     blockId: j['block_id']! as String,
-    ticketLabel: j['ticket_label']! as String,
+    ticketLabel: j['ticket_label'] as String?,
     createdAt: _ts(j['created_at']),
   );
 
   final String blockId;
-  final String ticketLabel;
+  final String? ticketLabel;
   final DateTime createdAt;
 }

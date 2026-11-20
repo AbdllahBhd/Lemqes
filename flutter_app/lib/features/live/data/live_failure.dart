@@ -84,6 +84,18 @@ class TooManyIds extends LiveFailure {
   const TooManyIds();
 }
 
+/// The entry already ended (or is not the caller's own remote entry).
+class EntryNotActive extends LiveFailure {
+  const EntryNotActive();
+}
+
+/// The server refused this pro's channel (other space, unpublished): the pro
+/// has no live line for this caller. Terminal until the space or account
+/// changes.
+class LiveUnavailable extends LiveFailure {
+  const LiveUnavailable();
+}
+
 class LiveNetworkFailure extends LiveFailure {
   const LiveNetworkFailure();
 }
@@ -95,7 +107,11 @@ class UnknownLiveFailure extends LiveFailure {
 
 /// Every SQL error code of the live migrations (bare
 /// `raise exception '<code>'`), in one place so it can be diffed against
-/// `supabase/migrations/` with a grep.
+/// `supabase/migrations/` with a grep (a test does it). Codes that only a
+/// client bug can trigger are in [liveUnmappedCodes] instead.
+///
+/// Import with a prefix or `hide NotOwner` where `pro_failure.dart` is also
+/// imported: both declare a `NotOwner`.
 const liveFailureCodes = <String, LiveFailure>{
   'not_owner': NotOwner(),
   'not_open': NotOpen(),
@@ -116,6 +132,17 @@ const liveFailureCodes = <String, LiveFailure>{
   'absent_block': AbsentBlock(),
   'join_unavailable': JoinUnavailable(),
   'too_many_ids': TooManyIds(),
+  'entry_not_active': EntryNotActive(),
+};
+
+/// Raised by the live migrations but deliberately left to
+/// [UnknownLiveFailure]: `request_id_required` and `invalid_status` mean the
+/// app sent a null argument (a bug, not a user situation), and
+/// `history_is_kept` guards a delete no client can issue.
+const liveUnmappedCodes = {
+  'request_id_required',
+  'invalid_status',
+  'history_is_kept',
 };
 
 /// Whether retrying the same action may succeed or may already have

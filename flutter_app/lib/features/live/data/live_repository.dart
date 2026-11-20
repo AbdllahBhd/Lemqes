@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/time/clock_providers.dart';
 import 'live_api.dart';
 import 'live_failure.dart';
 import 'live_models.dart';
@@ -12,7 +13,10 @@ final liveApiProvider = Provider<LiveApi>(
 );
 
 final liveRepositoryProvider = Provider<LiveRepository>(
-  (ref) => LiveRepository(ref.watch(liveApiProvider)),
+  (ref) => LiveRepository(
+    ref.watch(liveApiProvider),
+    now: ref.watch(utcClockProvider),
+  ),
 );
 
 /// A random (version 4) UUID; `dart:math` avoids a new dependency.
@@ -26,23 +30,37 @@ String newRequestId([Random? random]) {
       '${h.substring(16, 20)}-${h.substring(20)}';
 }
 
+/// How long an action with an unknown outcome keeps its request id: a retry
+/// within this window is the same user action; a later tap is a new one.
+const pendingRequestTtl = Duration(minutes: 2);
+
 /// One method per client RPC. Each mutating call carries a request id that
 /// the server uses to make a repeat harmless; the id is kept while an action
 /// ends in an unknown outcome (network, unknown error) so the retry of that
-/// same action reuses it, and dropped on success or a definitive refusal.
+/// same action reuses it, and dropped on success, on a definitive refusal or
+/// after [pendingRequestTtl].
 class LiveRepository {
-  LiveRepository(this._api, {String Function()? newId})
+  LiveRepository(this._api, {required this._now, String Function()? newId})
     : _newId = newId ?? newRequestId;
 
   final LiveApi _api;
   final String Function() _newId;
-  final Map<String, String> _pending = {};
+  final DateTime Function() _now;
+  final Map<String, ({String id, DateTime at})> _pending = {};
 
   Future<T> _act<T>(
     String key,
     Future<T> Function(String requestId) body,
   ) async {
-    final id = _pending[key] ??= _newId();
+    final now = _now();
+    final held = _pending[key];
+    final String id;
+    if (held != null && now.difference(held.at) < pendingRequestTtl) {
+      id = held.id;
+    } else {
+      id = _newId();
+      _pending[key] = (id: id, at: now);
+    }
     try {
       final out = await guardLive(() => body(id));
       _pending.remove(key);
@@ -149,24 +167,30 @@ class LiveRepository {
     });
   });
 
-  Future<void> block(String entryId) => _act('block:$entryId', (id) async {
-    await _api.rpc('queue_block', {'p_entry_id': entryId, 'p_request_id': id});
-  });
+  /// Returns the queue (the blocked customer's active entry is gone).
+  Future<List<OwnerQueueRow>> block(String entryId) =>
+      _queueAction('queue_block', 'block:$entryId', {'p_entry_id': entryId});
 
-  Future<void> unblock(String blockId) => _act('unblock:$blockId', (id) async {
-    await _api.rpc('queue_unblock', {
-      'p_block_id': blockId,
-      'p_request_id': id,
-    });
-  });
+  /// Returns the remaining blocks.
+  Future<List<BlockedCustomer>> unblock(String proId, String blockId) =>
+      _act('unblock:$proId:$blockId', (id) async {
+        return _blocked(
+          await _api.rpc('queue_unblock', {
+            'p_pro_id': proId,
+            'p_block_id': blockId,
+            'p_request_id': id,
+          }),
+        );
+      });
 
-  Future<List<BlockedCustomer>> blocked(String proId) => guardLive(() async {
-    final raw = await _api.rpc('queue_blocked', {'p_pro_id': proId});
-    return [
-      for (final r in raw! as List<Object?>)
-        BlockedCustomer.fromJson(r! as Map<String, Object?>),
-    ];
-  });
+  Future<List<BlockedCustomer>> blocked(String proId) => guardLive(
+    () async => _blocked(await _api.rpc('queue_blocked', {'p_pro_id': proId})),
+  );
+
+  List<BlockedCustomer> _blocked(Object? raw) => [
+    for (final r in raw! as List<Object?>)
+      BlockedCustomer.fromJson(r! as Map<String, Object?>),
+  ];
 
   // Customer.
 
@@ -185,17 +209,23 @@ class LiveRepository {
         return MyTicket.fromJson(_first(raw)!);
       });
 
-  Future<void> onMyWay(String entryId) =>
+  Future<MyTicket> onMyWay(String entryId) =>
       _act('on_my_way:$entryId', (id) async {
-        await _api.rpc('queue_on_my_way', {
+        final raw = await _api.rpc('queue_on_my_way', {
           'p_entry_id': entryId,
           'p_request_id': id,
         });
+        return MyTicket.fromJson(_first(raw)!);
       });
 
-  Future<void> leaveQueue(String entryId) => _act('leave:$entryId', (id) async {
-    await _api.rpc('leave_queue', {'p_entry_id': entryId, 'p_request_id': id});
-  });
+  Future<MyTicket> leaveQueue(String entryId) =>
+      _act('leave:$entryId', (id) async {
+        final raw = await _api.rpc('leave_queue', {
+          'p_entry_id': entryId,
+          'p_request_id': id,
+        });
+        return MyTicket.fromJson(_first(raw)!);
+      });
 
   /// The caller's active ticket, or the latest ended one within 30 min.
   Future<MyTicket?> myTicket() => guardLive(() async {
