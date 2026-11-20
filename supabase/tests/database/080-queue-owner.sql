@@ -634,9 +634,8 @@ select ok(
   not has_table_privilege('authenticated', 'public.queue_entries', 'delete')
   and not has_table_privilege('authenticated', 'public.queue_entries', 'insert')
   and not has_table_privilege('authenticated', 'public.queue_entries', 'update')
-  and not has_table_privilege('authenticated', 'public.queue_entries', 'select')
   and not has_table_privilege('anon', 'public.queue_entries', 'select'),
-  'Q15 clients have no table privilege on queue_entries (no delete grant)'
+  'Q15 clients have no write privilege on queue_entries (no delete grant); select is RLS-scoped (085 J7)'
 );
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 select throws_ok(
