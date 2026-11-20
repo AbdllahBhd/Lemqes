@@ -27,6 +27,8 @@
 -- auto_close_at are raw so the client derives "Pause prolongée" and the close on its own.
 -- join_block: closed (effective-closed, stale or unpublished), on_break, paused, followers, else
 -- null. status_age_from = last_activity_at rounded down to 5 min (coarse presence).
+-- listed = published: an unpublish broadcast tells subscribed customers to drop the pro (the
+-- channel stays authorized until they leave, since authorization is checked at join only).
 -- serving_duration_min and ahead_minutes count the pro's average for an entry without a service,
 -- as queue_wait_min does.
 create function public.live_snapshot(p_pro_id uuid)
@@ -72,6 +74,7 @@ begin
     'status_age_from', date_bin('5 minutes', v_live.last_activity_at,
                                 timestamptz '2000-01-01 00:00:00+00'),
     'queue_mode', v_live.queue_mode,
+    'listed', coalesce(v_published, false),
     'join_block', case
                     when v_published is not true or v_effective.status = 'closed'
                          or v_effective.stale then 'closed'

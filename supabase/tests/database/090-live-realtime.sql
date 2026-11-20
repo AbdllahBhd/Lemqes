@@ -1,5 +1,5 @@
 begin;
-select plan(90);
+select plan(92);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday (create_pro gives Monday
 -- 09:00-18:00); time is frozen at 10:00, then at Tuesday 07:00 for the end-of-day job.
@@ -123,9 +123,9 @@ select ok(
 select is(
   (select array_agg(k order by k collate "C")
      from jsonb_object_keys(public.live_snapshot(current_setting('t.pa')::uuid)) k),
-  array['ahead_minutes', 'auto_close_at', 'break_until', 'join_block', 'pro_id', 'queue_mode',
-        'queue_version', 'server_now', 'serving_called_at', 'serving_duration_min', 'status',
-        'status_age_from', 'wait_min', 'waiting_count'],
+  array['ahead_minutes', 'auto_close_at', 'break_until', 'join_block', 'listed', 'pro_id',
+        'queue_mode', 'queue_version', 'server_now', 'serving_called_at', 'serving_duration_min',
+        'status', 'status_age_from', 'wait_min', 'waiting_count'],
   'R1 the snapshot keys are exactly the Approach list'
 );
 select ok(
@@ -137,6 +137,10 @@ select ok(
 select is(
   public.live_snapshot(current_setting('t.pa')::uuid) ->> 'pro_id', current_setting('t.pa'),
   'R1 the snapshot names its pro'
+);
+select is(
+  public.live_snapshot(current_setting('t.pa')::uuid) -> 'listed', 'true'::jsonb,
+  'R1 a published pro is listed'
 );
 
 -- R2 ------------------------------------------------------------------------------------------
@@ -491,6 +495,10 @@ select is(
   (select array[m.topic, m.payload ->> 'join_block', m.private::text] from realtime.messages m),
   array['pro:' || current_setting('t.pb'), 'closed', 'true'],
   'R8 unpublishing (last service deactivated) broadcasts join_block closed'
+);
+select is(
+  (select m.payload -> 'listed' from realtime.messages m), 'false'::jsonb,
+  'R8 unpublishing broadcasts listed = false'
 );
 select is(tests.one_broadcast(current_setting('t.pb')::uuid), 'ok', 'R8 ... exactly once');
 
