@@ -142,11 +142,15 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
 
   /// A break always opens the return-time sheet (also to change it);
   /// closing with customers waiting asks first.
+  ///
+  /// While the status reads "Statut incertain" ([stale]), the current one
+  /// is sent again: the write is the barber's activity that clears it.
   Future<void> _selectStatus(
     LiveStatus chosen,
     LiveStatus current,
-    int waiting,
-  ) async {
+    int waiting, {
+    required bool stale,
+  }) async {
     final l10n = context.l10n;
     if (chosen == LiveStatus.onBreak) {
       final choice = await showBreakSheet(context);
@@ -162,7 +166,7 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
       );
       return;
     }
-    if (chosen == current) return;
+    if (chosen == current && !stale) return;
     if (chosen == LiveStatus.closed && waiting > 0) {
       final ok = await confirmLive(
         context,
@@ -275,8 +279,10 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
       if (r.state == EntryState.serving) serving = r;
     }
     final names = _names = _serviceNames();
-    final canAct = connected && queue != null;
     final inFlight = queue?.inFlight;
+    // One queue action at a time: while one is in flight every control
+    // waits (the controller would drop the tap), the one running shows it.
+    final canAct = connected && queue != null && inFlight == null;
 
     void act(Future<void> Function(OwnerQueueController q) body) {
       final q = _queue;
@@ -286,7 +292,8 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
     final statusControl = StatusSwitch(
       value: view?.status,
       onSelected: connected && view != null && !writing
-          ? (s) => _selectStatus(s, view.status, waiting.length)
+          ? (s) =>
+                _selectStatus(s, view.status, waiting.length, stale: view.stale)
           : null,
     );
 
@@ -322,6 +329,8 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
             onUndo: canAct && undoable
                 ? () => act((q) => q.undoWalkIn())
                 : null,
+            adding: inFlight == OwnerAction.addWalkIn,
+            undoing: inFlight == OwnerAction.undoWalkIn,
           ),
           if (serving != null) ...[
             const SizedBox(height: 16),
@@ -395,7 +404,12 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
                   minimumSize: const Size(48, 48),
                 ),
                 onPressed: canAct ? _clear : null,
-                icon: const Icon(Icons.playlist_remove),
+                icon: inFlight == OwnerAction.clear
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.playlist_remove),
                 label: Text(l10n.todayClear),
               ),
             ),

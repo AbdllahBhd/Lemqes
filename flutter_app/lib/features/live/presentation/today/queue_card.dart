@@ -18,6 +18,8 @@ class QueueCountCard extends StatelessWidget {
     required this.waitMin,
     required this.onAdd,
     required this.onUndo,
+    this.adding = false,
+    this.undoing = false,
     super.key,
   });
 
@@ -27,6 +29,10 @@ class QueueCountCard extends StatelessWidget {
   /// Null disables the control.
   final VoidCallback? onAdd;
   final VoidCallback? onUndo;
+
+  /// The +1 or −1 waiting for the server: a spinner in its place.
+  final bool adding;
+  final bool undoing;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +83,7 @@ class QueueCountCard extends StatelessWidget {
                   text: '−1',
                   semanticLabel: l10n.todayUndoWalkIn,
                   onPressed: onUndo,
+                  busy: undoing,
                 ),
                 const SizedBox(width: 12),
                 _StepButton(
@@ -85,6 +92,7 @@ class QueueCountCard extends StatelessWidget {
                   semanticLabel: l10n.todayAddWalkIn,
                   onPressed: onAdd,
                   filled: true,
+                  busy: adding,
                 ),
               ],
             ),
@@ -101,6 +109,7 @@ class _StepButton extends StatelessWidget {
     required this.semanticLabel,
     required this.onPressed,
     this.filled = false,
+    this.busy = false,
     super.key,
   });
 
@@ -108,24 +117,30 @@ class _StepButton extends StatelessWidget {
   final String semanticLabel;
   final VoidCallback? onPressed;
   final bool filled;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     // No colour of its own: the button's foreground fades it when off.
-    final label = FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Text(
-        text,
-        style: lemqesWeight(
-          lemqesNumeric.copyWith(
-            fontSize: theme.textTheme.titleLarge!.fontSize,
-          ),
-          FontWeight.w600,
-        ),
-      ),
-    );
+    final Widget label = busy
+        ? const SizedBox.square(
+            dimension: 24,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          )
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              text,
+              style: lemqesWeight(
+                lemqesNumeric.copyWith(
+                  fontSize: theme.textTheme.titleLarge!.fontSize,
+                ),
+                FontWeight.w600,
+              ),
+            ),
+          );
     const size = Size.square(64);
     return Semantics(
       button: true,

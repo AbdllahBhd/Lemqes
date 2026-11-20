@@ -284,6 +284,20 @@ Future<TodayHarness> pumpToday(
   return TodayHarness(mock, snapshots, container);
 }
 
+/// Whether the button under [key] (the keyed widget or one inside it) is
+/// enabled.
+bool buttonEnabled(WidgetTester tester, String key) => tester
+    .widget<ButtonStyleButton>(
+      find
+          .descendant(
+            of: find.byKey(Key(key)),
+            matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+            matchRoot: true,
+          )
+          .first,
+    )
+    .enabled;
+
 /// Riverpod rebuilds and stream hops need pumps that advance time.
 Future<void> settle(WidgetTester tester) async {
   for (var i = 0; i < 10; i++) {

@@ -106,6 +106,34 @@ void main() {
       verify(() => repo.extendAutoClose('p1')).called(1);
     });
 
+    testWidgets('Statut incertain: tapping the current status confirms it', (
+      t,
+    ) async {
+      final repo = stubbed();
+      await pumpToday(
+        t,
+        repo: repo,
+        snapshot: ownSnapshot(
+          status: LiveStatus.open,
+          autoCloseAt: DateTime.utc(2026, 11, 20, 18, 30),
+          statusAgeFrom: testNow.subtract(const Duration(hours: 3)),
+        ),
+      );
+      expect(find.text(fr.todayStaleNote), findsOneWidget);
+      await tapKey(t, 'status_open');
+      verify(() => repo.setStatus('p1', LiveStatus.open)).called(1);
+    });
+
+    testWidgets('a fresh status: tapping it again sends nothing', (t) async {
+      final repo = stubbed();
+      await pumpToday(t, repo: repo, snapshot: openSnapshot(waiting: 0));
+      await tapKey(t, 'status_open');
+      verifyNever(
+        () =>
+            repo.setStatus(any(), any(), breakUntil: any(named: 'breakUntil')),
+      );
+    });
+
     testWidgets('a closed pro shows no auto-close row', (t) async {
       await pumpToday(t, repo: stubbed(), snapshot: ownSnapshot());
       expect(find.text(fr.todayAutoClose), findsNothing);
@@ -147,6 +175,52 @@ void main() {
       await settle(t);
       verify(() => repo.callNext('p1')).called(1);
 
+      gate.complete(rows);
+      await settle(t);
+    });
+
+    testWidgets('while a queue action is in flight every control waits', (
+      t,
+    ) async {
+      final rows = fourEntries();
+      final repo = stubbed(rows: rows);
+      final gate = Completer<List<OwnerQueueRow>>();
+      when(() => repo.callNext(any())).thenAnswer((_) => gate.future);
+      when(() => repo.addWalkIn(any())).thenAnswer((_) async => rows);
+      await pumpToday(t, repo: repo, snapshot: openSnapshot());
+
+      await tapKey(t, 'callNext');
+      // Top to bottom: the list only scrolls down to find a key.
+      for (final key in ['walkInAdd', 'walkInUndo', 'finish']) {
+        expect(buttonEnabled(t, key), isFalse, reason: key);
+      }
+      await tapKey(t, 'walkInAdd');
+      verifyNever(() => repo.addWalkIn(any()));
+      await tapKey(t, 'queueRow_e2');
+      expect(find.byKey(const Key('entryName')), findsNothing);
+      await tapKey(t, 'queueClear');
+      expect(buttonEnabled(t, 'queueClear'), isFalse);
+      expect(find.text(fr.todayClearTitle), findsNothing);
+
+      gate.complete(rows);
+      await settle(t);
+      expect(buttonEnabled(t, 'queueClear'), isTrue);
+    });
+
+    testWidgets('+1 in flight shows its progress', (t) async {
+      final rows = fourEntries();
+      final repo = stubbed(rows: rows);
+      final gate = Completer<List<OwnerQueueRow>>();
+      when(() => repo.addWalkIn(any())).thenAnswer((_) => gate.future);
+      await pumpToday(t, repo: repo, snapshot: openSnapshot());
+      await tapKey(t, 'walkInAdd');
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('walkInAdd')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+      );
       gate.complete(rows);
       await settle(t);
     });
