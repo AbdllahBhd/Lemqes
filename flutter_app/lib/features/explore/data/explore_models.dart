@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import '../../live/data/live_models.dart';
 import '../../pro/data/pro_models.dart';
 
 class ExploreQuery {
@@ -48,6 +49,7 @@ class ProCard {
     this.localityNameFr,
     this.customerMix,
     this.minPriceDzd,
+    this.live,
   });
 
   factory ProCard.fromRow(Map<String, Object?> r) => ProCard(
@@ -67,6 +69,9 @@ class ProCard {
         : CustomerMix.fromDb(r['customer_mix']! as String),
     minPriceDzd: r['min_price_dzd'] as int?,
     isVerified: r['is_verified']! as bool,
+    live: r['live'] == null
+        ? null
+        : LiveSnapshot.fromJson(r['live']! as Map<String, Object?>),
   );
 
   final String proId;
@@ -85,6 +90,10 @@ class ProCard {
   /// Null when the pro hides prices or has no service yet.
   final int? minPriceDzd;
   final bool isVerified;
+
+  /// The pro's live state when the page was searched; the card follows
+  /// `proLiveProvider`, which this seeds.
+  final LiveSnapshot? live;
 
   String? regionName(Locale l) =>
       l.languageCode == 'ar' ? regionNameAr : regionNameFr;
