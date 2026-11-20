@@ -12,13 +12,12 @@ import 'package:lemqes/core/router/app_router.dart';
 import 'package:lemqes/core/storage/shared_preferences_provider.dart';
 import 'package:lemqes/core/theme/lemqes_theme.dart';
 import 'package:lemqes/core/theme/theme_mode_controller.dart';
+import 'package:lemqes/core/time/clock_providers.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
 import 'package:lemqes/features/geo/data/geo_repository.dart';
-import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.dart'
-    show profileClockProvider;
 import 'package:lemqes/features/pro/data/photo_uploader.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
@@ -518,7 +517,7 @@ Future<SetupHarness> pumpSetup(
       geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
       photoUploaderProvider.overrideWithValue(fakePhotos),
       // A Wednesday, so the hours table's "today" is stable.
-      profileClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
+      countryClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
       ...overrides,
       if (timeAnswers != null)
         timePickProvider.overrideWithValue(
