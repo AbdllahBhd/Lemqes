@@ -1,4 +1,5 @@
--- Persists in the local DB (no begin/rollback); `supabase db reset` wipes it and it reruns first.
+-- Persists for the run (no begin/rollback): every later file uses the tests schema, and
+-- 999-teardown.sql drops it at the end so freeze_now/set_hours never outlive the suite.
 create extension if not exists pgtap with schema extensions;
 create schema if not exists tests;
 
@@ -177,6 +178,8 @@ grant usage on schema tests to anon, authenticated;
 grant execute on all functions in schema tests to anon, authenticated;
 -- freeze_now runs as its owner: only the authenticated test role may reach it.
 revoke execute on function tests.freeze_now(timestamptz) from public, anon;
+-- set_hours is a definer too: tests call it as authenticated or postgres, never as anon.
+revoke execute on function tests.set_hours(uuid, int, time, time) from public, anon;
 
 select plan(1);
 select has_schema('tests');
