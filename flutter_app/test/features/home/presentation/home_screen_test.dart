@@ -7,6 +7,7 @@ import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:lemqes/features/home/presentation/customer_home_screen.dart';
 import 'package:lemqes/features/home/presentation/home_screen.dart';
+import 'package:lemqes/features/home/presentation/pro_shell.dart';
 import 'package:lemqes/features/pro/presentation/dashboard/pro_dashboard_screen.dart';
 import 'package:lemqes/shared/widgets/state_views.dart';
 import 'package:mocktail/mocktail.dart';
@@ -55,9 +56,9 @@ void main() {
     expect(find.byType(ProDashboardScreen), findsNothing);
   });
 
-  testWidgets('a pro sees the pro dashboard', (tester) async {
+  testWidgets('a pro sees the pro shell', (tester) async {
     await pumpHome(tester, home: const HomeScreen(), account: pro);
-    expect(find.byType(ProDashboardScreen), findsOneWidget);
+    expect(find.byType(ProShell), findsOneWidget);
     expect(find.byType(CustomerHomeScreen), findsNothing);
   });
 

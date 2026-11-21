@@ -304,6 +304,39 @@ Two groups inside a dashboard card: who sees the phone (single-choice rows: publ
 ### Visibility card (dashboard)
 The first dashboard card says whether customers can see the profile: a 48 dp Pill Mist disc with an eye (published) or crossed eye (hidden) icon, "Publié" / "Masqué" as the title, a muted line naming the space, and, when something is missing, a list of gaps with error-colour icons and the "Compléter mon profil" or "Publier mon profil" pill.
 
+### Live status line (`LiveStatusLine`, `LiveQueueLine`)
+One sentence that wraps as a sentence: an 8 dp status dot (filled when the status can be trusted, hollow for "Statut incertain"), the status word in its status colour and semibold, then " · " details in Muted Ink ("à l'instant", "retour 14:30" as an LTR island, "il y a 10 min" floored to 5 min). While the connection is down it reads "Mis à jour il y a X min" with a hollow grey dot instead of a confident status. The queue line under it is Ink in `lemqesNumeric`: "3 en attente · ~40 min", "File ouverte" (count hidden), "File complète" (paused), nothing when closed or uncertain, and no wait when the viewer holds a place there (the ticket gives theirs). The profile uses the next step up the type scale.
+
+### Live ring (`LiveRing`)
+A 2.5 dp Lagoon gradient ring with a 2 dp gap around the pro's avatar when open, a dashed grey ring on break, none when closed, uncertain or offline. Same footprint with or without a ring so cards stay aligned; decorative, since the status line says the same in words.
+
+### Live block (`LiveBlock`, public profile)
+A lifted card under the hero: the large status and queue lines, the customer's `TicketView` when they hold a place there, and the "Rejoindre la file" primary pill (disabled while not joinable or offline). The owner's preview shows the lines only.
+
+### Join sheet (`JoinQueueSheet`)
+A bottom sheet: "Choisissez un service" title, a muted promise line, one radio row per service (name, duration muted, price in `PriceText` or the hidden-price label) with the chosen row on Pill Mist, an inline error text when the server refuses (neutral wording for a block), and the "Prendre ma place" primary pill.
+
+### Ticket card (`MyTicketCard`: `ExploreTicketCard` / `TicketView`)
+"Votre file" sits at the top of Explore, only in the ticket's space: a lifted card with a muted label and a chevron to the profile, a champagne-gold disc with the place ("3e", "1re" in the women's space) or scissors on the turn, the headline ("Vous êtes 3e · ~40 min", "C'est votre tour", how it ended) and "chez <pro>". While waiting: "Je suis en route" primary pill and "Quitter la file" error text button (asks first). Place changes and the turn are announced once to screen readers.
+
+### Today status control (`StatusSwitch`, `StatusDetails`)
+Ouvert / En pause / Fermé as three pills on the Lagoon band, styled like the space switch: the chosen one is white with its filled status dot, the others outlined with a hollow dot. "En pause" opens the break sheet (15 / 30 / 45 / 60 min or "Sans heure"); closing with people waiting asks first. Under the band, a details card: break return, "Fermeture auto à 00:29" with the "Prolonger d'1 h" text button, and the stale warning.
+
+### Queue card (`QueueCountCard`, `ServingCard`)
+"En attente" label, the waiting count in display size and `lemqesNumeric`, "~80 min d'attente" muted, and two circular buttons: −1 outlined, +1 on Pill Mist. When someone is in the chair a second card shows "En cours" as a mist tag, the name or "Client N", the service, and an outlined "Terminé" pill.
+
+### Queue list (`QueueList`)
+One lifted card of rows divided by inset hairlines: a 36 dp mist disc with the position (LTR), the name or "Client N" in title weight, the service ("Service à préciser" when unset) and walk-in / remote as icon + word, an "En route" tag, and a chevron. A row opens the entry sheet (name for walk-ins, service chips, Save pill; "Absent" and the error-colour "Bloquer" for remote entries, both asking first). "Vider la file" is an error-colour text button under the list; "Appeler le suivant" is the screen's one primary pill, pinned above the navigation bar.
+
+### Queue settings sheet (`QueueSettingsSheet`)
+Who can join remotely as single-choice rows (Ouvert à tous, Abonnés seulement, En pause, each with a muted hint), the "Masquer le nombre" switch row with its hint, and the blocked customers list with a "Débloquer" text button per row (or a muted empty line).
+
+### Today banner (`TodayBanner`: offline, unpublished)
+A full-width strip under the band: icon, one sentence, optional text-button action. "Hors ligne. Vos actions reviennent avec la connexion." uses the error container with a retry; while it shows, every write control (status pills, ±1, rows, "Appeler le suivant", "Terminé", "Prolonger") is disabled. The unpublished notice uses the neutral container.
+
+### Pro navigation (`ProShell`)
+Pros get a Material `NavigationBar` with two destinations: "Aujourd'hui" (default; the live status and queue) and "Mon profil" (the dashboard), outlined icons that fill when selected on a Pill Mist indicator. The tab survives rebuilds of the home.
+
 ## Do's and Don'ts
 
 ### Do:

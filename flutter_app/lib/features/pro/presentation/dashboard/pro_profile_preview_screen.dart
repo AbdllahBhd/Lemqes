@@ -88,6 +88,7 @@ class ProProfilePreviewScreen extends ConsumerWidget {
 
     return ProPublicProfileView(
       profile: customerViewOf(profile),
+      asCustomer: false,
       marker: Semantics(
         key: const Key('previewTag'),
         child: BandTag(label: l10n.previewTag),

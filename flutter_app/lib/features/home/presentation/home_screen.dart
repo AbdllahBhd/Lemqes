@@ -5,11 +5,11 @@ import '../../../core/l10n/locale_controller.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account_providers.dart';
 import '../../account/presentation/account_failure_listener.dart';
-import '../../pro/presentation/dashboard/pro_dashboard_screen.dart';
 import 'customer_home_screen.dart';
+import 'pro_shell.dart';
 
-/// The signed-in landing: the customer home or the pro dashboard by the
-/// active role.
+/// The signed-in landing: the customer home or the pro shell by the active
+/// role.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -40,7 +40,7 @@ class HomeScreen extends ConsumerWidget {
     }
     return AccountFailureListener(
       child: account.activeRole.isPro
-          ? ProDashboardScreen(account: account)
+          ? ProShell(account: account)
           : CustomerHomeScreen(account: account),
     );
   }

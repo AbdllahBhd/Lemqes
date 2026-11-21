@@ -1,5 +1,5 @@
 begin;
-select plan(32);
+select plan(35);
 
 -- Search results are compared whole, so pros left in the local database (an integration run
 -- publishes one) must not count; the transaction rolls this back.
@@ -62,6 +62,10 @@ select is(
      from unnest((select proargnames from pg_proc where oid = 'public.search_pros'::regproc)) n
     where n ilike '%phone%'),
   0, 'search_pros returns no phone column');
+select is(
+  (select proargnames[array_upper(proargnames, 1)]
+     from pg_proc where oid = 'public.search_pros'::regproc),
+  'live', 'search_pros ends with the live column');
 
 -- Men customer ----------------------------------------------------------------------------------
 
@@ -70,6 +74,10 @@ select results_eq(
   $$ select display_name from public.search_pros() $$,
   $$ values ('Barber Oran'::text), ('Kids Corner'), ('Salon Dégradé') $$,
   'men customer: published men pros only, verified first, then newest');
+select is(
+  (select count(*)::int from public.search_pros() s
+    where jsonb_typeof(s.live) = 'object' and (s.live ->> 'pro_id')::uuid = s.pro_id),
+  3, 'each row carries its own pro''s live object');
 select results_eq(
   $$ select display_name from public.search_pros(p_kids => true) $$,
   $$ values ('Barber Oran'::text), ('Kids Corner') $$,
@@ -151,6 +159,10 @@ select results_eq(
   $$ select display_name from public.search_pros() $$,
   $$ values ('Lina Beauty'::text) $$,
   'women customer: only the women pro');
+select results_eq(
+  $$ select s.live ->> 'pro_id' from public.search_pros() s $$,
+  format($$ values (%L::text) $$, current_setting('t.w1')),
+  'women customer: the only live object is the women pro''s');
 select is(public.pro_contact_phone(current_setting('t.m1')::uuid), null,
   'a women customer gets no phone of a men pro');
 select is(

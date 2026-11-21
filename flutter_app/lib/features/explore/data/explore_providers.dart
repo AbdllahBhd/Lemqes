@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../account/data/account.dart';
 import '../../account/data/account_providers.dart';
+import '../../live/data/live_providers.dart';
 import '../../pro/data/pro_models.dart';
 import 'explore_api.dart';
 import 'explore_models.dart';
@@ -178,7 +179,12 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
     final page = await ref
         .read(exploreRepositoryProvider)
         .search(query, offset: 0, limit: exploreRepositoryPageSize);
-    if (generation == _generation) _listQuery = query;
+    if (generation == _generation) {
+      _listQuery = query;
+      // A superseded search may belong to the previous space: its
+      // snapshots must not outlive the channels' reset.
+      _seedLive(page);
+    }
     return ExploreResults(
       items: page,
       space: space,
@@ -187,6 +193,16 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
   }
 
   static const _empty = ExploreResults(items: [], hasMore: false);
+
+  /// Cards show their live line at once; channels only refresh it. A seed
+  /// older than what the channels hold is ignored there.
+  void _seedLive(List<ProCard> page) {
+    final channels = ref.read(liveChannelsProvider);
+    for (final card in page) {
+      final live = card.live;
+      if (live != null) channels.seed(live);
+    }
+  }
 
   Future<void> loadMore() async {
     // While a new search loads, the list on screen belongs to the old one.
@@ -212,6 +228,7 @@ class ExploreResultsController extends AsyncNotifier<ExploreResults> {
             limit: exploreRepositoryPageSize,
           );
       if (!ref.mounted || generation != _generation) return;
+      _seedLive(page);
       state = AsyncData(
         ExploreResults(
           items: [...current.items, ...page],

@@ -24,10 +24,10 @@ String _hm(TimeOfDay t) =>
     '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
 /// The weekly opening hours, Saturday first. A weekday missing from [week] is
-/// closed; today (from [clock]) sits on the pill tint and carries a tag, so
+/// closed; today (from [clock], the country's wall clock) sits on the pill tint and carries a tag, so
 /// it never relies on colour alone.
 class HoursTable extends StatelessWidget {
-  const HoursTable({super.key, required this.week, this.clock = DateTime.now});
+  const HoursTable({super.key, required this.week, required this.clock});
 
   final List<DayHours> week;
   final DateTime Function() clock;

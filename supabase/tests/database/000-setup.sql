@@ -1,4 +1,5 @@
--- Persists in the local DB (no begin/rollback); `supabase db reset` wipes it and it reruns first.
+-- Persists for the run (no begin/rollback): every later file uses the tests schema, and
+-- 999-teardown.sql drops it at the end so freeze_now/set_hours never outlive the suite.
 create extension if not exists pgtap with schema extensions;
 create schema if not exists tests;
 
@@ -140,9 +141,45 @@ exception when others then
 end;
 $$;
 
+-- Freezes public.live_now() at `ts` by redefining it; the redefinition is transactional, so it
+-- rolls back with the test (never a GUC: a client could set one). Security definer so a test can
+-- call it while acting as a client role. Dynamic SQL: live_now() comes from a later migration.
+create or replace function tests.freeze_now(ts timestamptz)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  execute format(
+    'create or replace function public.live_now() returns timestamptz language sql stable '
+    'set search_path = '''' as %L',
+    format('select %L::timestamptz', ts)
+  );
+end;
+$$;
+
+-- Sets one weekday's hours (no break) for a pro, replacing any existing row for that day.
+create or replace function tests.set_hours(pro uuid, weekday int, opens time, closes time)
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  insert into public.pro_hours (pro_id, weekday, opens, closes)
+  values (pro, weekday, opens, closes)
+  on conflict on constraint pro_hours_pkey do update
+    set opens = excluded.opens, closes = excluded.closes, break_start = null, break_end = null;
+end;
+$$;
+
 -- Test-only schema (never shipped): tests switch to these roles and must still reach the helpers.
 grant usage on schema tests to anon, authenticated;
 grant execute on all functions in schema tests to anon, authenticated;
+-- freeze_now runs as its owner: only the authenticated test role may reach it.
+revoke execute on function tests.freeze_now(timestamptz) from public, anon;
+-- set_hours is a definer too: tests call it as authenticated or postgres, never as anon.
+revoke execute on function tests.set_hours(uuid, int, time, time) from public, anon;
 
 select plan(1);
 select has_schema('tests');

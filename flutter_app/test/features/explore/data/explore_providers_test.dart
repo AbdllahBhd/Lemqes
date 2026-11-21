@@ -7,9 +7,13 @@ import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/explore/data/explore_models.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/data/explore_repository.dart';
+import 'package:lemqes/features/live/data/live_models.dart';
+import 'package:lemqes/features/live/data/live_providers.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../live/data/live_fakes.dart';
 
 class _MockRepo extends Mock implements ExploreRepository {}
 
@@ -33,6 +37,7 @@ ProCard _card(int i) => ProCard(
   displayName: 'Pro $i',
   workplaceType: WorkplaceType.salon,
   isVerified: false,
+  live: LiveSnapshot.fromJson(live('p$i')),
 );
 
 List<ProCard> _page(int from, int n) => [
@@ -43,6 +48,7 @@ void main() {
   late _MockRepo repo;
   late ProviderContainer container;
   late StreamController<Session?> sessions;
+  late FakeFactory factory;
 
   setUpAll(() => registerFallbackValue(const ExploreQuery()));
 
@@ -53,6 +59,7 @@ void main() {
         exploreDebounceProvider.overrideWithValue(debounce),
         accountProvider.overrideWith(_FakeAccount.new),
         sessionProvider.overrideWith((ref) => sessions.stream),
+        liveChannelFactoryProvider.overrideWithValue(factory.call),
       ],
     );
     addTearDown(c.dispose);
@@ -61,6 +68,7 @@ void main() {
   }
 
   setUp(() {
+    factory = FakeFactory();
     sessions = StreamController<Session?>.broadcast();
     addTearDown(sessions.close);
     repo = _MockRepo();
@@ -274,6 +282,76 @@ void main() {
     );
     gate.complete(_page(0, 30));
   });
+
+  test('ProCard reads the live object, or none', () {
+    final row = {
+      'pro_id': 'p1',
+      'kind': 'barber',
+      'display_name': 'Pro 1',
+      'avatar_path': null,
+      'workplace_type': 'salon',
+      'is_verified': false,
+    };
+    expect(ProCard.fromRow(row).live, isNull);
+    final card = ProCard.fromRow({...row, 'live': live('p1')});
+    expect(card.live, LiveSnapshot.fromJson(live('p1')));
+  });
+
+  test(
+    'results seed each card\'s live view before any channel answers',
+    () async {
+      container = make();
+      await container.read(exploreResultsProvider.future);
+      final sub = container.listen(proLiveProvider('p3'), (_, _) {});
+      await Future<void>.delayed(Duration.zero);
+      expect(sub.read().requireValue.snapshot, _card(3).live);
+
+      await container.read(exploreResultsProvider.notifier).loadMore();
+      final next = container.listen(proLiveProvider('p31'), (_, _) {});
+      await Future<void>.delayed(Duration.zero);
+      expect(next.read().requireValue.snapshot, _card(31).live);
+      sub.close();
+      next.close();
+    },
+  );
+
+  test(
+    'a men search answering after a switch to women seeds nothing',
+    () async {
+      final men = Completer<List<ProCard>>();
+      var calls = 0;
+      when(
+        () => repo.search(
+          any(),
+          offset: any(named: 'offset'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) {
+        // The first search is the men one; later ones are women's.
+        if (calls++ == 0) return men.future;
+        return Future.value([_card(100)]);
+      });
+      container = make();
+      await container.read(accountProvider.future);
+      container.read(exploreResultsProvider);
+      await container.pump();
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 1);
+
+      container.read(accountProvider.notifier).state = AsyncData(
+        _account(Space.women),
+      );
+      await container.pump();
+      final women = await container.read(exploreResultsProvider.future);
+      men.complete(_page(0, 30));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(women.space, Space.women);
+      final channels = container.read(liveChannelsProvider);
+      expect(channels.latest('p100'), isNotNull);
+      expect(channels.latest('p0'), isNull);
+    },
+  );
 
   test('loadMore pages the query its list came from', () async {
     container = make();

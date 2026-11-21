@@ -19,6 +19,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/presentation/harness.dart';
+import '../../live/presentation/today/today_harness.dart'
+    show quietLiveOverrides;
 import '../../explore/presentation/explore_harness.dart'
     show
         FakeExploreRepository,
@@ -99,6 +101,8 @@ Future<HomeHarness> pumpHome(
       proRepositoryProvider.overrideWithValue(PublicProRepository()),
       photoUploaderProvider.overrideWithValue(FakePhotoUploader()),
       geoRepositoryProvider.overrideWithValue(FakeGeoRepository()),
+      // A pro lands on the Today tab, which reads live state.
+      ...quietLiveOverrides(),
     ],
   );
   addTearDown(container.dispose);

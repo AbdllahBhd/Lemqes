@@ -11,6 +11,7 @@ import '../../../core/l10n/gen/app_localizations.dart';
 import '../../../core/l10n/locale_controller.dart';
 import '../../../core/theme/lemqes_tokens.dart';
 import '../../../core/theme/lemqes_typography.dart';
+import '../../../core/time/clock_providers.dart';
 import '../../../shared/widgets/hours_table.dart';
 import '../../../shared/widgets/lagoon_header_band.dart';
 import '../../../shared/widgets/lemqes_primary_button.dart';
@@ -21,6 +22,10 @@ import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account_providers.dart';
 import '../../auth/presentation/auth_widgets.dart' show formatAlgerianPhone;
 import '../../geo/data/geo_providers.dart';
+import '../../live/presentation/customer/join_queue_sheet.dart';
+import '../../live/data/live_providers.dart';
+import '../../live/presentation/customer/live_block.dart';
+import '../../live/presentation/customer/live_ring.dart';
 import '../../pro/data/photo_uploader.dart';
 import '../../pro/data/pro_models.dart';
 import '../../pro/data/pro_providers.dart';
@@ -71,9 +76,6 @@ final phoneLauncherProvider = Provider<Future<bool> Function(Uri)>(
   (_) => launchUrl,
 );
 
-/// "Today" for the hours table; overridable for stable goldens.
-final profileClockProvider = Provider<DateTime Function()>((_) => DateTime.now);
-
 /// The experience band (b0..b3) that `proPublicExperience` words a year
 /// count in.
 int experienceBandOf(int years) => switch (years) {
@@ -108,12 +110,24 @@ class ProPublicProfileScreen extends ConsumerWidget {
       AsyncValue(hasError: true) => _PhoneUnavailableBar(
         onRetry: () => ref.invalidate(proContactPhoneProvider(proId)),
       ),
-      AsyncValue(value: final String number) => _CallBar(phone: number),
+      AsyncValue(value: final String number) => _CallBar(
+        phone: number,
+        // One primary action leads: the live block's, when it has one.
+        primary: !liveBlockOffersAction(
+          ref,
+          proId,
+          hasServices: profile!.services.isNotEmpty,
+        ),
+      ),
       _ => null,
     };
 
     if (!state.hasError && profile != null) {
-      return ProPublicProfileView(profile: profile, bottomBar: callBar);
+      return ProPublicProfileView(
+        profile: profile,
+        bottomBar: callBar,
+        asCustomer: true,
+      );
     }
 
     final Widget body;
@@ -157,6 +171,7 @@ class ProPublicProfileView extends StatelessWidget {
   const ProPublicProfileView({
     required this.profile,
     this.marker,
+    required this.asCustomer,
     this.bottomBar,
     super.key,
   });
@@ -165,12 +180,21 @@ class ProPublicProfileView extends StatelessWidget {
   final Widget? marker;
   final Widget? bottomBar;
 
+  /// A customer's view: the live block and the hero ring follow the
+  /// customer channel, and the block offers the join. The owner's preview
+  /// passes false: both read the owner's own channel, with nothing to tap.
+  final bool asCustomer;
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        body: _ProfileBody(profile: profile, marker: marker),
+        body: _ProfileBody(
+          profile: profile,
+          marker: marker,
+          asCustomer: asCustomer,
+        ),
         bottomNavigationBar: bottomBar,
       ),
     );
@@ -233,9 +257,14 @@ class _StatePage extends StatelessWidget {
 }
 
 class _ProfileBody extends StatelessWidget {
-  const _ProfileBody({required this.profile, this.marker});
+  const _ProfileBody({
+    required this.profile,
+    required this.asCustomer,
+    this.marker,
+  });
 
   final ProProfile profile;
+  final bool asCustomer;
   final Widget? marker;
 
   @override
@@ -253,7 +282,7 @@ class _ProfileBody extends StatelessWidget {
             height: _bandHeight(context) + LagoonHeaderBand.overlapRise,
             overlap: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _Hero(profile: p),
+              child: _Hero(profile: p, asCustomer: asCustomer),
             ),
             child: _BackRow(marker: marker),
           ),
@@ -263,6 +292,12 @@ class _ProfileBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: asCustomer
+                      ? _CustomerLiveBlock(profile: p)
+                      : LiveBlock.owner(proId: p.id),
+                ),
                 if (hasBio || mix != null)
                   _Section(
                     title: l10n.proPublicAbout,
@@ -345,9 +380,10 @@ class _Section extends StatelessWidget {
 }
 
 class _Hero extends ConsumerStatefulWidget {
-  const _Hero({required this.profile});
+  const _Hero({required this.profile, required this.asCustomer});
 
   final ProProfile profile;
+  final bool asCustomer;
 
   @override
   ConsumerState<_Hero> createState() => _HeroState();
@@ -402,7 +438,20 @@ class _HeroState extends ConsumerState<_Hero> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ProAvatar(name: p.displayName, path: p.avatarPath, size: 72),
+            LiveRing(
+              view: ref
+                  .watch(
+                    widget.asCustomer
+                        ? proLiveProvider(p.id)
+                        : ownProLiveProvider(p.id),
+                  )
+                  .value,
+              child: ProAvatar(
+                name: p.displayName,
+                path: p.avatarPath,
+                size: 72,
+              ),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -524,6 +573,54 @@ class _CustomerMixLine extends StatelessWidget {
   }
 }
 
+/// A service's name as customers read it. Until the presets load (or if
+/// they fail), the category names a preset service rather than its raw key.
+String _serviceName(
+  AppLocalizations l10n,
+  Locale locale,
+  ProService s,
+  Map<String, ServicePreset> byKey,
+) =>
+    s.customName ??
+    byKey[s.presetKey]?.name(locale) ??
+    l10n.serviceCategoryName(s.category.toDb());
+
+Map<String, ServicePreset> _presetsOf(WidgetRef ref, ProProfile p) {
+  final presets = ref
+      .watch(
+        presetsProvider((space: p.space, home: p.kind == ProKind.homeArtist)),
+      )
+      .value;
+  return {for (final s in presets ?? const <ServicePreset>[]) s.key: s};
+}
+
+class _CustomerLiveBlock extends ConsumerWidget {
+  const _CustomerLiveBlock({required this.profile});
+
+  final ProProfile profile;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final locale = Localizations.localeOf(context);
+    final p = profile;
+    final byKey = _presetsOf(ref, p);
+    return LiveBlock.customer(
+      proId: p.id,
+      priceHiddenLabel: l10n.proPriceHidden(p.workplaceType.toDb()),
+      services: [
+        for (final s in p.services)
+          JoinService(
+            id: s.id,
+            name: _serviceName(l10n, locale, s, byKey),
+            durationMin: s.durationMin,
+            priceDzd: s.priceDzd,
+          ),
+      ],
+    );
+  }
+}
+
 class _Services extends ConsumerWidget {
   const _Services({required this.profile});
 
@@ -534,14 +631,7 @@ class _Services extends ConsumerWidget {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context);
     final p = profile;
-    final presets = ref
-        .watch(
-          presetsProvider((space: p.space, home: p.kind == ProKind.homeArtist)),
-        )
-        .value;
-    final byKey = {
-      for (final s in presets ?? const <ServicePreset>[]) s.key: s,
-    };
+    final byKey = _presetsOf(ref, p);
     final divider = Theme.of(context).colorScheme.outlineVariant;
     return Column(
       children: [
@@ -556,18 +646,6 @@ class _Services extends ConsumerWidget {
       ],
     );
   }
-
-  // Until the presets load (or if they fail), the category names a preset
-  // service rather than its raw key.
-  String _serviceName(
-    AppLocalizations l10n,
-    Locale locale,
-    ProService s,
-    Map<String, ServicePreset> byKey,
-  ) =>
-      s.customName ??
-      byKey[s.presetKey]?.name(locale) ??
-      l10n.serviceCategoryName(s.category.toDb());
 }
 
 class _ServiceRow extends StatelessWidget {
@@ -631,7 +709,7 @@ class _Hours extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      HoursTable(week: profile.hours, clock: ref.watch(profileClockProvider));
+      HoursTable(week: profile.hours, clock: ref.watch(countryClockProvider));
 }
 
 class _Photos extends ConsumerWidget {
@@ -717,9 +795,13 @@ class _PhoneUnavailableBar extends StatelessWidget {
 
 /// The one primary action, under the thumb: the number, then the call.
 class _CallBar extends ConsumerWidget {
-  const _CallBar({required this.phone});
+  const _CallBar({required this.phone, required this.primary});
 
   final String phone;
+
+  /// False while the live block offers its own action: the call is then an
+  /// outlined 48 dp button under it.
+  final bool primary;
 
   Future<void> _call(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -760,13 +842,30 @@ class _CallBar extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            LemqesPrimaryButton(
-              key: const Key('callPro'),
-              label: l10n.proPublicCall,
-              icon: Icons.call_outlined,
-              expand: true,
-              onPressed: () => _call(context, ref),
-            ),
+            if (primary)
+              LemqesPrimaryButton(
+                key: const Key('callPro'),
+                label: l10n.proPublicCall,
+                icon: Icons.call_outlined,
+                expand: true,
+                onPressed: () => _call(context, ref),
+              )
+            else
+              OutlinedButton(
+                key: const Key('callPro'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: () => _call(context, ref),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.call_outlined, size: 20),
+                    const SizedBox(width: 8),
+                    Flexible(child: Text(l10n.proPublicCall)),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

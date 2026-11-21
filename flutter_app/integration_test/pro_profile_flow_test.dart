@@ -194,7 +194,8 @@ void main() {
     await shot('setup_hours');
     await _tap(tester, find.byKey(const Key('setupPublish')));
 
-    // Dashboard: published.
+    // Published: the pro home opens on Today; "Mon profil" is the dashboard.
+    await _tap(tester, find.byKey(const Key('proNavProfile')));
     await _waitFor(tester, find.byKey(const Key('visibilityCard')));
     await _waitFor(tester, find.text(l10n.dashboardPublished));
 
@@ -429,6 +430,7 @@ void main() {
 
     // --- The barber makes a contact number public ---------------------------
     await _logIn(tester, _barberPhone);
+    await _tap(tester, find.byKey(const Key('proNavProfile')));
     await _waitFor(tester, find.byKey(const Key('visibilityCard')));
     await _scrollTo(tester, find.byKey(const Key('phone_public')));
     await _tap(tester, find.byKey(const Key('phone_public')));
