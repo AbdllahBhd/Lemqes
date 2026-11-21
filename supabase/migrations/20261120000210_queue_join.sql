@@ -22,17 +22,43 @@
 -- Tables ----------------------------------------------------------------------------------------
 
 -- ticket_label is the owner's label at block time (the customer's full_name): the owner's list
--- of blocks shows it, never the customer id.
+-- of blocks shows it, never the customer id. frozen_*: what the pro's snapshot carried when the
+-- block was made (filled by pro_blocks_freeze); the blocked customer reads these forever, so two
+-- reads an hour apart look like a pro that stayed closed (20261120000300 live_snapshot).
 create table public.pro_blocks (
   id uuid primary key default gen_random_uuid(),
   pro_id uuid not null references public.pro_profiles on delete cascade,
   customer_id uuid not null references public.profiles on delete cascade,
   ticket_label text,
+  frozen_live_version bigint not null,
+  frozen_queue_version bigint not null,
+  frozen_queue_mode public.queue_mode not null,
+  frozen_count_hidden boolean not null,
   created_at timestamptz not null default public.live_now(),
   constraint pro_blocks_pro_customer_key unique (pro_id, customer_id)
 );
 
 create index pro_blocks_customer_idx on public.pro_blocks (customer_id);
+
+create function public.pro_blocks_freeze()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  select l.live_version, l.queue_version, l.queue_mode, l.hide_queue_count
+    into new.frozen_live_version, new.frozen_queue_version, new.frozen_queue_mode,
+         new.frozen_count_hidden
+  from public.pro_live l
+  where l.pro_id = new.pro_id;
+  return new;
+end;
+$$;
+
+create trigger pro_blocks_freeze
+before insert on public.pro_blocks
+for each row execute function public.pro_blocks_freeze();
 
 -- What a customer sees of their own ticket and its pro. position: 0 serving, 1.. waiting, null
 -- once ended; wait_min and ahead_minutes only while waiting. ahead_minutes is the unrounded sum
@@ -544,6 +570,7 @@ for select to authenticated
 using (customer_id = (select auth.uid()));
 
 revoke execute on function
+  public.pro_blocks_freeze(),
   public.live_status_joinable(public.pro_live),
   public.queue_ticket(uuid),
   public.join_customer_check(uuid),
@@ -559,6 +586,7 @@ revoke execute on function
 from public, anon;
 
 revoke execute on function
+  public.pro_blocks_freeze(),
   public.live_status_joinable(public.pro_live),
   public.queue_ticket(uuid),
   public.join_customer_check(uuid),

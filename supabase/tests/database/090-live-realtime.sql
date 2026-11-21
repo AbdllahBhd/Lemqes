@@ -1,5 +1,5 @@
 begin;
-select plan(115);
+select plan(117);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday (create_pro gives Monday
 -- 09:00-18:00); time is frozen at 10:00, then at Tuesday 07:00 for the end-of-day job.
@@ -682,9 +682,13 @@ select ok(
 select is(current_setting('t.blks')::jsonb, current_setting('t.blk')::jsonb,
   'R13 search_pros gives the blocked customer the same closed live object');
 
+-- Blocked while the count was hidden (what the block keeps is what pa showed then).
+delete from public.pro_blocks where pro_id = current_setting('t.pa')::uuid;
 update public.pro_live
    set status = 'open', auto_close_at = '2026-11-23 18:30+01', hide_queue_count = true
  where pro_id = current_setting('t.pa')::uuid;
+insert into public.pro_blocks (pro_id, customer_id, ticket_label)
+values (current_setting('t.pa')::uuid, current_setting('t.d')::uuid, 'Djamel');
 do $$
 begin
   perform set_config('t.blk', tests.seen_by(current_setting('t.d')::uuid, current_setting('t.pa')::uuid)::text, true);
@@ -698,6 +702,47 @@ select is(
   'R13 with the count hidden too, the blocked customer sees the closed pa''s snapshot');
 update public.pro_live set status = 'open', auto_close_at = '2026-11-23 18:30+01'
  where pro_id = current_setting('t.pa')::uuid;
+
+-- What the blocked customer reads does not move, whatever the barber does: two reads look like
+-- a pro that stayed closed (server_now apart).
+create function tests.seen_whole(p_customer uuid, p_pro uuid)
+returns jsonb
+language plpgsql
+as $$
+declare
+  v jsonb;
+begin
+  perform tests.authenticate_as(p_customer);
+  select s.live into v from public.pro_live_snapshots(array[p_pro]) s;
+  perform tests.clear_auth();
+  return v - 'server_now';
+end;
+$$;
+do $$
+begin
+  perform set_config('t.frozen', tests.seen_whole(current_setting('t.d')::uuid, current_setting('t.pa')::uuid)::text, true);
+end;
+$$;
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select count(*) from public.queue_add_walk_in(current_setting('t.pa')::uuid, gen_random_uuid());
+select count(*) from public.queue_add_walk_in(current_setting('t.pa')::uuid, gen_random_uuid());
+select public.set_queue_settings(current_setting('t.pa')::uuid, 'paused', false, gen_random_uuid());
+select public.set_live_status(current_setting('t.pa')::uuid, 'on_break', null, gen_random_uuid());
+select public.set_queue_settings(current_setting('t.pa')::uuid, 'open', null, gen_random_uuid());
+select public.set_live_status(current_setting('t.pa')::uuid, 'open', null, gen_random_uuid());
+do $$ begin perform tests.clear_auth(); end; $$;
+select ok(
+  (select live_version > (current_setting('t.frozen')::jsonb ->> 'live_version')::bigint
+     from public.pro_live where pro_id = current_setting('t.pa')::uuid),
+  'R13 control: the barber''s actions moved pa''s live_version'
+);
+select is(
+  tests.seen_whole(current_setting('t.d')::uuid, current_setting('t.pa')::uuid),
+  current_setting('t.frozen')::jsonb,
+  'R13 the blocked customer''s snapshot is unchanged after walk-ins, pause, a status change '
+  'and a shown count (versions, queue_mode and keys kept from the block)'
+);
+update public.pro_live set hide_queue_count = true where pro_id = current_setting('t.pa')::uuid;
 
 select realtime.send(jsonb_build_object('probe', 3), 'live', 'pro:' || current_setting('t.pa'), true);
 do $$ begin perform tests.authenticate_as(current_setting('t.d')::uuid); end; $$;

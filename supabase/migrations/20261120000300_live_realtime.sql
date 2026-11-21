@@ -37,8 +37,9 @@
 -- serving_duration_min and ahead_minutes count the pro's average for an entry without a service,
 -- as queue_wait_min does.
 -- Closed (effective-closed, or blocked for p_viewer): no times, no age, no queue and no wait,
--- whoever reads it, so a blocked viewer's snapshot is exactly a closed pro's (versions and
--- server_now apart, which stay real). count_hidden (hide_queue_count): the count, ahead_minutes,
+-- whoever reads it, so a blocked viewer's snapshot is exactly a closed pro's. A blocked viewer
+-- also reads the versions, queue_mode and count_hidden frozen on the block (pro_blocks): their
+-- snapshot never moves, as a pro that stayed closed (server_now apart). count_hidden (hide_queue_count): the count, ahead_minutes,
 -- the serving fields and queue_version would recount it exactly, so they are left out and only
 -- wait_min, already rounded up to 5, remains. p_viewer: the reading customer (null for
 -- broadcasts, which every subscriber shares).
@@ -58,6 +59,9 @@ declare
   v_waiting integer;
   v_ahead integer;
   v_closed boolean;
+  v_block public.pro_blocks;
+  v_blocked boolean := false;
+  v_hidden boolean;
   v_snapshot jsonb;
 begin
   select l.* into v_live from public.pro_live l where l.pro_id = p_pro_id;
@@ -67,10 +71,14 @@ begin
   select e.* into v_effective from public.live_effective(v_live) e;
   select p.published_at is not null into v_published
   from public.pro_profiles p where p.id = p_pro_id;
-  v_closed := v_effective.status = 'closed'
-              or (p_viewer is not null and exists (
-                    select 1 from public.pro_blocks b
-                    where b.pro_id = p_pro_id and b.customer_id = p_viewer));
+  if p_viewer is not null then
+    select b.* into v_block
+    from public.pro_blocks b
+    where b.pro_id = p_pro_id and b.customer_id = p_viewer;
+    v_blocked := found;
+  end if;
+  v_closed := v_effective.status = 'closed' or v_blocked;
+  v_hidden := case when v_blocked then v_block.frozen_count_hidden else v_live.hide_queue_count end;
 
   select e.called_at, coalesce(e.duration_min, v_live.avg_service_min)
     into v_serving_called_at, v_serving_duration_min
@@ -91,9 +99,9 @@ begin
     'status_age_from', case when not v_closed then
                          date_bin('5 minutes', v_live.last_activity_at,
                                   timestamptz '2000-01-01 00:00:00+00') end,
-    'queue_mode', v_live.queue_mode,
+    'queue_mode', case when v_blocked then v_block.frozen_queue_mode else v_live.queue_mode end,
     'listed', coalesce(v_published, false),
-    'count_hidden', v_live.hide_queue_count,
+    'count_hidden', v_hidden,
     'join_block', case
                     when v_published is not true or v_closed or v_effective.stale then 'closed'
                     when not public.live_status_joinable(v_live) then 'on_break'
@@ -101,10 +109,11 @@ begin
                     when v_live.queue_mode = 'followers' then 'followers'
                   end,
     'wait_min', case when not v_closed then public.queue_wait_min(p_pro_id, null) end,
-    'live_version', v_live.live_version,
+    'live_version', case when v_blocked then v_block.frozen_live_version
+                         else v_live.live_version end,
     'server_now', public.live_now()
   );
-  if v_live.hide_queue_count then
+  if v_hidden then
     return v_snapshot;
   end if;
   return v_snapshot || jsonb_build_object(
@@ -112,7 +121,8 @@ begin
     'serving_called_at', case when not v_closed then v_serving_called_at end,
     'serving_duration_min', case when not v_closed then v_serving_duration_min end,
     'ahead_minutes', case when not v_closed then v_ahead end,
-    'queue_version', v_live.queue_version
+    'queue_version', case when v_blocked then v_block.frozen_queue_version
+                          else v_live.queue_version end
   );
 end;
 $$;
