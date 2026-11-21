@@ -426,6 +426,31 @@ void main() {
       sub.close();
     });
 
+    providerTest('a ticket that ends rejoins its pro\'s channel', (t, c) async {
+      // A block ends the ticket: the rejoin lets the server refuse the
+      // channel now, so a blocked customer goes fetch-only (closed).
+      when(() => repo.myTicket()).thenAnswer((_) async => ticket());
+      final sub = c.listen(myTicketProvider, (_, _) {});
+      final card = c.listen(proLiveProvider('p1'), (_, _) {});
+      await settle(t);
+      final first = factory.last('p1')..subscribed();
+      first.send(live('p1', version: 3));
+      await settle(t);
+
+      when(() => repo.myTicket()).thenAnswer(
+        (_) async =>
+            ticket(state: 'cancelled', endedAt: '2026-11-20T10:01:00+00:00'),
+      );
+      first.send(live('p1', version: 4));
+      await settle(t);
+      expect(sub.read().requireValue!.state, EntryState.cancelled);
+      expect(first.closed, isTrue);
+      expect(factory.open.map((ch) => ch.topic), ['pro:p1']);
+      expect(identical(factory.last('p1'), first), isFalse);
+      card.close();
+      sub.close();
+    });
+
     providerTest('the first snapshot of its pro refetches once', (t, c) async {
       when(() => repo.myTicket()).thenAnswer((_) async => ticket());
       final sub = c.listen(myTicketProvider, (_, _) {});

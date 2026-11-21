@@ -409,6 +409,11 @@ class MyTicketController extends AsyncNotifier<MyTicket?> {
   // stay quiet.
   ({String proId, (int?, int?) version})? _seen;
 
+  // The pro of the last active ticket: when that ticket ends (a block among
+  // the reasons) its channel is joined again, so the server authorizes it
+  // anew and a blocked customer goes fetch-only.
+  String? _activePro;
+
   @override
   Future<MyTicket?> build() async {
     final (:id, :space) = ref.watch(
@@ -426,6 +431,16 @@ class MyTicketController extends AsyncNotifier<MyTicket?> {
       ref,
       () => ref.read(liveRepositoryProvider).myTicket(),
     );
+    final active =
+        ticket != null &&
+        (ticket.state == EntryState.waiting ||
+            ticket.state == EntryState.serving);
+    final ended = _activePro;
+    if (ended != null && (!active || ticket.proId != ended)) {
+      _activePro = null;
+      ref.read(liveChannelsProvider).rejoin(ended);
+    }
+    if (active) _activePro = ticket.proId;
     if (ticket == null || ticket.proSpace != space.toDb()) return null;
     ref.listen(liveTickerProvider, (previous, next) {
       if (next.hasValue && next.value != previous?.value) ref.invalidateSelf();
