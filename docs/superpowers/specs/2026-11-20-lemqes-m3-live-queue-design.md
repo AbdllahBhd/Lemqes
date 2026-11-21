@@ -65,17 +65,17 @@ Sources: Supabase docs "Broadcast" (`realtime.send(payload, event, topic, privat
 - **Walk-in +1:** one tap → entry "Client N" (ticket number per pro per service day). Optional service and name can be set afterwards. **−1** removes the most recent waiting walk-in (corrects a mis-tap).
 - **Remote join:** a customer picks a service and gets the next place. Allowed only when the pro is listable to them, effective status is open (or on break before the return time), the queue mode is open, and the G1 limits pass. The owner can never join their own queue.
 - **"Je suis en route"** is information for the barber; it never reorders.
-- **"Appeler le suivant"** finishes the current "en cours" entry (served) and moves the first waiting entry to "en cours". **"Terminé"** finishes the current one without calling. **"Absent"** (remote entries) removes them and counts toward the G1 block.
+- **"Appeler le suivant"** finishes the current "en cours" entry (served) and moves the first waiting entry to "en cours". **"Terminé"** finishes the current one without calling. **"Absent"** (remote entries, only once called: on the "en cours" row) removes them and counts toward the G1 block; a waiting entry cannot be absent (`entry_not_called`).
 - **Wait** for a position = remaining time of the "en cours" entry (its duration minus time since it was called, at least 5 min) + durations of the waiting entries ahead. Duration = the service's duration, or the learned average (G4). Shown as "~N min", rounded up to 5.
 - **End of day:** auto-close stops new joins only. Waiting entries stay until the barber serves or clears them ("Vider la file", with confirmation). A daily job at 06:30 Africa/Algiers cancels whatever is left from the previous service day; the customer sees "File fermée par le barbier".
-- **Hide count:** customers see "File ouverte · ~40 min" instead of "3 en attente · ~40 min".
+- **Hide count:** customers see "File ouverte · ~40 min" instead of "3 en attente · ~40 min". The public snapshot then carries only the wait already rounded to 5 min (no count, ahead minutes, serving fields or `queue_version`): nothing that recovers the exact count (amended in the M3 security wave, 2026-11-21).
 - **Queue mode:** Ouvert à tous / Abonnés seulement (= paused until M6) / En pause ("File complète"). Walk-in controls always work.
 
 ### Abuse limits (G1)
 - One active entry (waiting or serving) per customer account, across all pros.
 - At most 5 remote joins per customer per service day.
-- 2 "absent" marks within 7 days block remote joins for 24 h (Claude's call on the 7-day window).
-- A barber can block the account behind a remote entry; a "Clients bloqués" list lets them unblock. A blocked customer's join is refused with a neutral message.
+- 2 "absent" marks within 7 days block remote joins for 24 h (Claude's call on the 7-day window). Only absents marked after a call count.
+- A barber can block the account behind a remote entry; a "Clients bloqués" list lets them unblock. A blocked customer sees the barber as closed (6b).
 - Hosted rate limiting (R3) still applies before any hosted release.
 
 ### Customer surfaces
@@ -95,7 +95,7 @@ Sources: Supabase docs "Broadcast" (`realtime.send(payload, event, topic, privat
 ## 6b. Calls made after the plan review (2026-11-20, Claude's — correct any)
 
 - A break **without** a return time is not joinable; a break whose return time has passed shows "Pause prolongée" and is not joinable.
-- A customer refused because the barber blocked them sees a neutral "Impossible de rejoindre cette file pour le moment" (no block oracle).
+- A customer the barber blocked sees that barber as permanently closed, and nothing else: every fetched snapshot (card, profile, search) is the closed shape a genuinely closed pro gives (no times, age, queue or wait), their channel is refused (the app serves the fetched "Fermé"), and a join is refused `pro_not_open` at the status check, exactly as a closed pro's. No block oracle: no other code, order, key or channel error (amended in the M3 security wave, 2026-11-21; supersedes the neutral "Impossible de rejoindre" message).
 - Status ages are rounded to 5 min (coarse presence; women's-space safety, R14).
 - While a customer's live connection is down, the status line says "Mis à jour il y a X min" instead of a confident status.
 - Cards re-derive closed / stale / break-over / wait locally on a 30 s ticker, because no message is sent when only time passes.
