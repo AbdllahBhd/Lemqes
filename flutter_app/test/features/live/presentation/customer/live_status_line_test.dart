@@ -153,6 +153,29 @@ void main() {
     await unmountLive(tester);
   });
 
+  testWidgets('a refusal after an open message takes the closed fetch at '
+      'the same version', (tester) async {
+    // Open at version 3 on the channel; the barber blocks this customer; the
+    // rejoined channel is refused and the closed fetch says version 3 too.
+    final (live, _) = await _pump(tester);
+    await settleLive(tester);
+    live.broadcast('p1', custLive('p1'));
+    await settleLive(tester);
+    expect(_line(tester), startsWith('Ouvert'));
+    live.repo.server['p1'] = LiveSnapshot.fromJson({
+      ...custLive('p1', status: 'closed', joinBlock: 'closed'),
+      'auto_close_at': null,
+      'status_age_from': null,
+      'waiting_count': null,
+      'wait_min': null,
+      'ahead_minutes': null,
+    });
+    live.factory.last('p1').refuse();
+    await settleLive(tester);
+    expect(_line(tester), 'Fermé');
+    await unmountLive(tester);
+  });
+
   testWidgets('no barber action for 2 h reads "Statut incertain", muted', (
     tester,
   ) async {

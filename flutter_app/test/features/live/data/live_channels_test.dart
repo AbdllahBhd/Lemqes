@@ -419,18 +419,60 @@ void main() {
     expect(late.first.status, LiveStatus.closed);
     expect(factory.channels, hasLength(1));
 
-    // Resume and Retry fetch it again (still no channel).
+    // Retry fetches it again, still with no channel (resume tries one: see
+    // the next test).
     final before = fetches.length;
-    channels.refreshAll();
+    channels.retryNow();
     await t.pump(const Duration(milliseconds: 300));
     expect(fetches.length, before + 1);
     expect(fetches.last, ['p1']);
-    channels.retryNow();
-    await t.pump(const Duration(milliseconds: 300));
-    expect(fetches.length, before + 2);
     expect(factory.channels, hasLength(1));
     stop(a);
     stop(b);
+  });
+
+  channelsTest('resume retries a refused pro once (unblocked: live again)', (
+    t,
+  ) async {
+    server['p1'] = snapshot('p1', status: 'closed');
+    final got = <LiveSnapshot>[];
+    final a = channels.watch('p1').listen(got.add);
+    final first = factory.last('p1')..refuse();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(factory.channels, hasLength(1));
+
+    // Still blocked: refused again, still served by the fetch.
+    channels.refreshAll();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(factory.channels, hasLength(2));
+    final second = factory.last('p1');
+    expect(identical(second, first), isFalse);
+    second.refuse();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(got.last.status, LiveStatus.closed);
+
+    // Unblocked meanwhile: the next resume joins and messages flow again.
+    server['p1'] = snapshot('p1', version: 5);
+    channels.refreshAll();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(factory.channels, hasLength(3));
+    factory.last('p1')
+      ..subscribed()
+      ..send(live('p1', version: 6));
+    await t.pump(const Duration(milliseconds: 300));
+    expect(got.last.liveVersion, 6);
+    expect(got.last.status, LiveStatus.open);
+    stop(a);
+  });
+
+  channelsTest('rejoin leaves and joins a pro\'s channel again', (t) async {
+    final a = channels.watch('p1').listen((_) {});
+    final first = factory.last('p1')..subscribed();
+    channels.rejoin('p1');
+    expect(first.closed, isTrue);
+    expect(factory.open.map((c) => c.topic), ['pro:p1']);
+    expect(identical(factory.last('p1'), first), isFalse);
+    stop(a);
   });
 
   channelsTest('Unauthorized, and the fetch says unlisted: unavailable', (

@@ -100,7 +100,9 @@ class _Topic {
 /// * `Unauthorized` means no channel for that pro until [closeAll] (no
 ///   rejoin), not no pro: it is served by fetches only (on attach and on
 ///   resume), as a customer the pro blocked sees it (the server's closed
-///   shape). Only when the fetch does not return the pro (another space,
+///   shape, whose versions are frozen at the block: a fetch-only pro takes
+///   every fetch, whatever its version). Each resume tries its channel again
+///   once, so an unblocked customer goes live again. Only when the fetch does not return the pro (another space,
 ///   unpublished) is it [LiveUnavailable] for everyone. A snapshot saying
 ///   `listed: false` is [LiveUnavailable] for customers only: the owner's
 ///   listeners ([watch] with `own`) keep receiving and fetching their pro.
@@ -219,8 +221,36 @@ class LiveChannels {
     }
   }
 
-  /// Re-fetches every watched pro (app resume).
+  /// Leaves [proId]'s channel and joins it again through the normal path,
+  /// so the server authorizes it anew: a block since the join is then
+  /// refused (fetch-only, closed). With nobody listening the topic simply
+  /// goes, and the next listener joins fresh.
+  void rejoin(String proId) {
+    if (_disposed || _suspended) return;
+    _unauthorized.remove(proId);
+    final t = _topics[proId];
+    if (t == null) return;
+    if (t.sinks.isEmpty) {
+      _removeTopic(t);
+      _promote();
+      return;
+    }
+    t.retry?.cancel();
+    t.retry = null;
+    _closeChannel(t);
+    if (_rejoinTimer == null) _open(t);
+  }
+
+  /// Re-fetches every watched pro (app resume), and joins each refused
+  /// one again once: a block lifted meanwhile is live again, a block still
+  /// there is just refused again.
   void refreshAll() {
+    final refused = [..._unauthorized];
+    _unauthorized.clear();
+    for (final id in refused) {
+      final t = _topics[id];
+      if (t != null && t.sinks.isNotEmpty && _rejoinTimer == null) _open(t);
+    }
     for (final t in _topics.values) {
       if (_mayFetch(t)) _queueFetch(t.proId);
     }
@@ -442,10 +472,12 @@ class LiveChannels {
     }
   }
 
-  /// No channel for this pro from now on: its listeners keep what they hold
-  /// and get one fetch; the fetch decides between served and gone.
+  /// No channel for this pro from now on: its listeners keep what they show
+  /// and get one fetch; the fetch decides between served and gone. The held
+  /// snapshot is forgotten: the fetch replaces it whatever its version.
   void _refused(_Topic t) {
     _unauthorized.add(t.proId);
+    _held.remove(t.proId);
     if (t.sinks.isEmpty) {
       _removeTopic(t);
       _promote();
@@ -540,7 +572,12 @@ class LiveChannels {
   bool _apply(LiveSnapshot s) {
     if (_disposed || _gone.contains(s.proId)) return false;
     final held = _held[s.proId];
-    if (held != null && !s.isNewerThan(held)) return false;
+    // A fetch-only pro gets no message to order: each fetch is the state.
+    if (held != null &&
+        !s.isNewerThan(held) &&
+        !_unauthorized.contains(s.proId)) {
+      return false;
+    }
     final t = _topics[s.proId];
     final hasOwn = t != null && t.own.isNotEmpty;
     if (!s.listed) {
