@@ -1,5 +1,5 @@
 begin;
-select plan(114);
+select plan(118);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday; time starts frozen at 10:00.
 -- pa (Salon Amine) is where customers join; pb (Salon Bilal) carries the J1 status fixtures and
@@ -730,6 +730,46 @@ do $$ begin perform tests.authenticate_as(current_setting('t.y')::uuid); end; $$
 select lives_ok(
   format($$ select * from public.join_queue(%L, null, gen_random_uuid()) $$, current_setting('t.pb')),
   'J13 open pro: an unblocked customer joins');
+
+-- J14 -----------------------------------------------------------------------------------------
+-- y waits at pb (J13) and has an older, ended entry there: blocking through the old entry ends
+-- the waiting one too, 'cleared', with one broadcast.
+do $$ begin perform tests.clear_auth(); end; $$;
+insert into public.queue_entries
+  (pro_id, served_by, ticket_no, service_day, kind, customer_id, state, called_at, ended_at)
+values (current_setting('t.pb')::uuid, current_setting('t.pb')::uuid, 930, '2026-11-22', 'remote',
+        current_setting('t.y')::uuid, 'absent', '2026-11-22 09:50+01', '2026-11-22 10:00+01');
+do $$
+begin
+  perform set_config('t.yold', (select id::text from public.queue_entries
+                                 where customer_id = current_setting('t.y')::uuid and ticket_no = 930), true);
+  perform set_config('t.ynew', (select id::text from public.queue_entries
+                                 where customer_id = current_setting('t.y')::uuid
+                                   and state = 'waiting'), true);
+end;
+$$;
+delete from realtime.messages;
+do $$ begin perform tests.authenticate_as(current_setting('t.b')::uuid); end; $$;
+select count(*) from public.queue_block(current_setting('t.yold')::uuid, gen_random_uuid());
+do $$ begin perform tests.clear_auth(); end; $$;
+select ok(
+  (select state = 'cancelled' and end_reason = 'cleared' and ended_at is not null
+     from public.queue_entries where id = current_setting('t.ynew')::uuid),
+  'J14 blocking through an old entry ends the customer''s active entry at that pro, cleared'
+);
+select ok(
+  (select state = 'absent' and end_reason is null
+     from public.queue_entries where id = current_setting('t.yold')::uuid),
+  'J14 the old ended entry is left as it was'
+);
+select is((select count(*)::int from realtime.messages), 1, 'J14 one broadcast for the block');
+do $$ begin perform tests.authenticate_as(current_setting('t.y')::uuid); end; $$;
+select ok(
+  (select entry_id = current_setting('t.ynew')::uuid and state = 'cancelled' and end_reason = 'cleared'
+     from public.my_ticket()),
+  'J14 my_ticket shows the ended entry as cleared'
+);
+do $$ begin perform tests.clear_auth(); end; $$;
 
 -- J12 -----------------------------------------------------------------------------------------
 do $$ begin perform tests.authenticate_as_anon(); end; $$;

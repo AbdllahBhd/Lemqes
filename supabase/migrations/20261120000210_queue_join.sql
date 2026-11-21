@@ -424,8 +424,10 @@ end;
 $$;
 
 -- Blocks the customer of a remote entry from this pro's queue (any state: an absent customer can
--- be blocked afterwards) and cancels the entry 'cleared' when it is still active. An entry whose
--- customer deleted the account has nobody left to block.
+-- be blocked afterwards) and cancels 'cleared' the entry when still active and every other active
+-- entry of that customer at this pro (blocked from an old entry while they wait again): a blocked
+-- customer holds no live ticket at a pro they read as closed. An entry whose customer deleted the
+-- account has nobody left to block.
 create function public.queue_block(p_entry_id uuid, p_request_id uuid)
 returns setof public.owner_queue_row
 language plpgsql
@@ -434,7 +436,7 @@ set search_path = ''
 as $$
 declare
   v_entry public.queue_entries;
-  v_cancelled boolean := false;
+  v_cancelled integer;
 begin
   select e.* into v_entry
   from public.queue_entries e
@@ -463,15 +465,14 @@ begin
     on conflict on constraint pro_blocks_pro_customer_key do nothing;
   end if;
 
-  if v_entry.state in ('waiting', 'serving') then
-    update public.queue_entries e
-       set state = 'cancelled', end_reason = 'cleared', ended_at = public.live_now()
-     where e.id = p_entry_id;
-    v_cancelled := true;
-  end if;
+  update public.queue_entries e
+     set state = 'cancelled', end_reason = 'cleared', ended_at = public.live_now()
+   where e.pro_id = v_entry.pro_id and e.kind = 'remote' and e.state in ('waiting', 'serving')
+     and (e.id = p_entry_id or e.customer_id = v_entry.customer_id);
+  get diagnostics v_cancelled = row_count;
 
   perform public.live_touch(v_entry.pro_id);
-  perform public.live_broadcast(v_entry.pro_id, v_cancelled);
+  perform public.live_broadcast(v_entry.pro_id, v_cancelled > 0);
   return query select * from public.owner_queue(v_entry.pro_id);
 end;
 $$;
