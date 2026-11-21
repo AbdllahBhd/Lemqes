@@ -183,10 +183,12 @@ void main() {
       customer.close();
     });
 
-    providerTest('a refused channel makes the pro unavailable', (t, c) async {
+    providerTest('a refused channel the fetch does not return makes the pro '
+        'unavailable', (t, c) async {
       final sub = c.listen(proLiveProvider('p1'), (_, _) {});
       await settle(t);
       factory.last('p1').refuse();
+      await t.pump(const Duration(milliseconds: 300));
       await settle(t);
       expect(sub.read().error, isA<LiveUnavailable>());
       // A refusal is not a disconnection.
@@ -227,6 +229,28 @@ void main() {
       when(() => repo.ownerQueue('p1'))
           .thenAnswer((_) async => [row(1), row(2)]);
       ch.send(live('p1', version: 5, serverNow: '2026-11-20T10:02:00+00:00'));
+      await settle(t);
+      verify(() => repo.ownerQueue('p1')).called(1);
+      expect(sub.read().requireValue.rows, hasLength(2));
+      sub.close();
+    });
+
+    providerTest('with the count hidden, refetches on every broadcast', (
+      t,
+      c,
+    ) async {
+      when(() => repo.ownerQueue('p1')).thenAnswer((_) async => [row(1)]);
+      final sub = c.listen(ownerQueueProvider('p1'), (_, _) {});
+      await settle(t);
+      final ch = factory.last('p1');
+      ch.send(hiddenLive('p1', version: 3));
+      await settle(t);
+      clearInteractions(repo);
+
+      // No queue_version to tell a queue change from a status one.
+      when(() => repo.ownerQueue('p1'))
+          .thenAnswer((_) async => [row(1), row(2)]);
+      ch.send(hiddenLive('p1', version: 4));
       await settle(t);
       verify(() => repo.ownerQueue('p1')).called(1);
       expect(sub.read().requireValue.rows, hasLength(2));
@@ -379,6 +403,24 @@ void main() {
       verify(() => repo.myTicket()).called(1);
 
       resumes.add(null);
+      await settle(t);
+      verify(() => repo.myTicket()).called(1);
+      sub.close();
+    });
+
+    providerTest('with the count hidden, refetches on live_version', (
+      t,
+      c,
+    ) async {
+      when(() => repo.myTicket()).thenAnswer((_) async => ticket());
+      final sub = c.listen(myTicketProvider, (_, _) {});
+      await settle(t);
+      final ch = factory.last('p1');
+      ch.send(hiddenLive('p1', version: 3));
+      await settle(t);
+      clearInteractions(repo);
+
+      ch.send(hiddenLive('p1', version: 4));
       await settle(t);
       verify(() => repo.myTicket()).called(1);
       sub.close();

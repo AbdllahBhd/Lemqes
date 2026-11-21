@@ -78,6 +78,16 @@ Map<String, Object?> live(
   'listed': listed,
 };
 
+/// [live] with the count hidden: what the server leaves out (every input
+/// that would recount it) is gone, only the rounded wait remains.
+Map<String, Object?> hiddenLive(String proId, {int version = 3}) =>
+    {...live(proId, version: version), 'count_hidden': true}
+      ..remove('waiting_count')
+      ..remove('ahead_minutes')
+      ..remove('serving_called_at')
+      ..remove('serving_duration_min')
+      ..remove('queue_version');
+
 LiveSnapshot snapshot(
   String proId, {
   int version = 3,

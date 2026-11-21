@@ -87,6 +87,7 @@ LiveSnapshot ownSnapshot({
   bool listed = true,
   int version = 1,
   DateTime? statusAgeFrom,
+  bool countHidden = false,
 }) => LiveSnapshot(
   proId: proId,
   status: status,
@@ -96,12 +97,13 @@ LiveSnapshot ownSnapshot({
   queueMode: mode,
   listed: listed,
   joinBlock: null,
-  waitingCount: waitingCount,
+  countHidden: countHidden,
+  waitingCount: countHidden ? null : waitingCount,
   waitMin: waitMin,
   servingCalledAt: null,
   servingDurationMin: null,
   aheadMinutes: waitMin ?? 0,
-  queueVersion: version,
+  queueVersion: countHidden ? null : version,
   liveVersion: version,
   serverNow: testNow,
 );

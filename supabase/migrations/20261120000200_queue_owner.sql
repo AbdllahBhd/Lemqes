@@ -442,8 +442,10 @@ begin
 end;
 $$;
 
--- A remote customer who did not show up (waiting or called). Walk-ins are in front of the
--- barber: they are undone or cleared instead.
+-- A remote customer who did not show up once called (serving, called_at set): only then has the
+-- barber seen them missing, and only such absents count toward absent_block (20261120000210). A
+-- waiting entry is entry_not_called. Walk-ins are in front of the barber: they are undone or
+-- cleared instead.
 create function public.queue_mark_absent(p_entry_id uuid, p_request_id uuid)
 returns setof public.owner_queue_row
 language plpgsql
@@ -473,6 +475,9 @@ begin
   end if;
   if v_entry.state not in ('waiting', 'serving') then
     raise exception 'entry_not_active';
+  end if;
+  if v_entry.called_at is null then
+    raise exception 'entry_not_called';
   end if;
 
   update public.queue_entries e

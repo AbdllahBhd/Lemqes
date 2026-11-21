@@ -101,25 +101,46 @@ void main() {
         .called(1);
   });
 
-  testWidgets('a remote sheet: no name field, absent and block confirm', (
-    t,
-  ) async {
+  testWidgets('a waiting remote sheet: no name field, no absent, block '
+      'confirms', (t) async {
     final repo = stubbed(fourEntries());
     await pumpToday(t, repo: repo, snapshot: openSnapshot());
     await tapKey(t, 'queueRow_e3');
     expect(find.byKey(const Key('entryName')), findsNothing);
-    expect(find.byKey(const Key('entryAbsent')), findsOneWidget);
+    // Not called yet: nobody can be missing.
+    expect(find.byKey(const Key('entryAbsent')), findsNothing);
 
-    await tapKey(t, 'entryAbsent');
-    expect(find.text(fr.todayAbsentTitle), findsOneWidget);
-    await tapKey(t, 'confirmAction');
-    verify(() => repo.markAbsent('e3')).called(1);
-
-    await tapKey(t, 'queueRow_e3');
     await tapKey(t, 'entryBlock');
     expect(find.text(fr.todayBlockTitle), findsOneWidget);
     await tapKey(t, 'confirmCancel');
     verifyNever(() => repo.block(any()));
+    verifyNever(() => repo.markAbsent(any()));
+  });
+
+  testWidgets('the called remote customer is marked absent from "En cours"', (
+    t,
+  ) async {
+    final rows = [
+      entry(
+        1,
+        kind: QueueKind.remote,
+        label: 'Karim M.',
+        state: EntryState.serving,
+      ),
+      entry(2, position: 1),
+    ];
+    final repo = stubbed(rows);
+    await pumpToday(t, repo: repo, snapshot: openSnapshot());
+    await tapKey(t, 'servingAbsent');
+    expect(find.text(fr.todayAbsentTitle), findsOneWidget);
+    await tapKey(t, 'confirmAction');
+    verify(() => repo.markAbsent('e1')).called(1);
+  });
+
+  testWidgets('a walk-in in the chair offers no absent', (t) async {
+    await pumpToday(t, repo: stubbed(fourEntries()), snapshot: openSnapshot());
+    expect(find.text('Sami B.'), findsOneWidget);
+    expect(find.byKey(const Key('servingAbsent')), findsNothing);
   });
 
   testWidgets('Arabic at 200 % text: the sheet does not overflow', (t) async {

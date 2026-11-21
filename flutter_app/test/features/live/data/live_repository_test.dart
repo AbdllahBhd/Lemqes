@@ -52,9 +52,9 @@ void main() {
     'already_in_queue': isA<AlreadyInQueue>(),
     'join_limit_reached': isA<JoinLimitReached>(),
     'absent_block': isA<AbsentBlock>(),
-    'join_unavailable': isA<JoinUnavailable>(),
     'too_many_ids': isA<TooManyIds>(),
     'entry_not_active': isA<EntryNotActive>(),
+    'entry_not_called': isA<EntryNotCalled>(),
   };
 
   for (final e in codes.entries) {

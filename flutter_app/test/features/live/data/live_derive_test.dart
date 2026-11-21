@@ -13,6 +13,7 @@ LiveSnapshot snap({
   int servingDuration = 20,
   int ahead = 0,
   int? wait,
+  bool countHidden = false,
 }) => LiveSnapshot(
   proId: 'p1',
   status: status,
@@ -22,7 +23,8 @@ LiveSnapshot snap({
   queueMode: QueueMode.open,
   listed: true,
   joinBlock: null,
-  waitingCount: 1,
+  countHidden: countHidden,
+  waitingCount: countHidden ? null : 1,
   waitMin: wait,
   servingCalledAt: servingCalledAt,
   servingDurationMin: servingCalledAt == null ? null : servingDuration,
@@ -94,6 +96,25 @@ void main() {
     expect(derive(snap(), t0).waitMin, isNull);
   });
 
+  test('a hidden count shows the server\'s rounded wait, never recounted', () {
+    // What a hidden-count snapshot carries: wait_min only, no inputs.
+    final s = snap(wait: 40, countHidden: true);
+    expect(derive(s, t0).waitMin, 40);
+    expect(derive(s, t0.add(const Duration(minutes: 25))).waitMin, 40);
+  });
+
+  test('a closed snapshot without an age reads closed, never stale', () {
+    final s = LiveSnapshot.fromJson({
+      ..._closedJson,
+      'server_now': t0.toIso8601String(),
+    });
+    final later = derive(s, t0.add(const Duration(hours: 5)));
+    expect(later.status, LiveStatus.closed);
+    expect(later.stale, isFalse);
+    expect(later.age, Duration.zero);
+    expect(later.waitMin, isNull);
+  });
+
   test('age uses the server clock passed in', () {
     final s = snap(ageFrom: t0);
     expect(
@@ -138,8 +159,31 @@ void main() {
 
     test('falls back to the fetched wait without a snapshot or inputs', () {
       expect(ticketWait(ticket(), null, t0), 30);
+      // Hidden count: the pro's snapshot carries no chair to recount.
+      expect(ticketWait(ticket(), snap(wait: 40, countHidden: true), t0), 30);
       expect(ticketWait(ticket(ahead: null), snap(), t0), 30);
       expect(ticketWait(ticket(state: 'serving'), snap(), t0), isNull);
     });
   });
 }
+
+/// A closed pro as the server sends it (and as a blocked customer reads any
+/// pro that blocked them): no times, age, queue or wait.
+const _closedJson = <String, Object?>{
+  'pro_id': 'p1',
+  'status': 'closed',
+  'break_until': null,
+  'auto_close_at': null,
+  'status_age_from': null,
+  'queue_mode': 'open',
+  'listed': true,
+  'count_hidden': false,
+  'join_block': 'closed',
+  'waiting_count': null,
+  'wait_min': null,
+  'serving_called_at': null,
+  'serving_duration_min': null,
+  'ahead_minutes': null,
+  'queue_version': 4,
+  'live_version': 9,
+};

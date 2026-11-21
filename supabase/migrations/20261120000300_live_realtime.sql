@@ -5,6 +5,10 @@
 --     search_pros (live), in pro_live_snapshots and in every broadcast. It carries no name, no
 --     customer and no phone, and never a top-level id (realtime.send keeps an existing id and the
 --     message id would be lost; spike finding b).
+--   * A customer the pro blocked sees it permanently closed, and nothing else: their reads
+--     (pro_live_snapshots, search_pros) get the closed shape a genuinely closed pro gives, their
+--     channel is refused (so the real broadcasts never reach them), and join_queue refuses them
+--     pro_not_open (20261120000210).
 --   * live_broadcast sends it with realtime.send(..., private => true) on topic pro:<id>; a
 --     public send can be read by any client in any space (spike finding c). Every RPC and job
 --     calls it once, last; the one trigger is on pro_profiles, which clients update directly.
@@ -26,12 +30,19 @@
 -- status is the effective status (closed once auto_close_at passed); break_until and
 -- auto_close_at are raw so the client derives "Pause prolongée" and the close on its own.
 -- join_block: closed (effective-closed, stale or unpublished), on_break (no return time or past
--- it; live_status_joinable), paused, followers, else null. status_age_from = last_activity_at rounded down to 5 min (coarse presence).
+-- it; live_status_joinable), paused, followers, else null. status_age_from = last_activity_at
+-- rounded down to 5 min (coarse presence).
 -- listed = published: an unpublish broadcast tells subscribed customers to drop the pro (the
 -- channel stays authorized until they leave, since authorization is checked at join only).
 -- serving_duration_min and ahead_minutes count the pro's average for an entry without a service,
 -- as queue_wait_min does.
-create function public.live_snapshot(p_pro_id uuid)
+-- Closed (effective-closed, or blocked for p_viewer): no times, no age, no queue and no wait,
+-- whoever reads it, so a blocked viewer's snapshot is exactly a closed pro's (versions and
+-- server_now apart, which stay real). count_hidden (hide_queue_count): the count, ahead_minutes,
+-- the serving fields and queue_version would recount it exactly, so they are left out and only
+-- wait_min, already rounded up to 5, remains. p_viewer: the reading customer (null for
+-- broadcasts, which every subscriber shares).
+create function public.live_snapshot(p_pro_id uuid, p_viewer uuid default null)
 returns jsonb
 language plpgsql
 stable
@@ -46,6 +57,8 @@ declare
   v_serving_duration_min integer;
   v_waiting integer;
   v_ahead integer;
+  v_closed boolean;
+  v_snapshot jsonb;
 begin
   select l.* into v_live from public.pro_live l where l.pro_id = p_pro_id;
   if not found then
@@ -54,6 +67,10 @@ begin
   select e.* into v_effective from public.live_effective(v_live) e;
   select p.published_at is not null into v_published
   from public.pro_profiles p where p.id = p_pro_id;
+  v_closed := v_effective.status = 'closed'
+              or (p_viewer is not null and exists (
+                    select 1 from public.pro_blocks b
+                    where b.pro_id = p_pro_id and b.customer_id = p_viewer));
 
   select e.called_at, coalesce(e.duration_min, v_live.avg_service_min)
     into v_serving_called_at, v_serving_duration_min
@@ -66,36 +83,43 @@ begin
   from public.queue_entries e
   where e.pro_id = p_pro_id and e.state = 'waiting';
 
-  return jsonb_build_object(
+  v_snapshot := jsonb_build_object(
     'pro_id', p_pro_id,
-    'status', v_effective.status,
-    'break_until', v_live.break_until,
-    'auto_close_at', v_live.auto_close_at,
-    'status_age_from', date_bin('5 minutes', v_live.last_activity_at,
-                                timestamptz '2000-01-01 00:00:00+00'),
+    'status', case when v_closed then 'closed'::public.live_status else v_effective.status end,
+    'break_until', case when not v_closed then v_live.break_until end,
+    'auto_close_at', case when not v_closed then v_live.auto_close_at end,
+    'status_age_from', case when not v_closed then
+                         date_bin('5 minutes', v_live.last_activity_at,
+                                  timestamptz '2000-01-01 00:00:00+00') end,
     'queue_mode', v_live.queue_mode,
     'listed', coalesce(v_published, false),
+    'count_hidden', v_live.hide_queue_count,
     'join_block', case
-                    when v_published is not true or v_effective.status = 'closed'
-                         or v_effective.stale then 'closed'
+                    when v_published is not true or v_closed or v_effective.stale then 'closed'
                     when not public.live_status_joinable(v_live) then 'on_break'
                     when v_live.queue_mode = 'paused' then 'paused'
                     when v_live.queue_mode = 'followers' then 'followers'
                   end,
-    'waiting_count', case when not v_live.hide_queue_count then v_waiting end,
-    'wait_min', public.queue_wait_min(p_pro_id, null),
-    'serving_called_at', v_serving_called_at,
-    'serving_duration_min', v_serving_duration_min,
-    'ahead_minutes', v_ahead,
-    'queue_version', v_live.queue_version,
+    'wait_min', case when not v_closed then public.queue_wait_min(p_pro_id, null) end,
     'live_version', v_live.live_version,
     'server_now', public.live_now()
+  );
+  if v_live.hide_queue_count then
+    return v_snapshot;
+  end if;
+  return v_snapshot || jsonb_build_object(
+    'waiting_count', case when not v_closed then v_waiting end,
+    'serving_called_at', case when not v_closed then v_serving_called_at end,
+    'serving_duration_min', case when not v_closed then v_serving_duration_min end,
+    'ahead_minutes', case when not v_closed then v_ahead end,
+    'queue_version', v_live.queue_version
   );
 end;
 $$;
 
 -- Batched reads (cards re-fetch on subscribe and on resume): a customer gets the listable pros of
--- the list, an owner its own; other ids are dropped silently. At most 60 ids per call.
+-- the list (closed for one that blocked them), an owner its own; other ids are dropped silently.
+-- At most 60 ids per call.
 create function public.pro_live_snapshots(p_pro_ids uuid[])
 returns table (pro_id uuid, live jsonb)
 language plpgsql
@@ -109,7 +133,7 @@ begin
   end if;
 
   return query
-  select i.id, public.live_snapshot(i.id)
+  select i.id, public.live_snapshot(i.id, (select auth.uid()))
   from (select distinct u.id from unnest(p_pro_ids) u(id) where u.id is not null) i
   where public.owns_pro(i.id) or public.is_listable(i.id)
   order by i.id;
@@ -170,7 +194,8 @@ execute function public.pro_profiles_live_broadcast();
 -- Channel authorization --------------------------------------------------------------------------
 
 -- The topic is checked against the full uuid shape before the cast, so a malformed topic is a
--- refusal, never an error.
+-- refusal, never an error. A customer the pro blocked is refused: the broadcasts carry the real
+-- state, and that customer reads the closed shape from fetches only.
 create function public.live_topic_allowed(p_topic text)
 returns boolean
 language plpgsql
@@ -186,7 +211,10 @@ begin
     return false;
   end if;
   v_id := substr(p_topic, 5)::uuid;
-  return public.owns_pro(v_id) or public.is_listable(v_id);
+  return public.owns_pro(v_id)
+      or (public.is_listable(v_id)
+          and not exists (select 1 from public.pro_blocks b
+                          where b.pro_id = v_id and b.customer_id = auth.uid()));
 end;
 $$;
 
@@ -338,7 +366,7 @@ $$;
 -- Grants -----------------------------------------------------------------------------------------
 
 revoke execute on function
-  public.live_snapshot(uuid),
+  public.live_snapshot(uuid, uuid),
   public.pro_live_snapshots(uuid[]),
   public.pro_profiles_live_broadcast(),
   public.live_topic_allowed(text),
@@ -347,7 +375,7 @@ revoke execute on function
 from public, anon;
 
 revoke execute on function
-  public.live_snapshot(uuid),
+  public.live_snapshot(uuid, uuid),
   public.pro_profiles_live_broadcast(),
   public.queue_end_of_day()
 from authenticated;

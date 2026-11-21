@@ -38,8 +38,7 @@ class QueueSettingsSheet extends ConsumerWidget {
     final enabled =
         snapshot != null && !writing && ref.watch(liveConnectedProvider);
     final mode = snapshot?.queueMode ?? QueueMode.open;
-    // The server sends no count when the pro hides it.
-    final hidden = snapshot != null && snapshot.waitingCount == null;
+    final hidden = snapshot != null && snapshot.countHidden;
 
     void save({required QueueMode mode, required bool hideCount}) {
       final owner = ref.read(ownerLiveProvider(proId).notifier);

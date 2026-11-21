@@ -358,7 +358,7 @@ void main() {
     stop(s);
   });
 
-  channelsTest('an Unauthorized refusal is terminal for that pro only', (
+  channelsTest('Unauthorized, and the fetch has no such pro: unavailable', (
     t,
   ) async {
     channels.seed(snapshot('p1'));
@@ -372,6 +372,8 @@ void main() {
     factory.last('p1').refuse();
     await t.pump(const Duration(seconds: 10));
 
+    // One fetch decided it (another space, unpublished: not returned).
+    expect(fetches.where((f) => f.contains('p1')), hasLength(1));
     expect(errors.single, isA<LiveUnavailable>());
     expect(factory.last('p1').closed, isTrue);
     expect(factory.channels.where((c) => c.topic == 'pro:p1'), hasLength(1));
@@ -390,6 +392,58 @@ void main() {
     for (final s in [a, b, c]) {
       stop(s);
     }
+  });
+
+  channelsTest('Unauthorized, and the fetch returns the pro: served by '
+      'fetches only', (t) async {
+    // A customer the pro blocked: the server's closed shape.
+    server['p1'] = snapshot('p1', status: 'closed');
+    final errors = <Object>[];
+    final got = <LiveSnapshot>[];
+    final a = channels.watch('p1').listen(got.add, onError: errors.add);
+    factory.last('p1').refuse();
+    await t.pump(const Duration(milliseconds: 300));
+
+    expect(errors, isEmpty);
+    expect(got.single.status, LiveStatus.closed);
+    expect(factory.last('p1').closed, isTrue);
+    // No rejoin, no "Hors ligne".
+    await t.pump(const Duration(seconds: 20));
+    expect(factory.channels, hasLength(1));
+    expect(channels.connected, isTrue);
+
+    // A new watcher gets the held snapshot without another join.
+    final late = <LiveSnapshot>[];
+    final b = channels.watch('p1').listen(late.add);
+    await t.pump(const Duration(milliseconds: 300));
+    expect(late.first.status, LiveStatus.closed);
+    expect(factory.channels, hasLength(1));
+
+    // Resume and Retry fetch it again (still no channel).
+    final before = fetches.length;
+    channels.refreshAll();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(fetches.length, before + 1);
+    expect(fetches.last, ['p1']);
+    channels.retryNow();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(fetches.length, before + 2);
+    expect(factory.channels, hasLength(1));
+    stop(a);
+    stop(b);
+  });
+
+  channelsTest('Unauthorized, and the fetch says unlisted: unavailable', (
+    t,
+  ) async {
+    server['p1'] = snapshot('p1').copyWithListed(false);
+    final errors = <Object>[];
+    final a = channels.watch('p1').listen((_) {}, onError: errors.add);
+    factory.last('p1').refuse();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(errors.single, isA<LiveUnavailable>());
+    expect(channels.latest('p1'), isNull);
+    stop(a);
   });
 
   channelsTest('a join-reply error without Unauthorized rejoins', (t) async {
@@ -417,7 +471,7 @@ void main() {
     await t.pump(const Duration(seconds: 20));
     final errors = <Object>[];
     final b = channels.watch('p1').listen((_) {}, onError: errors.add);
-    await t.pump();
+    await t.pump(const Duration(milliseconds: 300));
     expect(errors.single, isA<LiveUnavailable>());
     expect(factory.channels.where((c) => c.topic == 'pro:p1'), hasLength(1));
     stop(b);
@@ -550,7 +604,7 @@ void main() {
         .watch('p1', own: true)
         .listen((_) {}, onError: errors.add);
     factory.last('p1').refuse();
-    await t.pump();
+    await t.pump(const Duration(milliseconds: 300));
     expect(errors.single, isA<LiveUnavailable>());
     stop(a);
     final again = <Object>[];

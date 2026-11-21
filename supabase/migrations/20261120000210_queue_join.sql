@@ -2,12 +2,14 @@
 -- queue settings and blocks.
 --
 --   * can_join is the one place the join rules live (M10 extends it); internal, join_queue runs
---     it (the customer's own half, join_customer_check, also before the lock). It raises the first
---     failing code in a fixed order the app maps to messages: not_listable, own_queue,
---     pro_not_open, queue_paused, already_in_queue, join_limit_reached, absent_block,
---     join_unavailable. join_unavailable is deliberately neutral: a refusal never reveals a block,
---     and a block ends the ticket 'cleared' (customers select their own rows, so 'blocked' would
---     tell). queue_end_reason 'blocked' is unused since M3 (kept for compatibility).
+--     it before the lock and again under it. It raises the first failing code in a fixed order
+--     the app maps to messages: not_listable, own_queue, pro_not_open, queue_paused,
+--     already_in_queue, join_limit_reached, absent_block.
+--   * A blocked customer meets that pro as permanently closed, and nothing else: can_join refuses
+--     them pro_not_open at the status check (what a closed pro gives), their snapshots are the
+--     closed shape and their channel is refused (20261120000300). A block ends the ticket
+--     'cleared' (customers select their own rows, so 'blocked' would tell). queue_end_reason
+--     'blocked' is unused since M3 (kept for compatibility).
 --   * Customer RPCs follow the owner pattern of 20261120000200: lock the pro's pro_live row
 --     (ticket numbers stay serialized with the owner's actions), record the request (a replay
 --     returns the current ticket and changes nothing), change, live_broadcast once, last. They
@@ -106,9 +108,9 @@ as $$
 $$;
 
 -- The caller's own half of the join rule, in can_join's order: already_in_queue,
--- join_limit_reached, absent_block, join_unavailable (blocked by this pro). It reads only the
--- caller's rows and the pro's block list, so join_queue runs it before taking the pro's lock.
--- Absents: blocked while a 2nd absent within 7 days of another one is less than 24 h old.
+-- join_limit_reached, absent_block. Absents: blocked while a 2nd absent within 7 days of another
+-- one is less than 24 h old; only absents marked after a call count (queue_mark_absent refuses
+-- any other since M3's security wave, so an older uncalled one is not held against anyone).
 create function public.join_customer_check(p_pro_id uuid)
 returns void
 language plpgsql
@@ -144,27 +146,23 @@ begin
   if exists (
     select 1
     from public.queue_entries a2
-    where a2.customer_id = v_uid and a2.state = 'absent'
+    where a2.customer_id = v_uid and a2.state = 'absent' and a2.called_at is not null
       and a2.ended_at > v_now - interval '24 hours'
       and exists (
         select 1 from public.queue_entries a1
-        where a1.customer_id = v_uid and a1.state = 'absent' and a1.id <> a2.id
+        where a1.customer_id = v_uid and a1.state = 'absent' and a1.called_at is not null
+          and a1.id <> a2.id
           and a1.ended_at between a2.ended_at - interval '7 days' and a2.ended_at)
   ) then
     raise exception 'absent_block';
-  end if;
-
-  if exists (
-    select 1 from public.pro_blocks b where b.pro_id = p_pro_id and b.customer_id = v_uid
-  ) then
-    raise exception 'join_unavailable';
   end if;
 end;
 $$;
 
 -- Raises the first failing rule for the caller joining p_pro_id; returns when joining is allowed.
--- Internal (join_queue runs it under the pro's lock): a client-callable can_join would be a free
--- probe of the rules, blocks included.
+-- Internal (join_queue runs it): a client-callable can_join would be a free probe of the rules.
+-- A block is the pro being closed for this caller: pro_not_open, at the status check, so the
+-- refusal and its position match a closed pro's exactly (and the snapshot's join_block closed).
 create function public.can_join(p_pro_id uuid)
 returns void
 language plpgsql
@@ -183,7 +181,9 @@ begin
   end if;
 
   select l.* into v_live from public.pro_live l where l.pro_id = p_pro_id;
-  if not found or not public.live_status_joinable(v_live) then
+  if not found or not public.live_status_joinable(v_live)
+     or exists (select 1 from public.pro_blocks b
+                where b.pro_id = p_pro_id and b.customer_id = auth.uid()) then
     raise exception 'pro_not_open';
   end if;
 
@@ -211,21 +211,23 @@ declare
   v_service public.pro_services;
   v_entry_id uuid;
   v_constraint text;
+  v_prior public.queue_requests;
 begin
-  -- Before the lock, so no account can lock a pro it may not join (another space, unpublished,
-  -- or a customer refused on their own account: active ticket, limits, block; so a refused
-  -- customer hears their own code before pro_not_open). A replay skips the customer half: its
-  -- ticket is the active entry. The full can_join runs again under the lock.
-  if not public.is_listable(p_pro_id) then
-    raise exception 'not_listable';
+  if p_request_id is null then
+    raise exception 'request_id_required';
   end if;
-  if public.owns_pro(p_pro_id) then
-    raise exception 'own_queue';
-  end if;
-  if not exists (
-    select 1 from public.queue_requests r where r.actor = v_uid and r.request_id = p_request_id
-  ) then
-    perform public.join_customer_check(p_pro_id);
+
+  -- The full can_join, unlocked, before the lock: no account can lock a pro it may not join, and
+  -- the code is the one can_join's order gives (a blocked or refused customer hears exactly what
+  -- the lock would tell them). A replay of this very join (same action, same pro) skips it: its
+  -- ticket is the active entry. The same request id for anything else is refused here.
+  select r.* into v_prior
+  from public.queue_requests r
+  where r.actor = v_uid and r.request_id = p_request_id;
+  if not found then
+    perform public.can_join(p_pro_id);
+  elsif v_prior.action <> 'join_queue' or v_prior.pro_id <> p_pro_id then
+    raise exception 'request_reused';
   end if;
 
   select public.service_day(public.live_now(), c.timezone) into v_day

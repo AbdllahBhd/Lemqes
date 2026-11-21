@@ -1,5 +1,5 @@
 begin;
-select plan(101);
+select plan(114);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday; time starts frozen at 10:00.
 -- pa (Salon Amine) is where customers join; pb (Salon Bilal) carries the J1 status fixtures and
@@ -19,6 +19,9 @@ begin
   perform set_config('t.m', tests.create_account('213550000860', 'men', 'customer', 'Mourad')::text, true);
   perform set_config('t.n', tests.create_account('213550000861', 'men', 'customer', 'Nabil')::text, true);
   perform set_config('t.w', tests.create_account('213550000862', 'women', 'customer', 'Wafa')::text, true);
+  perform set_config('t.x', tests.create_account('213550000863', 'men', 'customer', 'Xavier')::text, true);
+  perform set_config('t.y', tests.create_account('213550000864', 'men', 'customer', 'Yacine')::text, true);
+  perform set_config('t.q', tests.create_account('213550000865', 'men', 'customer', 'Qasim')::text, true);
   perform set_config('t.pa', tests.create_pro(current_setting('t.a')::uuid, 'barber', 'Salon Amine')::text, true);
   perform set_config('t.pb', tests.create_pro(current_setting('t.b')::uuid, 'barber', 'Salon Bilal')::text, true);
   perform set_config('t.pu', tests.create_pro(current_setting('t.u')::uuid, 'barber', 'Hidden', published => false)::text, true);
@@ -207,19 +210,23 @@ do $$ begin perform tests.authenticate_as(current_setting('t.e')::uuid); end; $$
 select throws_ok(format($$ select tests.can_join(%L) $$, current_setting('t.pa')),
   'P0001', 'join_limit_reached', 'J1 join_limit_reached: the 6th remote join of the service day');
 
--- Absents (ended_at): d 20th 12:00 + 22nd 10:30 (blocked until 23rd 10:30); f 20th 12:00 +
--- 22nd 09:59 (lifted at 23rd 09:59); g 14th 10:00 + 22nd 12:00 (8 days apart, never blocked).
+-- Absents (ended_at, called 10 min before): d 20th 12:00 + 22nd 10:30 (blocked until 23rd
+-- 10:30); f 20th 12:00 + 22nd 09:59 (lifted at 23rd 09:59); g 14th 10:00 + 22nd 12:00 (8 days
+-- apart, never blocked); q like d but never called (stored before marking required a call).
 do $$ begin perform tests.clear_auth(); end; $$;
 insert into public.queue_entries
-  (pro_id, served_by, ticket_no, service_day, kind, customer_id, state, ended_at)
+  (pro_id, served_by, ticket_no, service_day, kind, customer_id, state, called_at, ended_at)
 select current_setting('t.pb')::uuid, current_setting('t.pb')::uuid, t, d::date, 'remote',
-       current_setting(c)::uuid, 'absent', at::timestamptz
-from (values (910, '2026-11-20', 't.d', '2026-11-20 12:00+01'),
-             (911, '2026-11-22', 't.d', '2026-11-22 10:30+01'),
-             (912, '2026-11-20', 't.f', '2026-11-20 12:00+01'),
-             (913, '2026-11-22', 't.f', '2026-11-22 09:59+01'),
-             (914, '2026-11-14', 't.g', '2026-11-14 10:00+01'),
-             (915, '2026-11-22', 't.g', '2026-11-22 12:00+01')) v(t, d, c, at);
+       current_setting(c)::uuid, 'absent',
+       case when called then at::timestamptz - interval '10 minutes' end, at::timestamptz
+from (values (910, '2026-11-20', 't.d', '2026-11-20 12:00+01', true),
+             (911, '2026-11-22', 't.d', '2026-11-22 10:30+01', true),
+             (912, '2026-11-20', 't.f', '2026-11-20 12:00+01', true),
+             (913, '2026-11-22', 't.f', '2026-11-22 09:59+01', true),
+             (914, '2026-11-14', 't.g', '2026-11-14 10:00+01', true),
+             (915, '2026-11-22', 't.g', '2026-11-22 12:00+01', true),
+             (916, '2026-11-20', 't.q', '2026-11-20 12:00+01', false),
+             (917, '2026-11-22', 't.q', '2026-11-22 10:30+01', false)) v(t, d, c, at, called);
 do $$ begin perform tests.authenticate_as(current_setting('t.d')::uuid); end; $$;
 select throws_ok(format($$ select tests.can_join(%L) $$, current_setting('t.pa')),
   'P0001', 'absent_block', 'J1 absent_block: 2 absents within 7 days, less than 24 h after the 2nd');
@@ -229,15 +236,18 @@ select lives_ok(format($$ select tests.can_join(%L) $$, current_setting('t.pa'))
 do $$ begin perform tests.authenticate_as(current_setting('t.g')::uuid); end; $$;
 select lives_ok(format($$ select tests.can_join(%L) $$, current_setting('t.pa')),
   'J1 absent_block: 2 absents more than 7 days apart do not block');
+do $$ begin perform tests.authenticate_as(current_setting('t.q')::uuid); end; $$;
+select lives_ok(format($$ select tests.can_join(%L) $$, current_setting('t.pa')),
+  'J1 absent_block: only absents marked after a call count');
 
 do $$ begin perform tests.clear_auth(); end; $$;
 insert into public.pro_blocks (pro_id, customer_id, ticket_label)
 values (current_setting('t.pa')::uuid, current_setting('t.h')::uuid, 'Hamid');
 do $$ begin perform tests.authenticate_as(current_setting('t.h')::uuid); end; $$;
 select is(tests.error_detail(format($$ select tests.can_join(%L) $$, current_setting('t.pa'))),
-  'join_unavailable|', 'J1 join_unavailable: blocked by this pro, with no detail revealing why');
+  'pro_not_open|', 'J1 blocked by this pro: pro_not_open, exactly a closed pro''s refusal (no detail)');
 select lives_ok(format($$ select tests.can_join(%L) $$, current_setting('t.pb')),
-  'J1 join_unavailable: a block at pa does not refuse pb');
+  'J1 a block at pa does not refuse pb');
 
 -- J2 ------------------------------------------------------------------------------------------
 -- W1, W2 walk-ins at 10:00; c joins at 10:05 with the 30-min service; W3 at 10:06.
@@ -273,11 +283,10 @@ select ok(
   'J2 a join bumps queue_version and does not count as owner activity'
 );
 select ok(
-  (select position('public.is_listable' in d) > 0
-          and position('public.is_listable' in d) < position('for update' in d)
-          and position('public.owns_pro' in d) < position('for update' in d)
+  (select position('public.can_join' in d) > 0
+          and position('public.can_join' in d) < position('for update' in d)
      from pg_get_functiondef('public.join_queue(uuid, uuid, uuid)'::regprocedure) d),
-  'J2 join_queue checks listability and own_queue before taking the pro_live lock'
+  'J2 join_queue runs the full can_join before taking the pro_live lock (and again under it)'
 );
 select tests.freeze_now('2026-11-23 10:06+01');
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
@@ -351,17 +360,25 @@ do $$ begin perform tests.authenticate_as(current_setting('t.k')::uuid); end; $$
 select throws_ok(
   format($$ select * from public.leave_queue(%L, %L) $$, current_setting('t.ek'), current_setting('t.rk')),
   'P0001', 'request_reused', 'J3 the same request id for another action is request_reused');
+select throws_ok(
+  format($$ select * from public.join_queue(%L, null, %L) $$, current_setting('t.pb'), current_setting('t.rk')),
+  'P0001', 'request_reused', 'J3 the same join request id at another pro is request_reused');
+select ok(
+  (select d ~ 'v_prior\.action <> ''join_queue''' and d ~ 'v_prior\.pro_id <> p_pro_id'
+     from pg_get_functiondef('public.join_queue(uuid, uuid, uuid)'::regprocedure) d),
+  'J3 the pre-lock replay lookup is keyed by actor, request id, action and pro'
+);
 
--- k waits at pa; pb is closed: the customer's own checks run before the pro's lock, so k is told
--- already_in_queue (can_join's order would say pro_not_open).
+-- k waits at pa; pb is closed: before the lock join_queue runs can_join in its own order, so k
+-- is told pro_not_open (the pro's state comes before the customer's own limits).
 do $$ begin perform tests.clear_auth(); end; $$;
 update public.pro_live set status = 'closed', auto_close_at = null
  where pro_id = current_setting('t.pb')::uuid;
 do $$ begin perform tests.authenticate_as(current_setting('t.k')::uuid); end; $$;
 select throws_ok(
   format($$ select * from public.join_queue(%L, null, gen_random_uuid()) $$, current_setting('t.pb')),
-  'P0001', 'already_in_queue',
-  'J3 join_queue runs the customer''s own checks before taking the pro''s lock');
+  'P0001', 'pro_not_open',
+  'J3 join_queue keeps can_join''s order before the lock: closed beats already_in_queue');
 do $$ begin perform tests.clear_auth(); end; $$;
 update public.pro_live set status = 'open', auto_close_at = '2026-11-23 19:30+01'
  where pro_id = current_setting('t.pb')::uuid;
@@ -586,7 +603,7 @@ select ok(
   'J9 the blocked customer''s ticket reads as cleared'
 );
 select is(tests.error_detail(format($$ select tests.can_join(%L) $$, current_setting('t.pa'))),
-  'join_unavailable|', 'J9 the blocked customer gets the neutral join_unavailable');
+  'pro_not_open|', 'J9 the blocked customer is refused as by a closed pro (pro_not_open)');
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 do $$
 begin
@@ -651,6 +668,68 @@ select is(
   array['remote:Kamel', 'walk_in:Kamel'],
   'J11 a walk-in and a remote entry for the same person wait side by side'
 );
+
+-- J13 -----------------------------------------------------------------------------------------
+-- A blocked customer meets a closed pro, whatever pb's state: join_queue's refusal is what their
+-- snapshot's join_block implies, and what an unblocked customer gets from a closed pro. x is
+-- blocked at pb and waits at pa (status beats the customer's own limits); y is not blocked.
+do $$ begin perform tests.clear_auth(); end; $$;
+insert into public.pro_blocks (pro_id, customer_id, ticket_label)
+values (current_setting('t.pb')::uuid, current_setting('t.x')::uuid, 'Xavier');
+do $$ begin perform tests.authenticate_as(current_setting('t.x')::uuid); end; $$;
+select count(*) from public.join_queue(current_setting('t.pa')::uuid, null, gen_random_uuid());
+do $$ begin perform tests.clear_auth(); end; $$;
+
+create function tests.join_code(p_pro uuid)
+returns text
+language sql
+as $$
+  select tests.error_detail(format($q$ select * from public.join_queue(%L, null, gen_random_uuid()) $q$, p_pro));
+$$;
+create function tests.join_block(p_pro uuid)
+returns text
+language sql
+as $$
+  select s.live ->> 'join_block' from public.pro_live_snapshots(array[p_pro]) s;
+$$;
+
+do $$ begin perform tests.clear_auth(); end; $$;
+update public.pro_live set status = 'closed', auto_close_at = null
+ where pro_id = current_setting('t.pb')::uuid;
+do $$ begin perform tests.authenticate_as(current_setting('t.x')::uuid); end; $$;
+select is(tests.join_code(current_setting('t.pb')::uuid), 'pro_not_open|',
+  'J13 closed pro: the blocked customer is refused pro_not_open');
+select is(tests.join_block(current_setting('t.pb')::uuid), 'closed',
+  'J13 closed pro: the blocked customer''s snapshot says closed');
+do $$ begin perform tests.authenticate_as(current_setting('t.y')::uuid); end; $$;
+select is(tests.join_code(current_setting('t.pb')::uuid), 'pro_not_open|',
+  'J13 closed pro: an unblocked customer is refused pro_not_open too');
+
+do $$ begin perform tests.clear_auth(); end; $$;
+update public.pro_live set status = 'open', auto_close_at = '2026-11-23 19:30+01', queue_mode = 'paused'
+ where pro_id = current_setting('t.pb')::uuid;
+do $$ begin perform tests.authenticate_as(current_setting('t.x')::uuid); end; $$;
+select is(tests.join_code(current_setting('t.pb')::uuid), 'pro_not_open|',
+  'J13 paused pro: the blocked customer is refused pro_not_open, not queue_paused');
+select is(tests.join_block(current_setting('t.pb')::uuid), 'closed',
+  'J13 paused pro: the blocked customer''s snapshot says closed');
+do $$ begin perform tests.authenticate_as(current_setting('t.y')::uuid); end; $$;
+select is(tests.join_code(current_setting('t.pb')::uuid), 'queue_paused|',
+  'J13 paused pro: an unblocked customer is refused queue_paused');
+select is(tests.join_block(current_setting('t.pb')::uuid), 'paused',
+  'J13 paused pro: the unblocked customer''s snapshot says paused');
+
+do $$ begin perform tests.clear_auth(); end; $$;
+update public.pro_live set queue_mode = 'open' where pro_id = current_setting('t.pb')::uuid;
+do $$ begin perform tests.authenticate_as(current_setting('t.x')::uuid); end; $$;
+select is(tests.join_code(current_setting('t.pb')::uuid), 'pro_not_open|',
+  'J13 open pro: the blocked customer is refused pro_not_open, not already_in_queue');
+select is(tests.join_block(current_setting('t.pb')::uuid), 'closed',
+  'J13 open pro: the blocked customer''s snapshot says closed');
+do $$ begin perform tests.authenticate_as(current_setting('t.y')::uuid); end; $$;
+select lives_ok(
+  format($$ select * from public.join_queue(%L, null, gen_random_uuid()) $$, current_setting('t.pb')),
+  'J13 open pro: an unblocked customer joins');
 
 -- J12 -----------------------------------------------------------------------------------------
 do $$ begin perform tests.authenticate_as_anon(); end; $$;

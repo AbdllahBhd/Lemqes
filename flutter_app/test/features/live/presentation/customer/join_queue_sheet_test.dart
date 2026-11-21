@@ -53,7 +53,6 @@ void main() {
     (const AlreadyInQueue(), _fr.joinErrorAlreadyInQueue),
     (const JoinLimitReached(), _fr.joinErrorLimit),
     (const AbsentBlock(), _fr.joinErrorAbsentBlock),
-    (const JoinUnavailable(), _fr.joinErrorUnavailable),
     (const InvalidService(), _fr.liveErrorInvalidService),
     (const LiveNetworkFailure(), _fr.errorNetwork),
   ];
@@ -79,13 +78,13 @@ void main() {
     });
   }
 
-  test('the neutral refusal never names a block', () {
-    expect(
-      _fr.joinErrorUnavailable,
-      'Impossible de rejoindre cette file pour le moment.',
-    );
-    expect(_fr.joinErrorUnavailable.toLowerCase(), isNot(contains('bloqu')));
-  });
+  test(
+    'a blocked customer hears the closed pro\'s sentence, naming no block',
+    () {
+      // The server refuses a blocked customer pro_not_open, as a closed pro.
+      expect(_fr.joinErrorNotOpen.toLowerCase(), isNot(contains('bloqu')));
+    },
+  );
 
   testWidgets('a join shows the ticket in place of the button', (tester) async {
     final h = await pumpJoinable(tester);

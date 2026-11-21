@@ -79,11 +79,23 @@ void main() {
     await pumpToday(
       t,
       repo: stubbed(),
-      snapshot: ownSnapshot(status: LiveStatus.open, waitingCount: null),
+      snapshot: ownSnapshot(status: LiveStatus.open, countHidden: true),
     );
     await tapKey(t, 'queueSettings');
     final tile = t.widget<SwitchListTile>(find.byKey(const Key('hideCount')));
     expect(tile.value, isTrue);
+  });
+
+  testWidgets('closed with the count shown reads as off', (t) async {
+    // A closed snapshot carries no count at all: that is not "hidden".
+    await pumpToday(
+      t,
+      repo: stubbed(),
+      snapshot: ownSnapshot(waitingCount: null, waitMin: null),
+    );
+    await tapKey(t, 'queueSettings');
+    final tile = t.widget<SwitchListTile>(find.byKey(const Key('hideCount')));
+    expect(tile.value, isFalse);
   });
 
   testWidgets('blocked customers list and unblock', (t) async {

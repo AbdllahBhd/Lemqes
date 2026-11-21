@@ -13,6 +13,7 @@ String liveFailureMessage(AppLocalizations l10n, LiveFailure failure) =>
       NothingServing() => l10n.liveErrorNothingServing,
       NothingToUndo() => l10n.liveErrorNothingToUndo,
       EntryNotActive() => l10n.liveErrorEntryGone,
+      EntryNotCalled() => l10n.liveErrorNotCalled,
       InvalidName() => l10n.liveErrorInvalidName,
       InvalidService() => l10n.liveErrorInvalidService,
       NotOpen() => l10n.liveErrorNotOpen,

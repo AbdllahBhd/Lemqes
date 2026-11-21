@@ -223,8 +223,9 @@ class OwnerQueue {
   bool get busy => inFlight != null;
 }
 
-/// The owner's queue: refetched when the pro's `queue_version` moves (a
-/// status-only message does not), replaced by each action's result.
+/// The owner's queue: refetched when the pro's queue moves
+/// ([LiveSnapshot.queueChangeKey]: a status-only message does not move it
+/// while the count is shown), replaced by each action's result.
 final ownerQueueProvider = AsyncNotifierProvider.autoDispose
     .family<OwnerQueueController, OwnerQueue, String>(
       OwnerQueueController.new,
@@ -243,7 +244,7 @@ class OwnerQueueController extends AsyncNotifier<OwnerQueue> {
   @override
   Future<OwnerQueue> build() async {
     ref.watch(
-      ownLiveSnapshotProvider(proId).select((s) => s.value?.queueVersion),
+      ownLiveSnapshotProvider(proId).select((s) => s.value?.queueChangeKey),
     );
     final rows = await _tracked(
       ref,
@@ -403,9 +404,10 @@ final myTicketProvider = AsyncNotifierProvider<MyTicketController, MyTicket?>(
 );
 
 class MyTicketController extends AsyncNotifier<MyTicket?> {
-  // The pro version the ticket was last refetched for. Kept across rebuilds:
-  // the rebuilt listener sees the same snapshot again and must stay quiet.
-  ({String proId, int version})? _seen;
+  // The pro queue key the ticket was last refetched for. Kept across
+  // rebuilds: the rebuilt listener sees the same snapshot again and must
+  // stay quiet.
+  ({String proId, (int?, int?) version})? _seen;
 
   @override
   Future<MyTicket?> build() async {
@@ -431,7 +433,7 @@ class MyTicketController extends AsyncNotifier<MyTicket?> {
     if (ticket.state == EntryState.waiting ||
         ticket.state == EntryState.serving) {
       ref.listen(liveSnapshotProvider(ticket.proId), (_, next) {
-        final version = next.value?.queueVersion;
+        final version = next.value?.queueChangeKey;
         if (version == null) return;
         final seen = (proId: ticket.proId, version: version);
         if (seen == _seen) return;

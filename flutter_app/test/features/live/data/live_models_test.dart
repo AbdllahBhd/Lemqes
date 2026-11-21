@@ -62,6 +62,44 @@ void main() {
     );
   });
 
+  test('a hidden-count snapshot parses without the recount inputs', () {
+    final hidden = {...snap(version: 7), 'count_hidden': true}
+      ..remove('waiting_count')
+      ..remove('ahead_minutes')
+      ..remove('serving_called_at')
+      ..remove('serving_duration_min')
+      ..remove('queue_version');
+    final s = LiveSnapshot.fromJson(hidden);
+    expect(s.countHidden, isTrue);
+    expect(s.waitingCount, isNull);
+    expect(s.waitMin, 40);
+    expect(s.queueVersion, isNull);
+    expect(s.hasWaitInputs, isFalse);
+    // Without queue_version, every broadcast may be a queue change.
+    expect(s.queueChangeKey, (null, 7));
+    expect(LiveSnapshot.fromJson(snap(version: 7)).queueChangeKey, (7, null));
+    expect(LiveSnapshot.fromJson(snap()).countHidden, isFalse);
+  });
+
+  test('a closed snapshot parses with no age, times or queue', () {
+    final s = LiveSnapshot.fromJson({
+      ...snap(),
+      'status': 'closed',
+      'join_block': 'closed',
+      'auto_close_at': null,
+      'status_age_from': null,
+      'waiting_count': null,
+      'wait_min': null,
+      'serving_called_at': null,
+      'serving_duration_min': null,
+      'ahead_minutes': null,
+    });
+    expect(s.status, LiveStatus.closed);
+    expect(s.statusAgeFrom, isNull);
+    expect(s.waitMin, isNull);
+    expect(s.hasWaitInputs, isFalse);
+  });
+
   test('isNewerThan compares live_version only', () {
     final base = LiveSnapshot.fromJson(snap());
     expect(LiveSnapshot.fromJson(snap(version: 4)).isNewerThan(base), isTrue);

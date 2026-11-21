@@ -174,13 +174,15 @@ class _StepButton extends StatelessWidget {
   }
 }
 
-/// "En cours": the customer in the chair, with "Terminé".
+/// "En cours": the customer in the chair, with "Terminé", and "Absent" for
+/// a remote customer (called, so the barber can see they did not come).
 class ServingCard extends StatelessWidget {
   const ServingCard({
     required this.row,
     required this.service,
     required this.onFinish,
     required this.finishing,
+    this.onAbsent,
     super.key,
   });
 
@@ -189,49 +191,69 @@ class ServingCard extends StatelessWidget {
   final VoidCallback? onFinish;
   final bool finishing;
 
+  /// Null disables "Absent" (offline, another action in flight).
+  final VoidCallback? onAbsent;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final service = this.service;
-    return TodayCard(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                MistTag(l10n.todayServing),
-                const SizedBox(height: 6),
+    final finish = Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              MistTag(l10n.todayServing),
+              const SizedBox(height: 6),
+              Text(
+                entryLabel(context, row),
+                style: theme.textTheme.titleMedium,
+              ),
+              if (service != null)
                 Text(
-                  entryLabel(context, row),
-                  style: theme.textTheme.titleMedium,
-                ),
-                if (service != null)
-                  Text(
-                    service,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                  service,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            key: const Key('finish'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              shape: const StadiumBorder(),
+        ),
+        const SizedBox(width: 8),
+        OutlinedButton.icon(
+          key: const Key('finish'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            shape: const StadiumBorder(),
+          ),
+          onPressed: finishing ? null : onFinish,
+          icon: finishing
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.check, size: 18),
+          label: Text(l10n.todayFinish),
+        ),
+      ],
+    );
+    if (row.kind != QueueKind.remote) return TodayCard(child: finish);
+    return TodayCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          finish,
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton.icon(
+              key: const Key('servingAbsent'),
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: onAbsent,
+              icon: const Icon(Icons.person_off_outlined),
+              label: Text(l10n.todayAbsent),
             ),
-            onPressed: finishing ? null : onFinish,
-            icon: finishing
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check, size: 18),
-            label: Text(l10n.todayFinish),
           ),
         ],
       ),

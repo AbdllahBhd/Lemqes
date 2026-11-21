@@ -332,6 +332,7 @@
 | `liveErrorNothingServing` | final | final | draft | draft |
 | `liveErrorNothingToUndo` | final | final | draft | draft |
 | `liveErrorEntryGone` | final | final | draft | draft |
+| `liveErrorNotCalled` | final | final | draft | draft |
 | `liveErrorInvalidName` | final | final | draft | draft |
 | `liveErrorInvalidService` | final | final | draft | draft |
 | `liveErrorNotOpen` | final | final | draft | draft |
@@ -361,7 +362,6 @@
 | `joinErrorAlreadyInQueue` | final | final | draft | draft |
 | `joinErrorLimit` | final | final | draft | draft |
 | `joinErrorAbsentBlock` | final | final | draft | draft |
-| `joinErrorUnavailable` | final | final | draft | draft |
 | `ticketTitle` | final | final | draft (native review: space forms / wording) | draft (native review: space forms / wording) |
 | `ticketPlace` | final | final | draft | draft |
 | `ticketYouAre` | final | final | draft | draft |

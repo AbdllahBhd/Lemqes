@@ -75,11 +75,6 @@ class AbsentBlock extends LiveFailure {
   const AbsentBlock();
 }
 
-/// Neutral refusal: never reveals that the pro blocked the caller.
-class JoinUnavailable extends LiveFailure {
-  const JoinUnavailable();
-}
-
 class TooManyIds extends LiveFailure {
   const TooManyIds();
 }
@@ -89,9 +84,15 @@ class EntryNotActive extends LiveFailure {
   const EntryNotActive();
 }
 
-/// The server refused this pro's channel (other space, unpublished): the pro
-/// has no live line for this caller. Terminal until the space or account
-/// changes.
+/// "Absent" on an entry that was never called: only the called customer
+/// can be missing.
+class EntryNotCalled extends LiveFailure {
+  const EntryNotCalled();
+}
+
+/// The server refused this pro's channel and does not return it either
+/// (other space, unpublished): the pro has no live line for this caller.
+/// Terminal until the space or account changes.
 class LiveUnavailable extends LiveFailure {
   const LiveUnavailable();
 }
@@ -130,9 +131,9 @@ const liveFailureCodes = <String, LiveFailure>{
   'already_in_queue': AlreadyInQueue(),
   'join_limit_reached': JoinLimitReached(),
   'absent_block': AbsentBlock(),
-  'join_unavailable': JoinUnavailable(),
   'too_many_ids': TooManyIds(),
   'entry_not_active': EntryNotActive(),
+  'entry_not_called': EntryNotCalled(),
 };
 
 /// Raised by the live migrations but deliberately left to

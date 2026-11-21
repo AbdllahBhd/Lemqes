@@ -201,15 +201,7 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
           () => queue.setDetails(row.entryId, name: name, serviceId: serviceId),
         );
       case EntryAbsent():
-        final ok = await confirmLive(
-          context,
-          title: l10n.todayAbsentTitle,
-          body: l10n.todayAbsentBody,
-          confirm: l10n.todayAbsent,
-        );
-        if (ok && mounted) {
-          await runLive(ref, () => queue.markAbsent(row.entryId));
-        }
+        await _markAbsent(row);
       case EntryBlock():
         final ok = await confirmLive(
           context,
@@ -220,6 +212,20 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
         if (ok && mounted) {
           await runLive(ref, () => queue.block(row.entryId));
         }
+    }
+  }
+
+  Future<void> _markAbsent(OwnerQueueRow row) async {
+    final l10n = context.l10n;
+    final queue = _queue;
+    final ok = await confirmLive(
+      context,
+      title: l10n.todayAbsentTitle,
+      body: l10n.todayAbsentBody,
+      confirm: l10n.todayAbsent,
+    );
+    if (ok && mounted) {
+      await runLive(ref, () => queue.markAbsent(row.entryId));
     }
   }
 
@@ -274,10 +280,7 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
     final queue = queueState.value;
     final rows = queue?.rows ?? const <OwnerQueueRow>[];
     final waiting = _waiting(rows);
-    OwnerQueueRow? serving;
-    for (final r in rows) {
-      if (r.state == EntryState.serving) serving = r;
-    }
+    final serving = rows.where((r) => r.state == EntryState.serving).lastOrNull;
     final names = _names = _serviceNames();
     final inFlight = queue?.inFlight;
     // One queue action at a time: while one is in flight every control
@@ -339,6 +342,7 @@ class _TodayBodyState extends ConsumerState<_TodayBody> {
               service: names[serving.serviceId],
               finishing: inFlight == OwnerAction.finish,
               onFinish: canAct ? () => act((q) => q.finish()) : null,
+              onAbsent: canAct ? () => _markAbsent(serving) : null,
             ),
           ],
           const SizedBox(height: 24),

@@ -129,11 +129,15 @@ void main() {
     expect(await ticketState(karim), 'serving');
     await shot('today_serving');
 
-    // --- Walid did not come: absent ---------------------------------------
-    await tap(tester, walidRow);
-    await tap(tester, find.byKey(const Key('entryAbsent')));
-    await tap(tester, find.byKey(const Key('confirmAction')));
+    // --- Walid, called, does not come: absent from "En cours" -----------
+    // A waiting customer cannot be absent: only the called one.
+    await tap(tester, callNext);
     await waitForGone(tester, walidRow);
+    expect(await ticketState(walid), 'serving');
+    final servingAbsent = find.byKey(const Key('servingAbsent'));
+    await tap(tester, servingAbsent);
+    await tap(tester, find.byKey(const Key('confirmAction')));
+    await waitForGone(tester, servingAbsent);
     expect(await ticketState(walid), 'absent');
 
     // --- Offline: the banner shows and "call next" waits for the network --

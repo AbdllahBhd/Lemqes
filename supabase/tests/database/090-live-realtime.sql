@@ -1,5 +1,5 @@
 begin;
-select plan(103);
+select plan(115);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday (create_pro gives Monday
 -- 09:00-18:00); time is frozen at 10:00, then at Tuesday 07:00 for the end-of-day job.
@@ -123,9 +123,9 @@ select ok(
 select is(
   (select array_agg(k order by k collate "C")
      from jsonb_object_keys(public.live_snapshot(current_setting('t.pa')::uuid)) k),
-  array['ahead_minutes', 'auto_close_at', 'break_until', 'join_block', 'listed', 'live_version',
-        'pro_id', 'queue_mode', 'queue_version', 'server_now', 'serving_called_at', 'serving_duration_min',
-        'status', 'status_age_from', 'wait_min', 'waiting_count'],
+  array['ahead_minutes', 'auto_close_at', 'break_until', 'count_hidden', 'join_block', 'listed',
+        'live_version', 'pro_id', 'queue_mode', 'queue_version', 'server_now', 'serving_called_at',
+        'serving_duration_min', 'status', 'status_age_from', 'wait_min', 'waiting_count'],
   'R1 the snapshot keys are exactly the Approach list'
 );
 select ok(
@@ -145,25 +145,51 @@ select is(
 
 -- R2 ------------------------------------------------------------------------------------------
 
+update public.pro_live
+   set status = 'open', auto_close_at = '2026-11-23 19:30+01', last_activity_at = '2026-11-23 10:00+01'
+ where pro_id = current_setting('t.pb')::uuid;
 insert into public.queue_entries (pro_id, served_by, ticket_no, service_day, kind)
 values (current_setting('t.pb')::uuid, current_setting('t.pb')::uuid, 1, '2026-11-23', 'walk_in');
 select is(
   public.live_snapshot(current_setting('t.pb')::uuid) -> 'waiting_count', '1'::jsonb,
   'R2 waiting_count counts the waiting entries when shown'
 );
-update public.pro_live set hide_queue_count = true where pro_id = current_setting('t.pb')::uuid;
-select ok(
-  (public.live_snapshot(current_setting('t.pb')::uuid) -> 'waiting_count') = 'null'::jsonb,
-  'R2 waiting_count is null when the pro hides it'
-);
-select is(
-  public.live_snapshot(current_setting('t.pb')::uuid) -> 'wait_min', '20'::jsonb,
-  'R2 wait_min is still present when the count is hidden'
-);
 select is(
   public.live_snapshot(current_setting('t.pb')::uuid) -> 'ahead_minutes', '20'::jsonb,
   'R2 ahead_minutes sums the waiting durations (the average when no service)'
 );
+select is(
+  public.live_snapshot(current_setting('t.pb')::uuid) -> 'count_hidden', 'false'::jsonb,
+  'R2 count_hidden is false when the count is shown'
+);
+update public.pro_live set hide_queue_count = true where pro_id = current_setting('t.pb')::uuid;
+select is(
+  (select array_agg(k order by k collate "C")
+     from jsonb_object_keys(public.live_snapshot(current_setting('t.pb')::uuid)) k),
+  array['auto_close_at', 'break_until', 'count_hidden', 'join_block', 'listed', 'live_version',
+        'pro_id', 'queue_mode', 'server_now', 'status', 'status_age_from', 'wait_min'],
+  'R2 a hidden count carries none of the inputs that recount it (count, ahead minutes, serving '
+  'fields, queue_version)'
+);
+select is(
+  public.live_snapshot(current_setting('t.pb')::uuid) -> 'wait_min', '20'::jsonb,
+  'R2 wait_min (rounded up to 5) is still present when the count is hidden'
+);
+select is(
+  public.live_snapshot(current_setting('t.pb')::uuid) -> 'count_hidden', 'true'::jsonb,
+  'R2 count_hidden is true when the pro hides the count'
+);
+update public.pro_live set status = 'closed', auto_close_at = null, hide_queue_count = false
+ where pro_id = current_setting('t.pb')::uuid;
+select is(
+  (select array_agg(e.key order by e.key collate "C")
+     from jsonb_each(public.live_snapshot(current_setting('t.pb')::uuid)) e
+    where e.value <> 'null'::jsonb),
+  array['count_hidden', 'join_block', 'listed', 'live_version', 'pro_id', 'queue_mode',
+        'queue_version', 'server_now', 'status'],
+  'R2 a closed pro with someone waiting carries no times, age, queue or wait'
+);
+update public.pro_live set hide_queue_count = true where pro_id = current_setting('t.pb')::uuid;
 
 -- R3 ------------------------------------------------------------------------------------------
 
@@ -421,6 +447,8 @@ begin
     (public.join_queue(current_setting('t.pa')::uuid, null, gen_random_uuid())).entry_id::text, true);
 end;
 $$;
+do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
+select count(*) from public.queue_call_next(current_setting('t.pa')::uuid, gen_random_uuid());
 do $$ begin perform tests.clear_auth(); end; $$;
 select tests.broadcast_count();
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
@@ -454,6 +482,13 @@ select is(tests.one_broadcast(current_setting('t.pa')::uuid), 'ok', 'R7 queue_cl
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
 select public.set_queue_settings(current_setting('t.pa')::uuid, null, true, gen_random_uuid());
 do $$ begin perform tests.clear_auth(); end; $$;
+select ok(
+  (select not (m.payload ?| array['waiting_count', 'ahead_minutes', 'serving_called_at',
+                                  'serving_duration_min', 'queue_version'])
+          and m.payload ? 'wait_min'
+     from realtime.messages m),
+  'R7 a hidden-count broadcast carries the rounded wait and none of its inputs'
+);
 select is(tests.one_broadcast(current_setting('t.pa')::uuid), 'ok', 'R7 set_queue_settings broadcasts once');
 
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
@@ -579,6 +614,107 @@ select throws_ok(
 do $$ begin perform tests.clear_auth(); end; $$;
 select set_config('realtime.topic', '', true);
 delete from realtime.messages;
+
+-- R13 -----------------------------------------------------------------------------------------
+-- A customer pa blocked (d) sees pa exactly as a closed pa: snapshots, search, channel. pa is open
+-- with someone waiting; c, not blocked, is the control.
+
+update public.pro_live set hide_queue_count = false where pro_id = current_setting('t.pa')::uuid;
+insert into public.queue_entries (pro_id, served_by, ticket_no, service_day, kind)
+values (current_setting('t.pa')::uuid, current_setting('t.pa')::uuid, 950, '2026-11-23', 'walk_in');
+insert into public.pro_blocks (pro_id, customer_id, ticket_label)
+values (current_setting('t.pa')::uuid, current_setting('t.d')::uuid, 'Djamel');
+
+-- The snapshot of pa that p_customer reads, without what moves between two reads.
+create function tests.seen_by(p_customer uuid, p_pro uuid)
+returns jsonb
+language plpgsql
+as $$
+declare
+  v jsonb;
+begin
+  perform tests.authenticate_as(p_customer);
+  select s.live into v from public.pro_live_snapshots(array[p_pro]) s;
+  perform tests.clear_auth();
+  return v - 'live_version' - 'server_now';
+end;
+$$;
+create function tests.seen_in_search(p_customer uuid, p_pro uuid)
+returns jsonb
+language plpgsql
+as $$
+declare
+  v jsonb;
+begin
+  perform tests.authenticate_as(p_customer);
+  select s.live into v from public.search_pros() s where s.pro_id = p_pro;
+  perform tests.clear_auth();
+  return v - 'live_version' - 'server_now';
+end;
+$$;
+
+do $$
+begin
+  perform set_config('t.open', tests.seen_by(current_setting('t.c')::uuid, current_setting('t.pa')::uuid)::text, true);
+  perform set_config('t.blk', tests.seen_by(current_setting('t.d')::uuid, current_setting('t.pa')::uuid)::text, true);
+  perform set_config('t.blks', tests.seen_in_search(current_setting('t.d')::uuid, current_setting('t.pa')::uuid)::text, true);
+end;
+$$;
+update public.pro_live set status = 'closed', auto_close_at = null, break_until = null
+ where pro_id = current_setting('t.pa')::uuid;
+do $$
+begin
+  perform set_config('t.cls', tests.seen_by(current_setting('t.c')::uuid, current_setting('t.pa')::uuid)::text, true);
+end;
+$$;
+select ok(
+  (select s ->> 'status' = 'open' and s -> 'waiting_count' = '1'::jsonb and s -> 'join_block' = 'null'::jsonb
+     from (select current_setting('t.open')::jsonb s) x),
+  'R13 an unblocked customer sees pa open with one waiting'
+);
+select is(current_setting('t.blk')::jsonb, current_setting('t.cls')::jsonb,
+  'R13 the blocked customer''s snapshot of the open pa is the closed pa''s, key for key');
+select ok(
+  (select s ->> 'status' = 'closed' and s ->> 'join_block' = 'closed' and s -> 'listed' = 'true'::jsonb
+     from (select current_setting('t.blk')::jsonb s) x),
+  'R13 ... status closed, join_block closed, still listed'
+);
+select is(current_setting('t.blks')::jsonb, current_setting('t.blk')::jsonb,
+  'R13 search_pros gives the blocked customer the same closed live object');
+
+update public.pro_live
+   set status = 'open', auto_close_at = '2026-11-23 18:30+01', hide_queue_count = true
+ where pro_id = current_setting('t.pa')::uuid;
+do $$
+begin
+  perform set_config('t.blk', tests.seen_by(current_setting('t.d')::uuid, current_setting('t.pa')::uuid)::text, true);
+end;
+$$;
+update public.pro_live set status = 'closed', auto_close_at = null
+ where pro_id = current_setting('t.pa')::uuid;
+select is(
+  current_setting('t.blk')::jsonb,
+  tests.seen_by(current_setting('t.c')::uuid, current_setting('t.pa')::uuid),
+  'R13 with the count hidden too, the blocked customer sees the closed pa''s snapshot');
+update public.pro_live set status = 'open', auto_close_at = '2026-11-23 18:30+01'
+ where pro_id = current_setting('t.pa')::uuid;
+
+select realtime.send(jsonb_build_object('probe', 3), 'live', 'pro:' || current_setting('t.pa'), true);
+do $$ begin perform tests.authenticate_as(current_setting('t.d')::uuid); end; $$;
+select ok(not public.live_topic_allowed('pro:' || current_setting('t.pa')),
+  'R13 the blocked customer is refused pa''s channel');
+select set_config('realtime.topic', 'pro:' || current_setting('t.pa'), true);
+select is((select count(*)::int from realtime.messages), 0,
+  'R13 policy: the blocked customer reads none of pa''s broadcasts');
+do $$ begin perform tests.clear_auth(); end; $$;
+do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
+select set_config('realtime.topic', 'pro:' || current_setting('t.pa'), true);
+select ok((select count(*) from realtime.messages) > 0,
+  'R13 policy: an unblocked customer still reads them');
+do $$ begin perform tests.clear_auth(); end; $$;
+select set_config('realtime.topic', '', true);
+delete from realtime.messages;
+delete from public.pro_blocks where pro_id = current_setting('t.pa')::uuid;
 
 -- R10 -----------------------------------------------------------------------------------------
 -- Tuesday 07:00 is service day 2026-11-24; Monday's entries still waiting or serving are ended.

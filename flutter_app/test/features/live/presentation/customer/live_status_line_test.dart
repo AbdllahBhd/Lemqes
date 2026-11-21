@@ -123,6 +123,36 @@ void main() {
     await unmountLive(tester);
   });
 
+  testWidgets('a refused channel with a closed fetch reads "Fermé", for good', (
+    tester,
+  ) async {
+    // A customer the pro blocked: the channel is refused and the fetch is
+    // the closed shape (no times, age, queue or wait).
+    final (live, _) = await _pump(tester);
+    live.repo.server['p1'] = LiveSnapshot.fromJson({
+      ...custLive('p1', status: 'closed', joinBlock: 'closed'),
+      'auto_close_at': null,
+      'status_age_from': null,
+      'waiting_count': null,
+      'wait_min': null,
+      'ahead_minutes': null,
+    });
+    await settleLive(tester);
+    live.factory.last('p1').refuse();
+    await settleLive(tester);
+
+    expect(_line(tester), 'Fermé');
+    expect(_queue(tester), isNull);
+    expect(find.byKey(const Key('liveRing_none')), findsOneWidget);
+    // Hours later, with no message: still a plain "Fermé" (no age, no
+    // "Statut incertain"), as a closed pro reads.
+    live.advanceTo(DateTime.utc(2026, 11, 20, 15));
+    await settleLive(tester);
+    expect(_line(tester), 'Fermé');
+    expect(_queue(tester), isNull);
+    await unmountLive(tester);
+  });
+
   testWidgets('no barber action for 2 h reads "Statut incertain", muted', (
     tester,
   ) async {

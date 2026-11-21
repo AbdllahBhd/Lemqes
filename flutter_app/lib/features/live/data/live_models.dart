@@ -97,6 +97,11 @@ DateTime? _tsOrNull(Object? v) => v == null ? null : _ts(v);
 /// One pro's live state exactly as the server sends it (RPC `live` object and
 /// broadcast payload; the broadcast's extra `id` and unknown keys are
 /// ignored).
+///
+/// A closed pro (and, for a customer it blocked, every pro read of it)
+/// carries no times, age, queue or wait. With the count hidden the server
+/// leaves out everything that would recount it (count, ahead minutes,
+/// serving fields, `queue_version`): only the rounded [waitMin] remains.
 class LiveSnapshot {
   const LiveSnapshot({
     required this.proId,
@@ -107,6 +112,7 @@ class LiveSnapshot {
     required this.queueMode,
     required this.listed,
     required this.joinBlock,
+    required this.countHidden,
     required this.waitingCount,
     required this.waitMin,
     required this.servingCalledAt,
@@ -122,16 +128,17 @@ class LiveSnapshot {
     status: LiveStatus.fromDb(j['status']! as String),
     breakUntil: _tsOrNull(j['break_until']),
     autoCloseAt: _tsOrNull(j['auto_close_at']),
-    statusAgeFrom: _ts(j['status_age_from']),
+    statusAgeFrom: _tsOrNull(j['status_age_from']),
     queueMode: QueueMode.fromDb(j['queue_mode']! as String),
     listed: j['listed']! as bool,
     joinBlock: JoinBlock.fromDb(j['join_block'] as String?),
+    countHidden: j['count_hidden'] as bool? ?? false,
     waitingCount: (j['waiting_count'] as num?)?.toInt(),
     waitMin: (j['wait_min'] as num?)?.toInt(),
     servingCalledAt: _tsOrNull(j['serving_called_at']),
     servingDurationMin: (j['serving_duration_min'] as num?)?.toInt(),
     aheadMinutes: (j['ahead_minutes'] as num?)?.toInt() ?? 0,
-    queueVersion: (j['queue_version']! as num).toInt(),
+    queueVersion: (j['queue_version'] as num?)?.toInt(),
     liveVersion: (j['live_version']! as num).toInt(),
     serverNow: _ts(j['server_now']),
   );
@@ -141,8 +148,9 @@ class LiveSnapshot {
   final DateTime? breakUntil;
   final DateTime? autoCloseAt;
 
-  /// Last barber activity, rounded down to 5 min by the server.
-  final DateTime statusAgeFrom;
+  /// Last barber activity, rounded down to 5 min by the server; null when
+  /// closed.
+  final DateTime? statusAgeFrom;
   final QueueMode queueMode;
 
   /// False once the pro is unpublished: customers drop the pro (their
@@ -150,16 +158,19 @@ class LiveSnapshot {
   final bool listed;
   final JoinBlock? joinBlock;
 
-  /// Null when the pro hides the count.
+  /// The pro hides the queue count: the snapshot carries [waitMin] only.
+  final bool countHidden;
+
+  /// Null when the pro hides the count, and when closed.
   final int? waitingCount;
   final int? waitMin;
   final DateTime? servingCalledAt;
   final int? servingDurationMin;
   final int aheadMinutes;
 
-  /// Moves when the queue changes: the owner queue and the ticket refetch
-  /// on it.
-  final int queueVersion;
+  /// Moves when the queue changes; absent when the count is hidden. Read
+  /// [queueChangeKey], not this.
+  final int? queueVersion;
 
   /// Moves on every broadcast, status-only ones included: the ordering key.
   final int liveVersion;
@@ -170,6 +181,17 @@ class LiveSnapshot {
   /// began before a change committed can carry a later stamp than the
   /// change's own broadcast.
   bool isNewerThan(LiveSnapshot other) => liveVersion > other.liveVersion;
+
+  /// What the owner queue and the ticket refetch on: `queue_version` while
+  /// the snapshot carries it; with the count hidden it does not, and any
+  /// broadcast (`live_version`) may be a queue change. Two record shapes, so
+  /// a switch between them always reads as a change.
+  (int?, int?) get queueChangeKey =>
+      queueVersion != null ? (queueVersion, null) : (null, liveVersion);
+
+  /// Whether the client may recount the wait between messages: not when
+  /// closed (nothing to count) or when the count is hidden (no inputs).
+  bool get hasWaitInputs => !countHidden && status != LiveStatus.closed;
 
   @override
   bool operator ==(Object other) =>
@@ -182,6 +204,7 @@ class LiveSnapshot {
       queueMode == other.queueMode &&
       listed == other.listed &&
       joinBlock == other.joinBlock &&
+      countHidden == other.countHidden &&
       waitingCount == other.waitingCount &&
       waitMin == other.waitMin &&
       servingCalledAt == other.servingCalledAt &&
@@ -201,6 +224,7 @@ class LiveSnapshot {
     queueMode,
     listed,
     joinBlock,
+    countHidden,
     waitingCount,
     waitMin,
     servingCalledAt,

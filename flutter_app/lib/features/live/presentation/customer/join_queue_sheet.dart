@@ -31,8 +31,8 @@ class JoinService {
 }
 
 /// One sentence per `join_queue` refusal (the join rules are not callable
-/// on their own: the button follows the snapshot's `join_block`);
-/// `join_unavailable` stays neutral so a refusal never reveals a block.
+/// on their own: the button follows the snapshot's `join_block`). A customer
+/// the pro blocked is refused `pro_not_open`, like at any closed pro.
 String joinFailureMessage(AppLocalizations l10n, LiveFailure f) => switch (f) {
   NotListable() => l10n.joinErrorNotListable,
   OwnQueue() => l10n.joinErrorOwnQueue,
@@ -41,7 +41,6 @@ String joinFailureMessage(AppLocalizations l10n, LiveFailure f) => switch (f) {
   AlreadyInQueue() => l10n.joinErrorAlreadyInQueue,
   JoinLimitReached() => l10n.joinErrorLimit,
   AbsentBlock() => l10n.joinErrorAbsentBlock,
-  JoinUnavailable() => l10n.joinErrorUnavailable,
   _ => liveFailureMessage(l10n, f),
 };
 

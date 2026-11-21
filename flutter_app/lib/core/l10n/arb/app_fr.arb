@@ -1456,6 +1456,10 @@
   "@liveErrorEntryGone": {
     "description": "Live failure: the entry already left"
   },
+  "liveErrorNotCalled": "Appelez ce client avant de le marquer absent.",
+  "@liveErrorNotCalled": {
+    "description": "Live failure: entry_not_called (an absent is marked only once the customer was called)"
+  },
   "liveErrorInvalidName": "Un nom de 40 caractères au plus, sans symboles spéciaux.",
   "@liveErrorInvalidName": {
     "description": "Live failure: walk-in name refused"
@@ -1622,10 +1626,6 @@
   "joinErrorAbsentBlock": "Après deux absences, les places à distance sont suspendues pendant 24 h.",
   "@joinErrorAbsentBlock": {
     "description": "Join refused: absent_block"
-  },
-  "joinErrorUnavailable": "Impossible de rejoindre cette file pour le moment.",
-  "@joinErrorUnavailable": {
-    "description": "Join refused: join_unavailable (neutral: never reveals a block)"
   },
   "ticketTitle": "Votre file",
   "@ticketTitle": {

@@ -182,7 +182,8 @@ class EntryBlock extends EntryAction {
 }
 
 /// An entry's sheet: its service (and a walk-in's optional name), plus
-/// "Absent" and "Bloquer" for remote entries.
+/// "Bloquer" for remote entries, and "Absent" once one is called (only the
+/// called customer can be missing).
 Future<EntryAction?> showQueueEntrySheet(
   BuildContext context, {
   required OwnerQueueRow row,
@@ -307,16 +308,17 @@ class _EntrySheetState extends State<_EntrySheet> {
                 runSpacing: 8,
                 alignment: WrapAlignment.center,
                 children: [
-                  TextButton.icon(
-                    key: const Key('entryAbsent'),
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size(48, 48),
+                  if (widget.row.state == EntryState.serving)
+                    TextButton.icon(
+                      key: const Key('entryAbsent'),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                      ),
+                      onPressed: () =>
+                          Navigator.of(context).pop(const EntryAbsent()),
+                      icon: const Icon(Icons.person_off_outlined),
+                      label: Text(l10n.todayAbsent),
                     ),
-                    onPressed: () =>
-                        Navigator.of(context).pop(const EntryAbsent()),
-                    icon: const Icon(Icons.person_off_outlined),
-                    label: Text(l10n.todayAbsent),
-                  ),
                   TextButton.icon(
                     key: const Key('entryBlock'),
                     style: TextButton.styleFrom(

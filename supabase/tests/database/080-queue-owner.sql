@@ -1,5 +1,5 @@
 begin;
-select plan(100);
+select plan(102);
 
 -- Calendar (Africa/Algiers, UTC+1, no DST): 2026-11-23 is a Monday. The service day is the local
 -- date of (now - 6 h 30), so 2026-11-24 05:00 still belongs to 2026-11-23.
@@ -356,11 +356,20 @@ select throws_ok(
   format($$ select * from public.queue_mark_absent(%L, gen_random_uuid()) $$, current_setting('t.e1')),
   'P0001', 'not_remote', 'Q9 a walk-in cannot be marked absent'
 );
+select throws_ok(
+  format($$ select * from public.queue_mark_absent(%L, gen_random_uuid()) $$, current_setting('t.e4')),
+  'P0001', 'entry_not_called', 'Q9 a remote entry still waiting (never called) cannot be marked absent'
+);
+select is(
+  (select array_agg(ticket_no || ':' || state order by position)
+     from public.queue_call_next(current_setting('t.pa')::uuid, gen_random_uuid())),
+  array['4:serving', '5:waiting'], 'Q9 calling next calls the remote entry'
+);
 do $$ begin perform set_config('t.r3', gen_random_uuid()::text, true); end; $$;
 select is(
   (select array_agg(ticket_no order by position)
      from public.queue_mark_absent(current_setting('t.e4')::uuid, current_setting('t.r3')::uuid)),
-  array[1, 5], 'Q9 marking a remote entry absent takes it out of the queue'
+  array[5], 'Q9 marking the called remote entry absent takes it out of the queue'
 );
 do $$ begin perform tests.clear_auth(); end; $$;
 select ok(
@@ -379,7 +388,7 @@ select tests.freeze_now('2026-11-25 10:05+01');
 select is(
   (select array_agg(ticket_no order by position)
      from public.queue_mark_absent(current_setting('t.e4')::uuid, current_setting('t.r3')::uuid)),
-  array[1, 5], 'Q9 replaying mark_absent with the same request id returns the queue without error'
+  array[5], 'Q9 replaying mark_absent with the same request id returns the queue without error'
 );
 do $$ begin perform tests.clear_auth(); end; $$;
 select ok(
@@ -429,8 +438,9 @@ select is(
 );
 select throws_ok(
   format($$ insert into public.queue_entries (pro_id, served_by, ticket_no, service_day, kind, state, called_at)
-            values (%L, %L, 90, '2026-11-25', 'walk_in', 'serving', now()) $$,
-         current_setting('t.pa'), current_setting('t.pa')),
+            values (%L, %L, 92, '2026-11-25', 'walk_in', 'serving', now()),
+                   (%L, %L, 93, '2026-11-25', 'walk_in', 'serving', now()) $$,
+         current_setting('t.pb'), current_setting('t.pb'), current_setting('t.pb'), current_setting('t.pb')),
   '23505', null, 'Q7 a second serving row for the same pro is refused'
 );
 insert into public.queue_entries (pro_id, served_by, ticket_no, service_day, kind, customer_id)
