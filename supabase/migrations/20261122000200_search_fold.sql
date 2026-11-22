@@ -4,12 +4,14 @@
 --     and apostrophes gone, hamza forms -> alef, ya/alef maqsura -> ya, ta marbuta -> ha, ؤ -> و,
 --     ئ -> ي, harakat and tatweel removed, Arabic-Indic and Persian digits -> 0-9, punctuation
 --     -> space, spaces collapsed.
---   * f_name_skeleton(text): a sound skeleton so "Amine" finds "أمين". Per word, on the fold:
---     Arabic is read the Algerian-French way (ش ch, ج dj, خ kh, غ gh, ق k, ع and ة as vowels,
---     final ه dropped), Latin ch/sh, kh, gh, dj, th, dh become one letter each, c before e/i/y
---     is s and any other c or q is k, Arabizi digits 3 7 9 5 2 read as ع ح ق خ ء, vowels (and
---     w, y inside a word) are dropped but a word's first vowel is kept as "a", a word-initial
---     y/w/و/ي and "ou" stay consonants, doubled letters collapse and spaces go.
+--   * f_name_skeleton(text): a sound skeleton so "Amine" finds "أمين". The raw text has ة read as
+--     "a" (before the fold would merge it into ه), then per word, on the fold: initial و/ي are w/y;
+--     in a word after the first, the article ال (or a lone el/al) is "l"; Latin ou before a vowel
+--     is w (Ouassim) but a vowel before a consonant (Oussama, Ouled); ch/sh, kh, gh, ph, dj, dh
+--     and an initial th become one letter each; c before e/i/y is s and any other c or q is k;
+--     Arabizi digits 3 7 9 5 2 read as ع ح ق خ ء; Arabic letters are read the Algerian-French way
+--     (ش ch, ج dj, خ kh, غ gh, ق k, ع a); vowels (and w, y inside a word) are dropped but a word's
+--     first vowel is kept as "a"; doubled letters collapse and spaces go.
 --     supabase/tests/fold_vectors.json is the single table both this and the Dart port
 --     (search_fold.dart) are tested against.
 --   * pro_profiles.search_key / search_skeleton: stored from display_name + workplace_name, with
@@ -33,16 +35,14 @@ as $$
   select btrim(regexp_replace(
     regexp_replace(
       translate(
-        translate(
-          regexp_replace(
-            translate(lower(public.f_unaccent(p_text)), 'ɣ''’‘ʿʾʼ`', 'g'),
-            '[ً-ٰٟـ]', '', 'g'),
-          'أإآٱةىؤئکی٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹',
-          'ااااهيويكي01234567890123456789'),
-        '', ''),
-      '[!-/:-@[-`{-~¡-¿،؛؟٪-٭۔‐-‧‰-⁞]',
+        regexp_replace(
+          translate(lower(public.f_unaccent(p_text)), 'ɣ''’‘ʿʾʼ`', 'g'),
+          '[\u064B-\u065F\u0670\u0640\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]', '', 'g'),
+        'أإآٱةىؤئکی٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹',
+        'ااااهيويكي01234567890123456789'),
+      '[!-/:-@[-`{-~\u00A1-\u00BF\u060C\u061B\u061F\u066A-\u066D\u06D4\u2010-\u2027\u2030-\u205E]',
       ' ', 'g'),
-    '[\s ]+', ' ', 'g'));
+    '[\s\u00A0]+', ' ', 'g'));
 $$;
 
 create function public.f_name_skeleton(p_text text)
@@ -55,27 +55,34 @@ set search_path = ''
 as $$
 declare
   v_token text;
+  v_n int := 0;
   v_out text := '';
 begin
+  -- ة is a final "a" (the fold would merge it into ه, which is a real h in Allah or Salah).
   for v_token in
-    select t from regexp_split_to_table(public.f_search_fold(p_text), ' ') as t
+    select t from regexp_split_to_table(public.f_search_fold(replace(p_text, 'ة', 'a')), ' ') as t
   loop
+    v_n := v_n + 1;
     -- A word with no letter (a number) is kept as it is.
     if v_token !~ '[a-zء-ي]' then
       v_out := v_out || v_token;
       continue;
     end if;
+    if v_n > 1 then
+      -- Abdelkader / عبد القادر: the article is a bare l, not a kept first vowel.
+      v_token := regexp_replace(v_token, '^ال(.)', 'l\1');
+      v_token := regexp_replace(v_token, '^[ae]l$', 'l');
+    end if;
     v_token := regexp_replace(v_token, '^و', 'w');
     v_token := regexp_replace(v_token, '^ي', 'y');
-    v_token := regexp_replace(v_token, '(.)ه$', '\1');
-    v_token := regexp_replace(v_token, '^ou', 'w');
-    v_token := regexp_replace(v_token, '([aeiou])h$', '\1');
+    v_token := regexp_replace(v_token, '^ou([aeiouy])', 'w\1');
+    v_token := regexp_replace(v_token, '^th', 't');
     v_token := replace(v_token, 'ch', '#');
     v_token := replace(v_token, 'sh', '#');
     v_token := replace(v_token, 'kh', 'x');
     v_token := replace(v_token, 'gh', 'g');
+    v_token := replace(v_token, 'ph', 'f');
     v_token := replace(v_token, 'dj', 'j');
-    v_token := replace(v_token, 'th', 't');
     v_token := replace(v_token, 'dh', 'd');
     v_token := regexp_replace(v_token, 'c([eiy])', 's\1', 'g');
     v_token := translate(v_token, 'cq#37952', 'kkcahkxa');
@@ -94,7 +101,7 @@ alter table public.pro_profiles
     public.f_search_fold(display_name || ' ' || coalesce(workplace_name, ''))
   ) stored,
   add column search_skeleton text generated always as (
-    public.f_name_skeleton(display_name || ' ' || coalesce(workplace_name, ''))
+    public.f_name_skeleton(display_name) || ' ' || public.f_name_skeleton(coalesce(workplace_name, ''))
   ) stored;
 
 create index pro_profiles_search_key_trgm_idx
@@ -117,6 +124,9 @@ grant execute on function public.f_search_fold(text), public.f_name_skeleton(tex
 -- tier 1 = skeleton-only match on the name or workplace. The tier orders first; with no query
 -- every row is tier 0 and the order is the one it was. A non-blank query that folds to nothing
 -- ("%", "...") matches nothing.
+-- The match is a union of id sets (one branch per index), not an OR over the row, so the two
+-- trigram indexes can answer the name branches; the service branch scans, as service names are
+-- not stored.
 create or replace function public.search_pros(
   p_query text default null,
   p_region_code text default null,
@@ -158,21 +168,38 @@ as $$
            case when char_length(q.skeleton) >= 3 then '%' || q.skeleton || '%' end as skel_pattern
     from q
   ),
+  matched as (
+    select u.id, min(u.tier) as tier
+    from (
+      select p.id, 0 as tier
+      from qp, public.pro_profiles p
+      where qp.active and qp.folds and p.search_key like qp.pattern
+      union all
+      select p.id, 1
+      from qp, public.pro_profiles p
+      where qp.active and qp.folds and p.search_skeleton like qp.skel_pattern
+      union all
+      select p.id, 0
+      from qp, public.pro_profiles p
+      cross join lateral public.pro_public_services(p.id) s
+      left join public.service_presets sp on sp.key = s.preset_key
+      where qp.active and qp.folds
+        and p.published_at is not null
+        and p.space = (select public.current_space())
+        and public.f_search_fold(concat_ws(' ', s.name, sp.name_ar, sp.name_fr, sp.name_en,
+                                           sp.name_kab)) like qp.pattern
+    ) u
+    group by u.id
+  ),
   page as (
     select p.id, p.kind, p.display_name, p.avatar_path, p.workplace_type, p.workplace_name,
            l.region_code, r.name_ar as region_name_ar, r.name_fr as region_name_fr,
            l.name_ar as locality_name_ar, l.name_fr as locality_name_fr, p.customer_mix,
            (select min(s.price_dzd) from public.pro_public_services(p.id) s) as min_price_dzd,
-           p.is_verified, p.published_at,
-           case when not qp.active or p.search_key like qp.pattern or exists (
-                  select 1
-                  from public.pro_public_services(p.id) s
-                  left join public.service_presets sp on sp.key = s.preset_key
-                  where public.f_search_fold(concat_ws(' ', s.name, sp.name_ar, sp.name_fr,
-                                                       sp.name_en, sp.name_kab)) like qp.pattern
-                ) then 0 else 1 end as tier
+           p.is_verified, p.published_at, coalesce(m.tier, 0) as tier
     from public.pro_profiles p
     cross join qp
+    left join matched m on m.id = p.id
     left join public.geo_localities l on l.id = p.locality_id
     left join public.geo_regions r on r.country_code = l.country_code and r.code = l.region_code
     where p.published_at is not null
@@ -184,17 +211,8 @@ as $$
       and (p_category is null or exists (
         select 1 from public.pro_public_services(p.id) s where s.category = p_category
       ))
-      and (not qp.active or (qp.folds and (
-        p.search_key like qp.pattern
-        or p.search_skeleton like qp.skel_pattern
-        or exists (
-          select 1
-          from public.pro_public_services(p.id) s
-          left join public.service_presets sp on sp.key = s.preset_key
-          where public.f_search_fold(concat_ws(' ', s.name, sp.name_ar, sp.name_fr, sp.name_en,
-                                               sp.name_kab)) like qp.pattern
-        ))))
-    order by tier, p.is_verified desc, p.published_at desc, p.id
+      and (not qp.active or m.id is not null)
+    order by coalesce(m.tier, 0), p.is_verified desc, p.published_at desc, p.id
     limit least(greatest(coalesce(p_limit, 30), 0), 50)
     offset least(greatest(coalesce(p_offset, 0), 0), 1000)
   )

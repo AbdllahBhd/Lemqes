@@ -7,9 +7,18 @@ import 'package:lemqes/features/geo/presentation/search_fold.dart';
 void main() {
   // One vector table drives this test and the generated pgTAP file, so the Dart and SQL folds
   // cannot drift (scripts/fold_vectors.py).
-  final vectors = (jsonDecode(
-    File('../supabase/tests/fold_vectors.json').readAsStringSync(),
-  ) as List).cast<Map<String, dynamic>>();
+  final file =
+      [
+        File('../supabase/tests/fold_vectors.json'),
+        File('supabase/tests/fold_vectors.json'),
+      ].firstWhere(
+        (f) => f.existsSync(),
+        orElse: () => throw StateError(
+          'fold_vectors.json not found: run the tests from flutter_app/ or the repo root',
+        ),
+      );
+  final vectors = (jsonDecode(file.readAsStringSync()) as List)
+      .cast<Map<String, dynamic>>();
 
   test('the vector table covers every rule', () {
     expect(vectors.length, greaterThanOrEqualTo(40));
@@ -44,6 +53,16 @@ void main() {
       expect(hit('Tizi', 'Tizi Ouzou', 'تيزي وزو'), isTrue);
       expect(hit('تيزي', 'Tizi Ouzou', 'تيزي وزو'), isTrue);
       expect(hit('Tizi', 'Oran', 'وهران'), isFalse);
+    });
+
+    test('a spelling variant is found by skeleton alone', () {
+      // Neither the fold of nameFr nor of nameAr contains "tizi wezzu".
+      expect(hit('Tizi Wezzu', 'Tizi Ouzou', 'تيزي وزو'), isTrue);
+      expect(hit('Tizi Wezzu', 'Oran', 'وهران'), isFalse);
+    });
+
+    test('a two-letter skeleton never matches', () {
+      expect(hit('Ali', 'El Oued', 'الوادي'), isFalse);
     });
 
     test('an empty query keeps every place and a code still matches', () {

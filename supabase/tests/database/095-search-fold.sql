@@ -130,13 +130,20 @@ begin
 end;
 $$;
 
--- 2,000 rows fit in a few dozen pages, where a sequential scan is cheaper than any index; the
--- test asks only whether the planner can answer the name query from the trigram index.
+-- The name branches of search_pros (its `matched` CTE) with a query of Amine: one index-backed
+-- id set per key. 2,000 rows fit in a few dozen pages, where a sequential scan is cheaper than
+-- any index, so the test asks only whether the planner can answer the real predicates from the
+-- trigram indexes.
 set local enable_seqscan = off;
 select ok(
-  (select tests.explain_text($$ select id from public.pro_profiles where search_key like '%amine%' $$)
-          like '%pro_profiles_search_key_trgm_idx%'),
-  'F7: a name query on 2,000 pros uses the trigram index on search_key'
+  (select tests.explain_text($$
+     with qp as (select '%' || public.f_search_fold('Amine') || '%' as pattern,
+                        '%' || public.f_name_skeleton('Amine') || '%' as skel_pattern)
+     select p.id from qp, public.pro_profiles p where p.search_key like qp.pattern
+     union all
+     select p.id from qp, public.pro_profiles p where p.search_skeleton like qp.skel_pattern
+   $$) ~ 'pro_profiles_search_key_trgm_idx.*pro_profiles_search_skeleton_trgm_idx'),
+  'F7: the name branches of search_pros on 2,000 pros use both trigram indexes'
 );
 
 select * from finish();
