@@ -1,5 +1,5 @@
 begin;
-select plan(40);
+select plan(41);
 
 -- Results are compared whole, so pros left in the local database must not count; rolled back.
 delete from public.pro_profiles;
@@ -251,8 +251,8 @@ select results_eq(
   $$ select lat, lng, distance_m, place_mode::text, comes_to_you
        from public.search_pros(p_origin_lat => 36.76846, p_origin_lng => 3.0909)
       where display_name = 'Bilal Studio' $$,
-  $$ values (null::double precision, null::double precision, null::int, null::text, false) $$,
-  'N6 a blocked customer gets the row with no place and no distance'
+  $$ values (null::double precision, null::double precision, null::int, 'none'::text, false) $$,
+  'N6 a blocked customer gets the row in the none shape, with no distance'
 );
 select is(
   (select distance_m from public.search_pros(p_origin_lat => 36.76846, p_origin_lng => 3.0909)
@@ -313,6 +313,16 @@ select ok(
   and has_function_privilege('authenticated', 'public.search_args_check(double precision, double precision, double precision[])', 'execute'),
   'N8 search_args_check is executable by authenticated only'
 );
+
+-- N4: a point just inside the equatorward edge of an 8-degree view at lon 0, where a great-circle
+-- box on the bare view misses it.
+do $$ begin perform tests.set_place(current_setting('t.pa')::uuid, 'exact', 32.03, 0.0); end; $$;
+do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
+select is(
+  (select count(*)::int from public.search_pros(p_bbox => array[-4.0, 32.0, 4.0, 40.0])
+    where display_name = 'Amine Coupe'),
+  1, 'N4 a point just inside a bbox edge is found');
+do $$ begin perform tests.clear_auth(); end; $$;
 
 -- N4 (101 cap) and N9: 2,000 men pros placed around O -------------------------------------------
 

@@ -147,7 +147,10 @@ as $$
            l.region_code, r.name_ar as region_name_ar, r.name_fr as region_name_fr,
            l.name_ar as locality_name_ar, l.name_fr as locality_name_fr, p.customer_mix,
            p.is_verified, p.published_at, p.locality_id, p.service_radius_km,
-           pl.place_mode, pl.lat, pl.lng, pl.area_radius_m, pl.landmark, pl.search_point
+           -- A blocked reader sees no pro_places row; every pro has one, so a null mode would
+           -- reveal the block. It reads as none (and, having no point, as no distance).
+           coalesce(pl.place_mode, 'none'::public.place_mode) as place_mode,
+           pl.lat, pl.lng, pl.area_radius_m, pl.landmark, pl.search_point
     from public.pro_profiles p
     left join public.pro_places pl on pl.pro_id = p.id
     left join public.geo_localities l on l.id = p.locality_id
@@ -187,9 +190,12 @@ as $$
      limit least(greatest(coalesce(p_limit, 30), 0), 50)
            + least(greatest(coalesce(p_offset, 0), 0), 1000))
     union all
-    -- Map: the points inside the view, nearest its centre first. The && test is on the view
-    -- padded by half a degree (a geography box follows great circles, which bow past the
-    -- view's straight lat/lng edges) and serves the index; the lat/lng test is the exact one.
+    -- Map: the points inside the view, nearest its centre first. The && test serves the index;
+    -- the lat/lng test is the exact one. A geography box follows great circles, and a view edge
+    -- along a parallel bows poleward between its corners (by atan(tan(lat) / cos(w / 2)) - lat,
+    -- at most ~0.07 degrees for an 8-degree side), so && on the bare view misses points just
+    -- inside its equatorward edge (measured: up to 0.06 degrees inside, at lon 0). The latitude
+    -- edges are padded by 0.1 degree; the longitude edges are meridians, which need none.
     (select b.*, 0,
             b.search_point operator(extensions.<->)
               extensions.st_point((p_bbox[1] + p_bbox[3]) / 2, (p_bbox[2] + p_bbox[4]) / 2,
@@ -200,8 +206,8 @@ as $$
      where p_bbox is not null
        and (not qp.active or m.id is not null)
        and b.search_point operator(extensions.&&) extensions.st_makeenvelope(
-             greatest(p_bbox[1] - 0.5, -180), greatest(p_bbox[2] - 0.5, -90),
-             least(p_bbox[3] + 0.5, 180), least(p_bbox[4] + 0.5, 90), 4326)::extensions.geography
+             p_bbox[1], greatest(p_bbox[2] - 0.1, -90),
+             p_bbox[3], least(p_bbox[4] + 0.1, 90), 4326)::extensions.geography
        and extensions.st_x(b.search_point::extensions.geometry) between p_bbox[1] and p_bbox[3]
        and extensions.st_y(b.search_point::extensions.geometry) between p_bbox[2] and p_bbox[4]
      order by b.search_point operator(extensions.<->)

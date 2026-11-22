@@ -131,7 +131,8 @@ class ProCard {
   /// for a pro with no point, or for a pro that blocked the reader.
   final int? distanceM;
 
-  /// Null when the reader cannot see the pro's place (blocked).
+  /// [PlaceMode.none] when the pro shows no point, and also when it blocked
+  /// the reader (so a block reads like any commune-only pro).
   final PlaceMode? placeMode;
 
   /// The shown point (pin or area centre); null for [PlaceMode.none].
