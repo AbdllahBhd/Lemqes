@@ -486,5 +486,91 @@
     }
   },
   "exploreComesToYou": "Travels to you",
-  "exploreFarNotice": "Nothing within 10 km — here are the closest"
+  "exploreFarNotice": "Nothing within 10 km — here are the closest",
+  "mapUnavailable": "Map unavailable",
+  "placeTitle": "Your location",
+  "placeBody": "{space, select, women{Choose what your customers see: your door, an area, or just your town.} other{Choose what your customers see: your door, an area, or just your town.}}",
+  "@placeBody": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeModeLabel": "What you show",
+  "placeModeExact": "Pin",
+  "placeModeArea": "Area",
+  "placeModeNone": "Commune only",
+  "placeRadiusLabel": "Area size",
+  "placeLandmarkLabel": "Landmark (optional)",
+  "placeLandmarkHint": "E.g. opposite the post office",
+  "placePreviewExact": "{space, select, women{Customers will see: this exact point, with directions.} other{Customers will see: this exact point, with directions.}}",
+  "@placePreviewExact": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewArea": "{space, select, women{Customers will see: an area of {size} around this point, not your address.} other{Customers will see: an area of {size} around this point, not your address.}}",
+  "@placePreviewArea": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewNone": "{space, select, women{Customers will see: only your town, no point on the map.} other{Customers will see: only your town, no point on the map.}}",
+  "@placePreviewNone": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeLocate": "My current location",
+  "placeLocateFailed": "Location unavailable. Move the map to your workplace.",
+  "placeMoveHint": "Move the map to place the point",
+  "placeChosenPoint": "Chosen point, at the map centre",
+  "placeWarningTitle": "Anyone can see this point",
+  "placeWarningBody": "Everyone picks their own space at sign-up: anyone can open the women’s space.",
+  "placeWarningAck": "I understand",
+  "placeLater": "Later",
+  "placeErrorTooFar": "This point is more than 30 km from your town. Move it closer, or change your town in your profile.",
+  "placeErrorOutOfCountry": "This point is outside Algeria.",
+  "placeErrorNoLocality": "Choose your town in your profile first.",
+  "placeRemoved": "Your location was removed: it was more than 30 km from your new town.",
+  "placeSectionTitle": "Location",
+  "placeSummaryExact": "Exact point on the map",
+  "placeSummaryArea": "Area of {size} around your point",
+  "@placeSummaryArea": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placeSummaryNone": "Commune only: no point on the map",
+  "placeEdit": "Edit location",
+  "placeHide": "Hide my location",
+  "placeHidden": "Location hidden: only your town is shown.",
+  "placeNudgeTitle": "Put your salon on the map",
+  "placeNudgeBody": "{space, select, women{Customers nearby find you faster. You choose what they see.} other{Customers nearby find you faster. You choose what they see.}}",
+  "@placeNudgeBody": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeNudgeAction": "Place my salon",
+  "settingsMapData": "Map data",
+  "mapLicencesIntro": "The Lemqes map is made with these open data and services.",
+  "mapLicenceOsm": "Map data © OpenStreetMap contributors, under the Open Database License (ODbL).",
+  "mapLicenceOpenMapTiles": "Vector tile schema © OpenMapTiles.",
+  "mapLicenceOpenFreeMap": "Map tiles and style provided free of charge by OpenFreeMap.",
+  "mapLicenceMore": "Learn more"
 }

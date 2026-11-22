@@ -486,5 +486,91 @@
     }
   },
   "exploreComesToYou": "يأتي إليك",
-  "exploreFarNotice": "لا يوجد أحد على بعد أقل من 10 كم — إليك الأقرب"
+  "exploreFarNotice": "لا يوجد أحد على بعد أقل من 10 كم — إليك الأقرب",
+  "mapUnavailable": "الخريطة غير متاحة",
+  "placeTitle": "موقعك",
+  "placeBody": "{space, select, women{اختاري ما تراه زبوناتك: بابك، أو منطقة، أو بلديتك فقط.} other{اختر ما يراه زبائنك: بابك، أو منطقة، أو بلديتك فقط.}}",
+  "@placeBody": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeModeLabel": "ما تُظهره",
+  "placeModeExact": "دبوس",
+  "placeModeArea": "منطقة",
+  "placeModeNone": "البلدية فقط",
+  "placeRadiusLabel": "حجم المنطقة",
+  "placeLandmarkLabel": "علامة مميزة (اختياري)",
+  "placeLandmarkHint": "مثال: مقابل البريد",
+  "placePreviewExact": "{space, select, women{سترى الزبونات: هذه النقطة بالضبط، مع الاتجاهات.} other{سيرى الزبائن: هذه النقطة بالضبط، مع الاتجاهات.}}",
+  "@placePreviewExact": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewArea": "{space, select, women{سترى الزبونات: منطقة بقطر {size} حول هذه النقطة، وليس عنوانك.} other{سيرى الزبائن: منطقة بقطر {size} حول هذه النقطة، وليس عنوانك.}}",
+  "@placePreviewArea": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewNone": "{space, select, women{سترى الزبونات: بلديتك فقط، دون أي نقطة على الخريطة.} other{سيرى الزبائن: بلديتك فقط، دون أي نقطة على الخريطة.}}",
+  "@placePreviewNone": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeLocate": "موقعي الحالي",
+  "placeLocateFailed": "الموقع غير متاح. حرّك الخريطة إلى مكان عملك.",
+  "placeMoveHint": "حرّك الخريطة لوضع النقطة",
+  "placeChosenPoint": "النقطة المختارة، في وسط الخريطة",
+  "placeWarningTitle": "يمكن للجميع رؤية هذه النقطة",
+  "placeWarningBody": "كل شخص يختار فضاءه عند التسجيل: يمكن لأي أحد فتح فضاء النساء.",
+  "placeWarningAck": "فهمت",
+  "placeLater": "لاحقًا",
+  "placeErrorTooFar": "هذه النقطة تبعد أكثر من 30 كم عن بلديتك. قرّبها، أو غيّر بلديتك في ملفك.",
+  "placeErrorOutOfCountry": "هذه النقطة خارج الجزائر.",
+  "placeErrorNoLocality": "اختر بلديتك في ملفك أولًا.",
+  "placeRemoved": "تمت إزالة موقعك: كان يبعد أكثر من 30 كم عن بلديتك الجديدة.",
+  "placeSectionTitle": "الموقع",
+  "placeSummaryExact": "نقطة دقيقة على الخريطة",
+  "placeSummaryArea": "منطقة بقطر {size} حول نقطتك",
+  "@placeSummaryArea": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placeSummaryNone": "البلدية فقط: لا نقطة على الخريطة",
+  "placeEdit": "تعديل الموقع",
+  "placeHide": "إخفاء موقعي",
+  "placeHidden": "تم إخفاء الموقع: بلديتك فقط ظاهرة.",
+  "placeNudgeTitle": "ضع صالونك على الخريطة",
+  "placeNudgeBody": "{space, select, women{تجدك الزبونات القريبات أسرع. أنتِ تختارين ما يرينه.} other{يجدك الزبائن القريبون أسرع. أنت تختار ما يرونه.}}",
+  "@placeNudgeBody": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeNudgeAction": "تحديد موقع صالوني",
+  "settingsMapData": "بيانات الخرائط",
+  "mapLicencesIntro": "خريطة Lemqes مصنوعة بهذه البيانات والخدمات المفتوحة.",
+  "mapLicenceOsm": "بيانات الخرائط © المساهمون في OpenStreetMap، بموجب رخصة Open Database License (ODbL).",
+  "mapLicenceOpenMapTiles": "مخطط البلاطات المتجهة © OpenMapTiles.",
+  "mapLicenceOpenFreeMap": "البلاطات ونمط الخريطة مقدّمة مجانًا من OpenFreeMap.",
+  "mapLicenceMore": "اعرف المزيد"
 }
