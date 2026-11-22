@@ -71,7 +71,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Take photos of your work and your profile picture.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Your approximate location sorts barbers by distance. It is never stored.</string>
+	<string>Your approximate location sorts barbers by distance and is never stored. Pros can also use it to place the point they choose to show customers; that chosen point is saved.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tel</string>
