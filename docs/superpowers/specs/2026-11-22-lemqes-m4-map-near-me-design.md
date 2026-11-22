@@ -56,6 +56,8 @@ Governing anti-goal: **nothing on a map reveals more about a pro's location than
 | S2 | Location nudge | The dashboard card nudges **salons only**; studios and home artists are never nudged. |
 | S3 | Pin gaming (centre-of-town pins to rank first) | Accepted and logged: a false pin sends customers to the wrong place; revisit with reviews (M6). |
 | S4 | Law 18-07 (ANPDP declaration) + Play location disclosure | On the pre-release checklist before M5's store release. |
+| F1 | Area centre after the final review (2026-11-22): the area stores the exact point the pro chose, so a home-based pro who centres her Zone on her door publishes it | **Picker fix only** — no server rounding or offset of the stored centre (it would contradict D1, "she places it"). The picker never defaults a point to the device fix (saved point, else the commune centre); "Ma position actuelle" stays an explicit action, and in Zone mode it adds a note that the centre is visible. The preview copy says the centre is shown (no more "pas votre adresse"). The customer map draws no dot on the centre: an area is tapped on its circle's edge. |
+| F2 | Block inference after the final review (2026-11-22) | **Accept the hints.** The direct oracles are removed: `viewer_blocked` and M3's `live_topic_allowed` now live in the non-exposed `private` schema (no RPC). Accepted residuals, listed in §7b: a blocked reader may still infer the block from indirect shapes. |
 | G5 | Tile access hygiene | OpenFreeMap needs no key; a unique `User-Agent` and the attribution are required. On the hosted checklist with R3/R13 (plus key restriction if the CARTO fallback is used). |
 
 ## 4. Approaches
@@ -136,6 +138,9 @@ Full notes with URLs: side-session notes `m4-external-facts.md`, `m4-free-tiles.
 - Arabizi digits in the skeleton; Dart skeleton for the locality picker; `kab` map labels in Latin.
 - New decisions S1–S4 (women's-space warning and hide button, salon-only nudge, pin gaming accepted, compliance checklist).
 - "Never stored": nothing in our tables (`search_pros` stays `stable` SQL, which cannot write); hosted API request logs are on the hosted checklist (R22).
+- **Final review (2026-11-22).** F1 (area centre) and F2 (block hints) above. `viewer_blocked`, `live_topic_allowed`, `f_search_fold`, `f_name_skeleton` and `search_args_check` moved to `private` (usage for authenticated only; PostgREST exposes `public` and `graphql_public`), so none is an RPC; the policies and `search_pros` call them there. `search_pros` refuses a query over 100 characters (`query_invalid`); the client field stops at 100.
+- **Accepted block-inference residuals** (user decision F2, alongside M3's refused channel, which a blocked customer can tell from a fetch that works): for a pro who blocked the reader, (a) `distance_m` is null although the pro has a place; (b) the pro sorts in the no-point group of a near-me list; (c) the pro is missing from the commune pin and the map box count; (d) a direct `pro_places` select returns no row and the profile's `pro_places` embed is null. Each needs the reader to already know the pro has a place; none says "blocked" in words. Revisit only if a block must become undetectable (a definer read path that fakes the commune point for blocked readers).
+- Tiles: OpenFreeMap sees every tile request, hence the area a customer looks at (no account, no origin). Only `https` tile templates are used (`lemqes_base_map.dart`); disclosure belongs to S4.
 
 ## 8. Left to the builder
 - Exact transliteration table and skeleton classes, as long as the shared vectors pass.
