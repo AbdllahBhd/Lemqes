@@ -19,7 +19,7 @@ String? placeLine(String? locality, String? region) {
     for (final p in [locality, region])
       if (p != null && p.isNotEmpty) p,
   ];
-  if (parts.length == 2 && foldLatin(parts[0]) == foldLatin(parts[1])) {
+  if (parts.length == 2 && searchFold(parts[0]) == searchFold(parts[1])) {
     return parts.first;
   }
   return parts.isEmpty ? null : parts.join(' · ');
