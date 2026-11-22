@@ -447,5 +447,44 @@
   "ticketLeft": "Teffɣeḍ seg tebdart",
   "ticketServed": "Yekfa. Ar tufat!",
   "ticketEnded": "Ur telliḍ ara deg tebdart-a",
-  "ticketOpenPro": "Wali amaɣnu"
+  "ticketOpenPro": "Wali amaɣnu",
+  "locationChipNone": "Ameccaq seg…",
+  "locationChipHint": "Snifel ansa i d-tettwasnaq tehri",
+  "locationSheetTitle": "Ccuḍ tehri seg",
+  "locationOptionDevice": "Adig-iw",
+  "locationOptionDeviceHint": "Adig s lqedder, ad yeqqim ɣef tiliɣri-inek",
+  "locationOptionCommune": "Fren taɣiwant",
+  "locationOptionCommuneHint": "Seg yiwen n tlemmast n taɣiwant",
+  "locationExplainerTitle": "Af-d iseqdacen i k-iqerben",
+  "locationExplainerBody": "Lemqes yesseqdac adig-ik s lqedder i usmizzwer n yiseqdacen seg i yellan d aqrib ar i yellan d aretyan. Ad yeqqim ɣef tiliɣri-inek, ur t-neṭṭef ara.",
+  "locationExplainerAllow": "Kemmel",
+  "locationExplainerBack": "Ɣer zdat",
+  "locationPickerTitle": "Taɣiwant-ik",
+  "locationNoCentre": "Taɣiwant-a ur tesɛi ara adig yettwasnen. Fren tayeḍ.",
+  "exploreDistanceM": "{value} m",
+  "@exploreDistanceM": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceKm": "{value} km",
+  "@exploreDistanceKm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceAbout": "≈ {value} km",
+  "@exploreDistanceAbout": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreComesToYou": "Yusa-d ɣur-k",
+  "exploreFarNotice": "Ulac ayen yellan ddaw 10 km — ha-t-an wid i yellan d imezdayen"
 }

@@ -447,5 +447,44 @@
   "ticketLeft": "You left the queue",
   "ticketServed": "All done. See you soon!",
   "ticketEnded": "You are no longer in this queue",
-  "ticketOpenPro": "View profile"
+  "ticketOpenPro": "View profile",
+  "locationChipNone": "Distances from…",
+  "locationChipHint": "Change where distances are measured from",
+  "locationSheetTitle": "Measure distances from",
+  "locationOptionDevice": "My location",
+  "locationOptionDeviceHint": "Approximate position, kept on your phone",
+  "locationOptionCommune": "Choose a commune",
+  "locationOptionCommuneHint": "From the centre of the commune",
+  "locationExplainerTitle": "Find pros near you",
+  "locationExplainerBody": "Lemqes uses your approximate position to sort pros from nearest to farthest. It stays on your phone: we do not store it.",
+  "locationExplainerAllow": "Continue",
+  "locationExplainerBack": "Not now",
+  "locationPickerTitle": "Your commune",
+  "locationNoCentre": "This commune has no known position. Choose another one.",
+  "exploreDistanceM": "{value} m",
+  "@exploreDistanceM": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceKm": "{value} km",
+  "@exploreDistanceKm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceAbout": "≈ {value} km",
+  "@exploreDistanceAbout": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreComesToYou": "Travels to you",
+  "exploreFarNotice": "Nothing within 10 km — here are the closest"
 }

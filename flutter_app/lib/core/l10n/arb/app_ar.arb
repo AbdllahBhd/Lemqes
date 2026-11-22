@@ -447,5 +447,44 @@
   "ticketLeft": "غادرت القائمة",
   "ticketServed": "انتهى دورك. إلى اللقاء!",
   "ticketEnded": "لم تعد في هذه القائمة",
-  "ticketOpenPro": "عرض الملف"
+  "ticketOpenPro": "عرض الملف",
+  "locationChipNone": "المسافة من…",
+  "locationChipHint": "غيّر نقطة قياس المسافات",
+  "locationSheetTitle": "قياس المسافات من",
+  "locationOptionDevice": "موقعي",
+  "locationOptionDeviceHint": "موقع تقريبي، يبقى على هاتفك",
+  "locationOptionCommune": "اختيار بلدية",
+  "locationOptionCommuneHint": "من وسط البلدية",
+  "locationExplainerTitle": "اعثر على المحترفين القريبين منك",
+  "locationExplainerBody": "يستخدم Lemqes موقعك التقريبي لترتيب المحترفين من الأقرب إلى الأبعد. يبقى الموقع على هاتفك ولا نحفظه.",
+  "locationExplainerAllow": "متابعة",
+  "locationExplainerBack": "لاحقًا",
+  "locationPickerTitle": "بلديتك",
+  "locationNoCentre": "لا يوجد موقع معروف لهذه البلدية. اختر بلدية أخرى.",
+  "exploreDistanceM": "{value} م",
+  "@exploreDistanceM": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceKm": "{value} كم",
+  "@exploreDistanceKm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceAbout": "≈ {value} كم",
+  "@exploreDistanceAbout": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreComesToYou": "يأتي إليك",
+  "exploreFarNotice": "لا يوجد أحد على بعد أقل من 10 كم — إليك الأقرب"
 }

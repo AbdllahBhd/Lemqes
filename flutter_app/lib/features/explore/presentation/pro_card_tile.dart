@@ -3,6 +3,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/l10n/locale_controller.dart';
 import '../../../core/theme/lemqes_tokens.dart';
+import '../../../core/theme/lemqes_typography.dart';
+import '../../../shared/widgets/ltr.dart';
 import '../../../shared/widgets/price_text.dart';
 import '../../live/data/live_providers.dart';
 import '../../live/presentation/customer/live_ring.dart';
@@ -34,6 +36,7 @@ class ProCardTile extends ConsumerWidget {
     final place = placeLine(card.localityName(locale), card.regionName(locale));
     final kids = kidsTagOf(l10n, card.customerMix);
     final price = card.minPriceDzd;
+    final distance = distanceLabel(l10n, locale, card);
     final radius = BorderRadius.circular(LemqesShape.cardRadius);
 
     return MergeSemantics(
@@ -117,6 +120,9 @@ class ProCardTile extends ConsumerWidget {
                                 l10n.proPriceHidden(card.workplaceType.toDb()),
                                 style: muted,
                               ),
+                            if (distance != null) _DistanceLabel(distance),
+                            if (card.comesToYou ?? false)
+                              MistTag(l10n.exploreComesToYou),
                             if (kids != null) MistTag(kids),
                           ],
                         ),
@@ -136,6 +142,37 @@ class ProCardTile extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "700 m" with a pin: tabular Latin digits, left-to-right inside Arabic.
+class _DistanceLabel extends StatelessWidget {
+  const _DistanceLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurfaceVariant;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ExcludeSemantics(
+          child: Icon(Icons.near_me_outlined, size: 16, color: color),
+        ),
+        const SizedBox(width: 4),
+        Ltr(
+          child: Text(
+            text,
+            key: const Key('proDistance'),
+            style: theme.textTheme.bodyMedium!
+                .merge(lemqesNumeric)
+                .copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }

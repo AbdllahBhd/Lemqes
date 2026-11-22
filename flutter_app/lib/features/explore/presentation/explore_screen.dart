@@ -7,6 +7,7 @@ import '../../../core/theme/lemqes_tokens.dart';
 import '../../../shared/widgets/lemqes_primary_button.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account.dart';
+import '../../geo/presentation/location_chip.dart';
 import '../../live/presentation/customer/my_ticket_card.dart';
 import '../../pro/presentation/pro_failure_message.dart';
 import '../data/explore_models.dart';
@@ -16,6 +17,9 @@ import 'pro_card_tile.dart';
 
 /// How close to the end of the list the next page starts loading.
 const _loadMoreExtent = 400.0;
+
+/// Past this distance the nearest result is called out (design: far notice).
+const _farNoticeM = 10000;
 
 /// The customer's list of pros in their space: search, filters, results.
 ///
@@ -70,6 +74,15 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     return Column(
       children: [
         widget.header(search),
+        // Below the search, not in the band: the band is built by the home
+        // screen and is shared with the pro home.
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: LocationChip(),
+          ),
+        ),
         Expanded(
           child: NotificationListener<ScrollNotification>(
             onNotification: _onScroll,
@@ -110,7 +123,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     if (value == null) return const [SliverToBoxAdapter(child: _Skeleton())];
     if (value.items.isEmpty && !results.isLoading) {
       final space = widget.space.toDb();
-      final filtered = query != const ExploreQuery();
+      // The origin is the customer's position, not a filter.
+      final filtered = query != ExploreQuery(origin: query.origin);
       return [
         SliverFillRemaining(
           child: filtered
@@ -142,6 +156,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           child: results.isLoading ? const LinearProgressIndicator() : null,
         ),
       ),
+      if ((value.items.first.distanceM ?? 0) > _farNoticeM)
+        const SliverToBoxAdapter(child: _FarNotice()),
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         sliver: SliverList.separated(
@@ -162,6 +178,38 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         sliver: SliverToBoxAdapter(child: _Footer(results: value)),
       ),
     ];
+  }
+}
+
+/// "Nothing within 10 km": the list is sorted, so only the first row matters.
+class _FarNotice extends StatelessWidget {
+  const _FarNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Row(
+        key: const Key('exploreFarNotice'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ExcludeSemantics(
+            child: Icon(Icons.info_outline, size: 20, color: scheme.primary),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.exploreFarNotice,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

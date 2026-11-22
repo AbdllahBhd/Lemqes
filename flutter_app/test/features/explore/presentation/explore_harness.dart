@@ -14,6 +14,7 @@ import 'package:lemqes/features/explore/data/explore_models.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/data/explore_repository.dart';
 import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.dart';
+import 'package:lemqes/features/geo/data/device_location.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/live/data/live_models.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
@@ -27,6 +28,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/presentation/harness.dart';
+import '../../geo/data/fake_device_location.dart';
 import '../../live/presentation/customer/customer_live_harness.dart';
 import '../../pro/presentation/setup/setup_harness.dart'
     show FakeGeoRepository, FakeProRepository, settle;
@@ -60,6 +62,9 @@ ProCard card(
   CustomerMix? mix = CustomerMix.adults,
   int? minPrice = 600,
   LiveSnapshot? live,
+  int? distanceM,
+  PlaceMode? placeMode,
+  bool? comesToYou,
 }) => ProCard(
   proId: cardId(i),
   kind: workplace == WorkplaceType.mobile ? ProKind.homeArtist : ProKind.barber,
@@ -75,6 +80,9 @@ ProCard card(
   customerMix: mix,
   minPriceDzd: minPrice,
   live: live,
+  distanceM: distanceM,
+  placeMode: placeMode,
+  comesToYou: comesToYou,
 );
 
 /// Three cards that cover the variants: verified with a workplace name,
@@ -306,6 +314,7 @@ Future<ExploreHarness> pumpExplore(
   double textScale = 1,
   Size size = const Size(390, 844),
   CustomerLive? live,
+  DeviceLocation? deviceLocation,
 }) async {
   final customerLive = live ?? CustomerLive();
   addTearDown(customerLive.dispose);
@@ -341,6 +350,11 @@ Future<ExploreHarness> pumpExplore(
       proRepositoryProvider.overrideWithValue(fakePros),
       photoUploaderProvider.overrideWithValue(FakePhotoUploader()),
       geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
+      // Never the real platform service: a test that does not script the
+      // device must not be able to prompt.
+      deviceLocationProvider.overrideWithValue(
+        deviceLocation ?? FakeDeviceLocation(),
+      ),
       // A Wednesday, so the hours table's "today" is stable.
       countryClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
       // Cards and the ticket run on the real channels over fakes; a pro

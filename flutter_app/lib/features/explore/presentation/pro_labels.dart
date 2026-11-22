@@ -4,6 +4,7 @@ import '../../../core/l10n/gen/app_localizations.dart';
 import '../../../core/l10n/locale_controller.dart';
 import '../../geo/presentation/search_fold.dart';
 import '../../pro/data/pro_models.dart';
+import '../data/explore_models.dart';
 
 /// "Salon · Salon El Bahdja", or the workplace word alone.
 String workplaceLine(AppLocalizations l10n, WorkplaceType type, String? name) {
@@ -23,6 +24,24 @@ String? placeLine(String? locality, String? region) {
     return parts.first;
   }
   return parts.isEmpty ? null : parts.join(' · ');
+}
+
+/// The distance of a result: "700 m", "1,5 km", or "≈ 3 km" for a pro that
+/// shows only its commune. Null without an origin, and for a pro the server
+/// hides the point of (a blocked reader), so no distance leaks.
+String? distanceLabel(AppLocalizations l10n, Locale locale, ProCard card) {
+  final m = card.distanceM;
+  if (m == null) return null;
+  if (card.placeMode == PlaceMode.none) {
+    // Whole kilometres only: the commune centre is not the pro's place.
+    return l10n.exploreDistanceAbout('${(m / 1000).round().clamp(1, 99999)}');
+  }
+  if (m < 1000) return l10n.exploreDistanceM('$m');
+  final tenths = (m / 100).round();
+  final whole = tenths ~/ 10;
+  final frac = tenths % 10;
+  final sep = locale.languageCode == 'en' ? '.' : ',';
+  return l10n.exploreDistanceKm(frac == 0 ? '$whole' : '$whole$sep$frac');
 }
 
 /// The kids tag of a customer mix; null for adults only.

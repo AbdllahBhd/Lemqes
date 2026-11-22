@@ -1734,5 +1734,92 @@
   "ticketOpenPro": "Voir le profil",
   "@ticketOpenPro": {
     "description": "Ticket card: screen-reader hint, opens the pro profile"
+  },
+  "locationChipNone": "Distances depuis…",
+  "@locationChipNone": {
+    "description": "Distance chip: nothing chosen yet"
+  },
+  "locationChipHint": "Changer le point de départ des distances",
+  "@locationChipHint": {
+    "description": "Screen-reader hint of the location chip"
+  },
+  "locationSheetTitle": "Mesurer les distances depuis",
+  "@locationSheetTitle": {
+    "description": "Title of the sheet that picks where distances are measured from"
+  },
+  "locationOptionDevice": "Ma position",
+  "@locationOptionDevice": {
+    "description": "Option: use the device position"
+  },
+  "locationOptionDeviceHint": "Position approximative, gardée sur votre téléphone",
+  "@locationOptionDeviceHint": {
+    "description": "Option sub-line under 'My location'"
+  },
+  "locationOptionCommune": "Choisir une commune",
+  "@locationOptionCommune": {
+    "description": "Option: pick a commune as the starting point"
+  },
+  "locationOptionCommuneHint": "Depuis le centre de la commune",
+  "@locationOptionCommuneHint": {
+    "description": "Option sub-line under 'Choose a commune'"
+  },
+  "locationExplainerTitle": "Trouvez les pros près de vous",
+  "@locationExplainerTitle": {
+    "description": "Title of the sheet shown before the OS location prompt"
+  },
+  "locationExplainerBody": "Lemqes utilise votre position approximative pour classer les pros du plus proche au plus loin. Elle reste sur votre téléphone : nous ne l’enregistrons pas.",
+  "@locationExplainerBody": {
+    "description": "Body of the pre-prompt explainer (position stays on the device)"
+  },
+  "locationExplainerAllow": "Continuer",
+  "@locationExplainerAllow": {
+    "description": "Explainer button: goes on to the OS prompt"
+  },
+  "locationExplainerBack": "Plus tard",
+  "@locationExplainerBack": {
+    "description": "Explainer button: dismisses without asking"
+  },
+  "locationPickerTitle": "Votre commune",
+  "@locationPickerTitle": {
+    "description": "Title of the commune picker sheet for the starting point"
+  },
+  "locationNoCentre": "Cette commune n’a pas de position connue. Choisissez-en une autre.",
+  "@locationNoCentre": {
+    "description": "Snackbar: the picked commune has no coordinates"
+  },
+  "exploreDistanceM": "{value} m",
+  "@exploreDistanceM": {
+    "description": "Distance under 1 km; value is the metre figure",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceKm": "{value} km",
+  "@exploreDistanceKm": {
+    "description": "Distance from 1 km; value is a number with the locale decimal separator",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceAbout": "≈ {value} km",
+  "@exploreDistanceAbout": {
+    "description": "Distance of a commune-only pro (whole km, approximate)",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreComesToYou": "Se déplace jusqu’à vous",
+  "@exploreComesToYou": {
+    "description": "Tag on a home artist whose service radius reaches the customer"
+  },
+  "exploreFarNotice": "Rien à moins de 10 km — voici les plus proches",
+  "@exploreFarNotice": {
+    "description": "Notice above the list when the nearest result is over 10 km away"
   }
 }
