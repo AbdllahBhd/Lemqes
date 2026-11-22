@@ -45,7 +45,7 @@ def render() -> str:
     for n, c in enumerate(cases, 1):
         for fn, key in (("f_search_fold", "fold"), ("f_name_skeleton", "skeleton")):
             lines.append(
-                "select is(public.%s(%s), %s, %s);"
+                "select is(private.%s(%s), %s, %s);"
                 % (fn, lit(c["input"]), lit(c[key]), lit("%s vector %d" % (fn, n)))
             )
     lines += ["", "select * from finish();", "rollback;", ""]

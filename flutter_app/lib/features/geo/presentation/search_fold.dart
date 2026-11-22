@@ -39,7 +39,7 @@ const _latin = {
   'č': 'c',
 };
 
-// Dart port of public.f_search_fold / public.f_name_skeleton (supabase/migrations/
+// Dart port of private.f_search_fold / private.f_name_skeleton (supabase/migrations/
 // 20261122000200_search_fold.sql). supabase/tests/fold_vectors.json is the one table both are
 // tested against, so a change to either side starts there.
 
