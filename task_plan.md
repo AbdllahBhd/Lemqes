@@ -172,8 +172,8 @@ flutter_app/test/ (mirrors lib/, goldens under each test folder's goldens/)  flu
 
 **Files:** create `features/geo/presentation/{location_chip,location_explainer_sheet}.dart`; modify `features/explore/presentation/{explore_screen,pro_card_tile,pro_labels}.dart`, ARBs + REVIEW.md; tests and goldens under `flutter_app/test/features/{geo,explore}/presentation/goldens/`.
 
-- [ ] **Step 1: Failing widget tests** — no permission prompt on Explore open; the chip's "Ma position" shows the explainer, then requests approximate; denied or service off → commune picker (the existing `locality_picker.dart`); picking a commune sets the origin; rows show distance (G2, `≈ 3 km` for `none`) and "Se déplace jusqu'à vous"; no origin → no distances, old order; far notice when the first row > 10 km, including a `none`-only result set; blocked-viewer row shows closed and no distance; chip and place filter independent. Goldens (fr light, ar RTL): `explore_list_near_{fr,ar}.png`, `location_chip_{fr,ar}.png`, `location_explainer_{fr,ar}.png`.
-- [ ] **Step 2:** Implement.
+- [x] **Step 1: Failing widget tests** — no permission prompt on Explore open; the chip's "Ma position" shows the explainer, then requests approximate; denied or service off → commune picker (the existing `locality_picker.dart`); picking a commune sets the origin; rows show distance (G2, `≈ 3 km` for `none`) and "Se déplace jusqu'à vous"; no origin → no distances, old order; far notice when the first row > 10 km, including a `none`-only result set; blocked-viewer row shows closed and no distance; chip and place filter independent. Goldens (fr light, ar RTL): `explore_list_near_{fr,ar}.png`, `location_chip_{fr,ar}.png`, `location_explainer_{fr,ar}.png`.
+- [x] **Step 2:** Implement.
 
 **Done when:** (1) the new tests and the six named goldens pass; (2) `npm run lint`, `npm run typecheck`, `scripts/sdk flutter test` green; (3) no files changed outside the Files list above.
 
