@@ -439,3 +439,15 @@
 | `mapLicenceOpenMapTiles` | final | final | draft | draft |
 | `mapLicenceOpenFreeMap` | final | final | draft | draft |
 | `mapLicenceMore` | final | final | draft | draft |
+| `exploreViewMap` | final | final | draft | draft |
+| `exploreViewList` | final | final | draft | draft |
+| `exploreMapSearchArea` | final | final | draft | draft |
+| `exploreMapZoomIn` | final | final | draft | draft |
+| `exploreMapEmpty` | final | final | draft | draft |
+| `exploreMapCluster` | final | final | draft | draft |
+| `exploreMapCommune` | final | final | draft | draft |
+| `exploreMapCommuneNote` | final | final | draft | draft |
+| `directionsOpen` | final | final | draft | draft |
+| `directionsMore` | final | final | draft | draft |
+| `directionsWaze` | final | final | draft | draft |
+| `directionsFailed` | final | final | draft | draft |

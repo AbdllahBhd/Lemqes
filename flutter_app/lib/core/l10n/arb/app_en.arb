@@ -572,5 +572,17 @@
   "mapLicenceOsm": "Map data © OpenStreetMap contributors, under the Open Database License (ODbL).",
   "mapLicenceOpenMapTiles": "Vector tile schema © OpenMapTiles.",
   "mapLicenceOpenFreeMap": "Map tiles and style provided free of charge by OpenFreeMap.",
-  "mapLicenceMore": "Learn more"
+  "mapLicenceMore": "Learn more",
+  "exploreViewMap": "Map",
+  "exploreViewList": "List",
+  "exploreMapSearchArea": "Search this area",
+  "exploreMapZoomIn": "Zoom in to see more",
+  "exploreMapEmpty": "No pros in this area",
+  "exploreMapCluster": "{count, plural, =1{1 pro here. Tap to zoom in.} other{{count} pros here. Tap to zoom in.}}",
+  "exploreMapCommune": "{count, plural, =1{{commune}: 1 pro} other{{commune}: {count} pros}}",
+  "exploreMapCommuneNote": "These pros only show their commune.",
+  "directionsOpen": "Directions",
+  "directionsMore": "Other directions apps",
+  "directionsWaze": "Open in Waze",
+  "directionsFailed": "Couldn’t open directions."
 }

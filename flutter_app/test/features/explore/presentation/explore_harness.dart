@@ -13,10 +13,12 @@ import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/explore/data/explore_models.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/data/explore_repository.dart';
+import 'package:lemqes/features/explore/presentation/directions_button.dart';
 import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.dart';
 import 'package:lemqes/features/geo/data/device_location.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/live/data/live_models.dart';
+import 'package:lemqes/features/map/presentation/lemqes_base_map.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
 import 'package:lemqes/features/geo/data/geo_repository.dart';
 import 'package:lemqes/features/pro/data/photo_uploader.dart';
@@ -65,6 +67,10 @@ ProCard card(
   int? distanceM,
   PlaceMode? placeMode,
   bool? comesToYou,
+  double? lat,
+  double? lng,
+  int? areaRadiusM,
+  int? localityId,
 }) => ProCard(
   proId: cardId(i),
   kind: workplace == WorkplaceType.mobile ? ProKind.homeArtist : ProKind.barber,
@@ -83,6 +89,10 @@ ProCard card(
   distanceM: distanceM,
   placeMode: placeMode,
   comesToYou: comesToYou,
+  lat: lat,
+  lng: lng,
+  areaRadiusM: areaRadiusM,
+  localityId: localityId,
 );
 
 /// Three cards that cover the variants: verified with a workplace name,
@@ -149,6 +159,7 @@ class FakeExploreRepository extends Fake implements ExploreRepository {
   ProFailure? failure;
   final queries = <ExploreQuery>[];
   final offsets = <int>[];
+  final limits = <int>[];
 
   @override
   Future<List<ProCard>> search(
@@ -158,6 +169,7 @@ class FakeExploreRepository extends Fake implements ExploreRepository {
   }) async {
     queries.add(q);
     offsets.add(offset);
+    limits.add(limit);
     final f = failure;
     if (f != null) throw f;
     final a = answer;
@@ -308,6 +320,7 @@ Future<ExploreHarness> pumpExplore(
   PublicProRepository? pros,
   String? location,
   Future<bool> Function(Uri)? launcher,
+  Future<bool> Function(Uri)? directionsLauncher,
   GeoRepository? geo,
   Locale locale = const Locale('fr'),
   ThemeMode themeMode = ThemeMode.light,
@@ -361,6 +374,11 @@ Future<ExploreHarness> pumpExplore(
       // passing through /home mounts the Today tab on its own snapshot.
       ...customerLive.overrides(),
       if (launcher != null) phoneLauncherProvider.overrideWithValue(launcher),
+      if (directionsLauncher != null)
+        directionsLauncherProvider.overrideWithValue(directionsLauncher),
+      // Tests never build the vector tile layer (no network, and it fails
+      // at teardown in flutter_test).
+      mapBaseLayerProvider.overrideWithValue((_) => const MapPlainBackground()),
     ],
   );
   addTearDown(container.dispose);

@@ -21,6 +21,7 @@ import '../../../shared/widgets/price_text.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account_providers.dart';
 import '../../auth/presentation/auth_widgets.dart' show formatAlgerianPhone;
+import '../../geo/data/geo_models.dart' show GeoPoint;
 import '../../geo/data/geo_providers.dart';
 import '../../live/presentation/customer/join_queue_sheet.dart';
 import '../../live/data/live_providers.dart';
@@ -30,6 +31,9 @@ import '../../pro/data/photo_uploader.dart';
 import '../../pro/data/pro_models.dart';
 import '../../pro/data/pro_providers.dart';
 import '../../pro/presentation/pro_failure_message.dart';
+import '../data/explore_models.dart';
+import 'directions_button.dart';
+import 'explore_map_view.dart' show directionsPointOf;
 import 'photo_viewer.dart';
 import 'pro_avatar.dart';
 import 'pro_labels.dart';
@@ -89,9 +93,13 @@ int experienceBandOf(int years) => switch (years) {
 /// what price, when they work and their photos; a call when the number is
 /// public.
 class ProPublicProfileScreen extends ConsumerWidget {
-  const ProPublicProfileScreen({required this.proId, super.key});
+  const ProPublicProfileScreen({required this.proId, this.card, super.key});
 
   final String proId;
+
+  /// The explore card this was opened from; a link has none (and so no
+  /// directions: the public profile does not carry the pin).
+  final ProCard? card;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -123,10 +131,14 @@ class ProPublicProfileScreen extends ConsumerWidget {
     };
 
     if (!state.hasError && profile != null) {
+      final from = card;
       return ProPublicProfileView(
         profile: profile,
         bottomBar: callBar,
         asCustomer: true,
+        directionsTo: from != null && from.proId == proId
+            ? directionsPointOf(from)
+            : null,
       );
     }
 
@@ -173,12 +185,16 @@ class ProPublicProfileView extends StatelessWidget {
     this.marker,
     required this.asCustomer,
     this.bottomBar,
+    this.directionsTo,
     super.key,
   });
 
   final ProProfile profile;
   final Widget? marker;
   final Widget? bottomBar;
+
+  /// An exact pin to offer directions to, under the hero.
+  final GeoPoint? directionsTo;
 
   /// A customer's view: the live block and the hero ring follow the
   /// customer channel, and the block offers the join. The owner's preview
@@ -194,6 +210,7 @@ class ProPublicProfileView extends StatelessWidget {
           profile: profile,
           marker: marker,
           asCustomer: asCustomer,
+          directionsTo: directionsTo,
         ),
         bottomNavigationBar: bottomBar,
       ),
@@ -261,11 +278,13 @@ class _ProfileBody extends StatelessWidget {
     required this.profile,
     required this.asCustomer,
     this.marker,
+    this.directionsTo,
   });
 
   final ProProfile profile;
   final bool asCustomer;
   final Widget? marker;
+  final GeoPoint? directionsTo;
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +301,11 @@ class _ProfileBody extends StatelessWidget {
             height: _bandHeight(context) + LagoonHeaderBand.overlapRise,
             overlap: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _Hero(profile: p, asCustomer: asCustomer),
+              child: _Hero(
+                profile: p,
+                asCustomer: asCustomer,
+                directionsTo: directionsTo,
+              ),
             ),
             child: _BackRow(marker: marker),
           ),
@@ -380,10 +403,15 @@ class _Section extends StatelessWidget {
 }
 
 class _Hero extends ConsumerStatefulWidget {
-  const _Hero({required this.profile, required this.asCustomer});
+  const _Hero({
+    required this.profile,
+    required this.asCustomer,
+    this.directionsTo,
+  });
 
   final ProProfile profile;
   final bool asCustomer;
+  final GeoPoint? directionsTo;
 
   @override
   ConsumerState<_Hero> createState() => _HeroState();
@@ -435,61 +463,74 @@ class _HeroState extends ConsumerState<_Hero> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LiveRing(
-              view: ref
-                  .watch(
-                    widget.asCustomer
-                        ? proLiveProvider(p.id)
-                        : ownProLiveProvider(p.id),
-                  )
-                  .value,
-              child: ProAvatar(
-                name: p.displayName,
-                path: p.avatarPath,
-                size: 72,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            p.displayName,
-                            style: theme.textTheme.titleLarge,
-                          ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LiveRing(
+                  view: ref
+                      .watch(
+                        widget.asCustomer
+                            ? proLiveProvider(p.id)
+                            : ownProLiveProvider(p.id),
+                      )
+                      .value,
+                  child: ProAvatar(
+                    name: p.displayName,
+                    path: p.avatarPath,
+                    size: 72,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                p.displayName,
+                                style: theme.textTheme.titleLarge,
+                              ),
+                            ),
+                            if (p.isVerified) ...[
+                              const SizedBox(width: 6),
+                              const VerifiedTick(size: 20),
+                            ],
+                          ],
                         ),
-                        if (p.isVerified) ...[
-                          const SizedBox(width: 6),
-                          const VerifiedTick(size: 20),
-                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(kindLine, style: muted),
+                      const SizedBox(height: 8),
+                      _IconLine(
+                        icon: p.workplaceType == WorkplaceType.mobile
+                            ? Icons.directions_car_outlined
+                            : Icons.storefront_outlined,
+                        text: workplaceLine(
+                          l10n,
+                          p.workplaceType,
+                          p.workplaceName,
+                        ),
+                      ),
+                      if (place != null) ...[
+                        const SizedBox(height: 4),
+                        _IconLine(icon: Icons.place_outlined, text: place),
                       ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(kindLine, style: muted),
-                  const SizedBox(height: 8),
-                  _IconLine(
-                    icon: p.workplaceType == WorkplaceType.mobile
-                        ? Icons.directions_car_outlined
-                        : Icons.storefront_outlined,
-                    text: workplaceLine(l10n, p.workplaceType, p.workplaceName),
-                  ),
-                  if (place != null) ...[
-                    const SizedBox(height: 4),
-                    _IconLine(icon: Icons.place_outlined, text: place),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
+            if (widget.directionsTo case final to?) ...[
+              const SizedBox(height: 16),
+              DirectionsButton(to: to),
+            ],
           ],
         ),
       ),

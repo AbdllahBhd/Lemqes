@@ -2018,5 +2018,66 @@
   "mapLicenceMore": "En savoir plus",
   "@mapLicenceMore": {
     "description": "Link button under each credit"
+  },
+  "exploreViewMap": "Carte",
+  "@exploreViewMap": {
+    "description": "Toggle to the map view"
+  },
+  "exploreViewList": "Liste",
+  "@exploreViewList": {
+    "description": "Toggle back to the list view"
+  },
+  "exploreMapSearchArea": "Rechercher dans cette zone",
+  "@exploreMapSearchArea": {
+    "description": "Map button after the camera moved: search the visible area"
+  },
+  "exploreMapZoomIn": "Zoomez pour voir plus",
+  "@exploreMapZoomIn": {
+    "description": "Map notice when the area holds more than 100 pros or is too wide"
+  },
+  "exploreMapEmpty": "Aucun pro dans cette zone",
+  "@exploreMapEmpty": {
+    "description": "Map notice when the searched area has no pro"
+  },
+  "exploreMapCluster": "{count, plural, =1{1 pro ici. Touchez pour zoomer.} other{{count} pros ici. Touchez pour zoomer.}}",
+  "@exploreMapCluster": {
+    "description": "Screen-reader label of a map cluster (count ≥ 2)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "exploreMapCommune": "{count, plural, =1{{commune} : 1 pro} other{{commune} : {count} pros}}",
+  "@exploreMapCommune": {
+    "description": "Screen-reader label of a commune pin: commune name and how many commune-only pros",
+    "placeholders": {
+      "commune": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "exploreMapCommuneNote": "Ces pros n’affichent que leur commune.",
+  "@exploreMapCommuneNote": {
+    "description": "Under the commune name in the sheet of a commune pin"
+  },
+  "directionsOpen": "Itinéraire",
+  "@directionsOpen": {
+    "description": "Button on an exact pin's card and profile: opens Google Maps directions"
+  },
+  "directionsMore": "Autres applis d’itinéraire",
+  "@directionsMore": {
+    "description": "Tooltip of the overflow next to the directions button"
+  },
+  "directionsWaze": "Ouvrir dans Waze",
+  "@directionsWaze": {
+    "description": "Overflow item: directions in Waze"
+  },
+  "directionsFailed": "Impossible d’ouvrir l’itinéraire.",
+  "@directionsFailed": {
+    "description": "Snackbar when no app could open the directions link"
   }
 }

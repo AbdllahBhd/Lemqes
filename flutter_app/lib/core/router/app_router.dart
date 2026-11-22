@@ -1,9 +1,11 @@
-import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/account/data/account_providers.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/explore/data/explore_models.dart' show ProCard;
+import '../../features/explore/presentation/explore_map_view.dart';
 import '../../features/explore/presentation/pro_public_profile_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/pro/data/pro_providers.dart';
@@ -71,7 +73,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             SignupWizard(step: state.pathParameters['step']!),
       ),
-      GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
+      GoRoute(path: '/home', pageBuilder: (_, state) => _homePage(state)),
+      // Explore's map view (`?view=map&lat=&lng=&z=`) on the same home page.
+      GoRoute(path: '/explore', pageBuilder: (_, state) => _homePage(state)),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
         path: '/settings/map-data',
@@ -104,14 +108,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       // would otherwise be read as a profile id.
       GoRoute(
         path: '/pro/:id',
-        builder: (context, state) =>
-            ProPublicProfileScreen(proId: state.pathParameters['id']!),
+        builder: (context, state) => ProPublicProfileScreen(
+          proId: state.pathParameters['id']!,
+          // The card it was opened from, when there was one: it carries the
+          // pin that directions lead to.
+          card: switch (state.extra) {
+            final ProCard card => card,
+            _ => null,
+          },
+        ),
       ),
     ],
   );
   ref.onDispose(router.dispose);
   return router;
 });
+
+/// One page key for `/home` and `/explore`: switching between the list and
+/// the map updates the page in place (no transition, the home keeps its
+/// state) instead of replacing it.
+const _homePageKey = ValueKey<String>('home');
+
+Page<void> _homePage(GoRouterState state) => MaterialPage<void>(
+  key: _homePageKey,
+  child: ExploreLocationScope(
+    location: ExploreLocation.fromUri(state.uri),
+    child: const HomeScreen(),
+  ),
+);
 
 bool _hasSession(Ref ref) => resolveHasSession(
   ref.read(sessionProvider),

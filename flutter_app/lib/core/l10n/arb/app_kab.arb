@@ -572,5 +572,17 @@
   "mapLicenceOsm": "Isefka n tkarḍa © imttekkiyen n OpenStreetMap, s turagt Open Database License (ODbL).",
   "mapLicenceOpenMapTiles": "Azenziɣ n tferkiwin © OpenMapTiles.",
   "mapLicenceOpenFreeMap": "Tiferkiwin d uɣanib n tkarḍa s baṭel sɣur OpenFreeMap.",
-  "mapLicenceMore": "Issin ugar"
+  "mapLicenceMore": "Issin ugar",
+  "exploreViewMap": "Takarḍa",
+  "exploreViewList": "Tabdart",
+  "exploreMapSearchArea": "Nadi deg temnaḍt-a",
+  "exploreMapZoomIn": "Simɣer takarḍa akken ad twaliḍ ugar",
+  "exploreMapEmpty": "Ulac imahilen deg temnaḍt-a",
+  "exploreMapCluster": "{count, plural, =1{1 n umahil da. Sit akken ad tsimɣreḍ.} other{{count} n imahilen da. Sit akken ad tsimɣreḍ.}}",
+  "exploreMapCommune": "{count, plural, =1{{commune}: 1 n umahil} other{{commune}: {count} n imahilen}}",
+  "exploreMapCommuneNote": "Imahilen-a sbanen-d kan taɣiwant-nsen.",
+  "directionsOpen": "Abrid",
+  "directionsMore": "Isnasen-nniḍen n ubrid",
+  "directionsWaze": "Ldi deg Waze",
+  "directionsFailed": "Ur yezmir ara ad yeldi ubrid."
 }

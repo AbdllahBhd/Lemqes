@@ -572,5 +572,17 @@
   "mapLicenceOsm": "بيانات الخرائط © المساهمون في OpenStreetMap، بموجب رخصة Open Database License (ODbL).",
   "mapLicenceOpenMapTiles": "مخطط البلاطات المتجهة © OpenMapTiles.",
   "mapLicenceOpenFreeMap": "البلاطات ونمط الخريطة مقدّمة مجانًا من OpenFreeMap.",
-  "mapLicenceMore": "اعرف المزيد"
+  "mapLicenceMore": "اعرف المزيد",
+  "exploreViewMap": "الخريطة",
+  "exploreViewList": "القائمة",
+  "exploreMapSearchArea": "ابحث في هذه المنطقة",
+  "exploreMapZoomIn": "قرّب الخريطة لرؤية المزيد",
+  "exploreMapEmpty": "لا يوجد محترفون في هذه المنطقة",
+  "exploreMapCluster": "{count, plural, =1{محترف واحد هنا. المس للتقريب.} =2{محترفان هنا. المس للتقريب.} few{{count} محترفين هنا. المس للتقريب.} other{{count} محترفًا هنا. المس للتقريب.}}",
+  "exploreMapCommune": "{count, plural, =1{{commune}: محترف واحد} =2{{commune}: محترفان} few{{commune}: {count} محترفين} other{{commune}: {count} محترفًا}}",
+  "exploreMapCommuneNote": "هؤلاء المحترفون يُظهرون بلديتهم فقط.",
+  "directionsOpen": "الاتجاهات",
+  "directionsMore": "تطبيقات اتجاهات أخرى",
+  "directionsWaze": "افتح في Waze",
+  "directionsFailed": "تعذّر فتح الاتجاهات."
 }
