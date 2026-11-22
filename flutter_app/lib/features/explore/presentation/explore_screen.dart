@@ -220,7 +220,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           child: results.isLoading ? const LinearProgressIndicator() : null,
         ),
       ),
-      if (isFarResult(value.items.first))
+      if (value.items.isNotEmpty && isFarResult(value.items.first))
         const SliverToBoxAdapter(child: _FarNotice()),
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
