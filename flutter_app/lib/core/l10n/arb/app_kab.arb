@@ -461,6 +461,9 @@
   "locationExplainerBack": "Ɣer zdat",
   "locationPickerTitle": "Taɣiwant-ik",
   "locationNoCentre": "Taɣiwant-a ur tesɛi ara adig yettwasnen. Fren tayeḍ.",
+  "locationBlockedTitle": "Adig yettwagdel",
+  "locationBlockedBody": "Adig yettwagi i LEMQES. Sireg-it deg yiɣewwaren n tiliɣri, neɣ fren tamnaḍt.",
+  "locationOpenSettings": "Ldi iɣewwaren",
   "exploreDistanceM": "{value} m",
   "@exploreDistanceM": {
     "placeholders": {
@@ -512,7 +515,7 @@
       }
     }
   },
-  "placePreviewArea": "{space, select, women{Ad walint tmsaɣin: tamnaḍt n {size} i tenqiḍt-a, mačči tansa-m.} other{Ad walin imsaɣen: tamnaḍt n {size} i tenqiḍt-a, mačči tansa-k.}}",
+  "placePreviewArea": "{space, select, women{Ad walint tmsaɣin: tamnaḍt n {size} d tlemmast-is, tanqiḍt-a.} other{Ad walin imsaɣen: tamnaḍt n {size} d tlemmast-is, tanqiḍt-a.}}",
   "@placePreviewArea": {
     "placeholders": {
       "space": {
@@ -533,6 +536,7 @@
   },
   "placeLocate": "Adig-iw tura",
   "placeLocateFailed": "Adig ulac-it. Smutti takarḍa ar wadeg n uxeddim-ik.",
+  "placeAreaDeviceNote": "Talemmast n tmnaḍt d adeg-ik tura: ad d-tban di tkarḍa. Smutti takarḍa ma yella d axxam-ik.",
   "placeMoveHint": "Smutti takarḍa akken ad tesrseḍ tanqiḍt",
   "placeChosenPoint": "Tanqiḍt yettwafernen, di tlemmast n tkarḍa",
   "placeWarningTitle": "Yal yiwen yezmer ad iwali tanqiḍt-a",

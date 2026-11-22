@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math' as math;
 
@@ -115,7 +116,7 @@ class _PlacePickerScreenState extends ConsumerState<PlacePickerScreen> {
   late PlaceMode _mode;
   late int _radius;
 
-  /// Where the map opened; null until the commune (or device) is known.
+  /// Where the map opened; null until the commune is known.
   LatLng? _start;
   double _startZoom = 13;
 
@@ -125,7 +126,12 @@ class _PlacePickerScreenState extends ConsumerState<PlacePickerScreen> {
   bool _acknowledged = false;
   bool _busy = false;
   bool _locating = false;
+
+  /// The point came from "Ma position actuelle": an area centred there
+  /// shows the pro's position, so the picker says so.
+  bool _located = false;
   String? _failure;
+  final _failureKey = GlobalKey();
 
   bool get _women => widget.profile.space == Space.women;
   bool get _needsAck => _women && _mode != PlaceMode.none && !_acknowledged;
@@ -166,18 +172,12 @@ class _PlacePickerScreenState extends ConsumerState<PlacePickerScreen> {
     }
     final savedLat = saved?.lat;
     final savedLng = saved?.lng;
-    LatLng? start = savedLat != null && savedLng != null
+    // Never the device fix, even when already granted: an area's centre is
+    // public, and a pro working from home would publish her door without
+    // having chosen to. "Ma position actuelle" is the explicit way there.
+    final start = savedLat != null && savedLng != null
         ? LatLng(savedLat, savedLng)
         : null;
-    if (start == null) {
-      final device = ref.read(deviceLocationProvider);
-      // Only an answer already given: the prompt waits for "Ma position
-      // actuelle".
-      if ((await device.permission()).granted) {
-        final fix = await device.current();
-        if (fix != null) start = LatLng(fix.lat, fix.lng);
-      }
-    }
     if (!mounted) return;
     setState(() {
       _commune = commune;
@@ -230,7 +230,10 @@ class _PlacePickerScreenState extends ConsumerState<PlacePickerScreen> {
     }
     final point = LatLng(fix.lat, fix.lng);
     _map.move(point, math.max(_map.camera.zoom, 16));
-    setState(() => _centre = point);
+    setState(() {
+      _centre = point;
+      _located = true;
+    });
   }
 
   Future<void> _save() async {
@@ -256,6 +259,22 @@ class _PlacePickerScreenState extends ConsumerState<PlacePickerScreen> {
       setState(() {
         _busy = false;
         _failure = placeFailureMessage(l10n, failure);
+      });
+      // The banner sits at the top of the controls, which the pro may have
+      // scrolled away (down at the acknowledgement, say).
+      final reduce = MediaQuery.disableAnimationsOf(context);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final banner = _failureKey.currentContext;
+        if (banner == null || !banner.mounted) return;
+        unawaited(
+          Scrollable.ensureVisible(
+            banner,
+            duration: reduce
+                ? Duration.zero
+                : const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+          ),
+        );
       });
       return;
     }
@@ -475,7 +494,7 @@ class _PlacePickerScreenState extends ConsumerState<PlacePickerScreen> {
         Text(l10n.placeBody(space), style: muted),
         if (failure != null) ...[
           const SizedBox(height: 16),
-          FailureBanner(message: failure),
+          FailureBanner(key: _failureKey, message: failure),
         ],
         section(l10n.placeModeLabel),
         PlaceModeControl(mode: _mode, onChanged: _busy ? null : _setMode),
@@ -531,6 +550,32 @@ class _PlacePickerScreenState extends ConsumerState<PlacePickerScreen> {
             ],
           ),
         ),
+        if (_mode == PlaceMode.area && _located) ...[
+          const SizedBox(height: 12),
+          Row(
+            key: const Key('placeAreaDeviceNote'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: ExcludeSemantics(
+                  child: Icon(
+                    Icons.my_location,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.placeAreaDeviceNote,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+        ],
         if (_women && _mode != PlaceMode.none) ...[
           const SizedBox(height: 16),
           _ExposureWarning(

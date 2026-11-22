@@ -1787,6 +1787,18 @@
   "@locationNoCentre": {
     "description": "Snackbar: the picked commune has no coordinates"
   },
+  "locationBlockedTitle": "Position bloquée",
+  "@locationBlockedTitle": {
+    "description": "Dialog title: location permission denied forever"
+  },
+  "locationBlockedBody": "La position est refusée à LEMQES. Autorisez-la dans les réglages du téléphone, ou choisissez une commune.",
+  "@locationBlockedBody": {
+    "description": "Dialog body: allow location in the system settings or pick a commune"
+  },
+  "locationOpenSettings": "Ouvrir les réglages",
+  "@locationOpenSettings": {
+    "description": "Dialog button: opens the app's page in the system settings"
+  },
   "exploreDistanceM": "{value} m",
   "@exploreDistanceM": {
     "description": "Distance under 1 km; value is the metre figure",
@@ -1876,7 +1888,7 @@
       }
     }
   },
-  "placePreviewArea": "{space, select, women{Les clientes verront : une zone de {size} autour de ce point, pas votre adresse.} other{Les clients verront : une zone de {size} autour de ce point, pas votre adresse.}}",
+  "placePreviewArea": "{space, select, women{Les clientes verront : une zone de {size} et son centre, ce point.} other{Les clients verront : une zone de {size} et son centre, ce point.}}",
   "@placePreviewArea": {
     "description": "Preview line, area mode; size = \"1 km\"; space = men | women",
     "placeholders": {
@@ -1904,6 +1916,10 @@
   "placeLocateFailed": "Position indisponible. Déplacez la carte jusqu’à votre lieu de travail.",
   "@placeLocateFailed": {
     "description": "Snackbar when no device position is available"
+  },
+  "placeAreaDeviceNote": "Le centre de la zone est votre position actuelle : il sera visible sur la carte. Déplacez la carte si c’est votre domicile.",
+  "@placeAreaDeviceNote": {
+    "description": "Note under the area preview after \"Ma position actuelle\": the area's centre is public"
   },
   "placeMoveHint": "Déplacez la carte pour placer le point",
   "@placeMoveHint": {

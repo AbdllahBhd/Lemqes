@@ -393,6 +393,9 @@
 | `locationExplainerBack` | final | final | draft | draft |
 | `locationPickerTitle` | final | final | draft | draft |
 | `locationNoCentre` | final | final | draft | draft |
+| `locationBlockedTitle` | final | final | draft | draft |
+| `locationBlockedBody` | final | final | draft | draft |
+| `locationOpenSettings` | final | final | draft | draft |
 | `exploreDistanceM` | final | final | draft | draft |
 | `exploreDistanceKm` | final | final | draft | draft |
 | `exploreDistanceAbout` | final | final | draft | draft |
@@ -413,6 +416,7 @@
 | `placePreviewNone` | final | final | draft | draft |
 | `placeLocate` | final | final | draft | draft |
 | `placeLocateFailed` | final | final | draft | draft |
+| `placeAreaDeviceNote` | final | final | draft | draft |
 | `placeMoveHint` | final | final | draft | draft |
 | `placeChosenPoint` | final | final | draft | draft |
 | `placeWarningTitle` | final | final | draft | draft |

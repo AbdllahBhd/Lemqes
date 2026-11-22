@@ -461,6 +461,9 @@
   "locationExplainerBack": "لاحقًا",
   "locationPickerTitle": "بلديتك",
   "locationNoCentre": "لا يوجد موقع معروف لهذه البلدية. اختر بلدية أخرى.",
+  "locationBlockedTitle": "الموقع محظور",
+  "locationBlockedBody": "الموقع مرفوض لتطبيق LEMQES. اسمح به من إعدادات الهاتف، أو اختر بلدية.",
+  "locationOpenSettings": "فتح الإعدادات",
   "exploreDistanceM": "{value} م",
   "@exploreDistanceM": {
     "placeholders": {
@@ -512,7 +515,7 @@
       }
     }
   },
-  "placePreviewArea": "{space, select, women{سترى الزبونات: منطقة بقطر {size} حول هذه النقطة، وليس عنوانك.} other{سيرى الزبائن: منطقة بقطر {size} حول هذه النقطة، وليس عنوانك.}}",
+  "placePreviewArea": "{space, select, women{سترى الزبونات: منطقة بقطر {size} ومركزها، أي هذه النقطة.} other{سيرى الزبائن: منطقة بقطر {size} ومركزها، أي هذه النقطة.}}",
   "@placePreviewArea": {
     "placeholders": {
       "space": {
@@ -533,6 +536,7 @@
   },
   "placeLocate": "موقعي الحالي",
   "placeLocateFailed": "الموقع غير متاح. حرّك الخريطة إلى مكان عملك.",
+  "placeAreaDeviceNote": "مركز المنطقة هو موقعك الحالي وسيظهر على الخريطة. حرّك الخريطة إذا كان هذا منزلك.",
   "placeMoveHint": "حرّك الخريطة لوضع النقطة",
   "placeChosenPoint": "النقطة المختارة، في وسط الخريطة",
   "placeWarningTitle": "يمكن للجميع رؤية هذه النقطة",

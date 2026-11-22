@@ -209,6 +209,42 @@ void main() {
       expect(call.lng, closeTo(3.1, 1e-6));
     });
 
+    for (final mode in ['exact', 'area']) {
+      testWidgets('an $mode never opens on a fix already granted: the commune '
+          'centre until the pro asks', (tester) async {
+        final device = FakeDeviceLocation(
+          status: DevicePermission.precise,
+          position: const GeoPoint(36.7, 3.1),
+        );
+        final h = await _pumpPicker(tester, device: device);
+        await tapAndSettle(tester, 'placeMode_$mode');
+        await tapAndSettle(tester, 'placeSave');
+
+        final call = h.pros.placeCalls.single;
+        expect(call.lat, closeTo(algerCentreLat, 1e-6));
+        expect(call.lng, closeTo(algerCentreLng, 1e-6));
+        expect(device.currentCalls, 0);
+      });
+    }
+
+    testWidgets('used for an area, it says the centre is visible', (
+      tester,
+    ) async {
+      final device = FakeDeviceLocation(
+        onRequest: DevicePermission.precise,
+        position: const GeoPoint(36.7, 3.1),
+      );
+      await _pumpPicker(tester, device: device);
+      await tapAndSettle(tester, 'placeMode_area');
+      expect(byKey('placeAreaDeviceNote'), findsNothing);
+
+      await tapAndSettle(tester, 'placeLocate');
+      expect(find.text(fr.placeAreaDeviceNote), findsOneWidget);
+
+      await tapAndSettle(tester, 'placeMode_exact');
+      expect(byKey('placeAreaDeviceNote'), findsNothing);
+    });
+
     testWidgets('without a fix it says so and the point stays', (tester) async {
       final device = FakeDeviceLocation(onRequest: DevicePermission.denied);
       final h = await _pumpPicker(tester, device: device);
@@ -232,6 +268,24 @@ void main() {
 
       expect(find.text(fr.placeErrorTooFar), findsOneWidget);
       expect(h.location, '/pro/setup/location');
+    });
+
+    testWidgets('a refusal is brought into view wherever the pro scrolled', (
+      tester,
+    ) async {
+      final h = await _pumpPicker(
+        tester,
+        space: Space.women,
+        profile: _women(barberProfile(service: false, hours: false)),
+      );
+      h.pros.nextFailure = const PlaceTooFar();
+      await tapAndSettle(tester, 'placeMode_exact');
+      // Down at the acknowledgement, the top of the controls is scrolled away.
+      await tapAndSettle(tester, 'placeWarningAck');
+      expect(find.text(fr.placeTitle).hitTestable(), findsNothing);
+
+      await tapAndSettle(tester, 'placeSave');
+      expect(find.text(fr.placeErrorTooFar).hitTestable(), findsOneWidget);
     });
   });
 

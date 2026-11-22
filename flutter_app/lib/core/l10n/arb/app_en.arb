@@ -461,6 +461,9 @@
   "locationExplainerBack": "Not now",
   "locationPickerTitle": "Your commune",
   "locationNoCentre": "This commune has no known position. Choose another one.",
+  "locationBlockedTitle": "Location blocked",
+  "locationBlockedBody": "Location is refused to LEMQES. Allow it in your phone’s settings, or choose a commune.",
+  "locationOpenSettings": "Open settings",
   "exploreDistanceM": "{value} m",
   "@exploreDistanceM": {
     "placeholders": {
@@ -512,7 +515,7 @@
       }
     }
   },
-  "placePreviewArea": "{space, select, women{Customers will see: an area of {size} around this point, not your address.} other{Customers will see: an area of {size} around this point, not your address.}}",
+  "placePreviewArea": "{space, select, women{Customers will see: an area of {size} and its centre, this point.} other{Customers will see: an area of {size} and its centre, this point.}}",
   "@placePreviewArea": {
     "placeholders": {
       "space": {
@@ -533,6 +536,7 @@
   },
   "placeLocate": "My current location",
   "placeLocateFailed": "Location unavailable. Move the map to your workplace.",
+  "placeAreaDeviceNote": "The area’s centre is your current position: it will show on the map. Move the map if this is your home.",
   "placeMoveHint": "Move the map to place the point",
   "placeChosenPoint": "Chosen point, at the map centre",
   "placeWarningTitle": "Anyone can see this point",
