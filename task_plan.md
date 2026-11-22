@@ -194,8 +194,8 @@ flutter_app/test/ (mirrors lib/, goldens under each test folder's goldens/)  flu
 
 **Files:** create `features/explore/presentation/{explore_map_view,directions_button}.dart`; modify `explore_screen.dart`, `pro_public_profile_screen.dart`, `core/router/app_router.dart` (`/explore?view=map&lat=&lng=&z=`), ARBs + REVIEW.md; tests and goldens under `flutter_app/test/features/explore/presentation/goldens/`.
 
-- [ ] **Step 1: Failing widget tests** — the toggle keeps query, filters and origin; the map state round-trips through the route; markers for `exact`, polygon circles for `area`, commune pins with counts for `none` grouped by `locality_id`; the grid-clustering function unit-tested (merge within the cell size, split when zoomed in, counts preserved); "Rechercher dans cette zone" appears after a pan and sends one bbox (no request while panning); a 101st row shows "Zoomez pour voir plus"; a tapped pin shows the card; a blocked viewer's pro is not on the map; "Itinéraire" only for `exact`, Google Maps URL, Waze in the overflow (fake launcher). Goldens: `explore_map_{fr,ar}.png` with each marker kind.
-- [ ] **Step 2:** Implement.
+- [x] **Step 1: Failing widget tests** — the toggle keeps query, filters and origin; the map state round-trips through the route; markers for `exact`, polygon circles for `area`, commune pins with counts for `none` grouped by `locality_id`; the grid-clustering function unit-tested (merge within the cell size, split when zoomed in, counts preserved); "Rechercher dans cette zone" appears after a pan and sends one bbox (no request while panning); a 101st row shows "Zoomez pour voir plus"; a tapped pin shows the card; a blocked viewer's pro is not on the map; "Itinéraire" only for `exact`, Google Maps URL, Waze in the overflow (fake launcher). Goldens: `explore_map_{fr,ar}.png` with each marker kind.
+- [x] **Step 2:** Implement.
 
 **Done when:** (1) the new tests and the two named goldens pass; (2) `npm run lint`, `npm run typecheck`, `scripts/sdk flutter test` green; (3) no files changed outside the Files list above.
 
