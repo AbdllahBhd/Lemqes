@@ -92,9 +92,14 @@ class OriginController extends Notifier<Origin> {
       if (previous == null || previous == next) return;
       _choice++;
       _fixAt = null;
-      state = const NoOrigin();
       unawaited(ref.read(sharedPreferencesProvider).remove(originChoiceKey));
-      if (next != null) unawaited(_resolveDevice());
+      // The change can be noticed while a widget first watches the origin,
+      // when no provider may notify: the new state waits for that build.
+      scheduleMicrotask(() {
+        if (!ref.mounted) return;
+        state = const NoOrigin();
+        if (next != null) unawaited(_resolveDevice());
+      });
     });
 
     // A stored commune wins at once. Otherwise (a stored device choice, or

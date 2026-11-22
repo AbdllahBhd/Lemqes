@@ -8,6 +8,7 @@ import 'package:lemqes/features/geo/data/device_location.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/geo/data/origin.dart';
 import 'package:lemqes/features/live/data/live_providers.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_device_location.dart';
@@ -243,6 +244,38 @@ void main() {
         expect(prefs.getString(originChoiceKey), isNull);
       });
     }
+
+    testWidgets('a change first noticed by a widget build does not throw', (
+      tester,
+    ) async {
+      final c = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          deviceLocationProvider.overrideWithValue(device),
+          utcClockProvider.overrideWithValue(() => now),
+          appResumesProvider.overrideWithValue(resumes.stream),
+          originAccountIdProvider.overrideWith((ref) => ref.watch(_accountId)),
+        ],
+      );
+      addTearDown(c.dispose);
+      c.read(originProvider.notifier).useCommune(_bab);
+      // Signed out while nothing watched the origin.
+      c.read(_accountId.notifier).set(null);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: c,
+          child: Consumer(
+            builder: (context, ref, _) {
+              ref.watch(originProvider);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(c.read(originProvider), isA<NoOrigin>());
+    });
 
     test('the OS "asked" flag is device state and stays', () async {
       await prefs.setBool(locationRequestedKey, true);
