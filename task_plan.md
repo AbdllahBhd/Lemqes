@@ -246,6 +246,7 @@ M1 foundation ✅ (`f7263e0`) · M2 barber profile, photos, services, explore �
 | fcd04d9 (F1 gate) | ✅ | ✅ | ✅ 582 | ✅ 247 | ✅ ×2 | Contact phone; 248 pgTAP after review pin. |
 | adca74d (M3 pre-merge gate) | ✅ | ✅ | ✅ 839 | ✅ 618 | ✅ ×2 (4 files) | After security audit + whole-branch review fix wave; race 20/20; pgTAP also green on a DB with leftover integration seed. |
 | 3bb7ea0 (M3 security fix wave) | ✅ | ✅ | ✅ 854 | ✅ 651 | ✅ ×2 (4 files) | User chose "Fix all, then merge": blocked customer sees a permanently closed barber, join-check order, replay filter, hidden-count payload, absent after call; security re-review approved; race 20/20; pgTAP green after integration. |
+| f69f74d (M4 Task 8 gate) | ✅ | ✅ | ✅ 1232 | ✅ 982 | ✅ ×2 (6 files) | Adds place_pro + map_customer paths (map_seed.sql); fixes the explore crash on a search after an empty answer (5a7e0ef) and the auth path's off-screen sign-out (f69f74d); real-tile captures fr/ar in `.superpowers/spikes/m4-map/real-tiles/`. Pre-review: security audit + whole-branch review still to run. |
 
 
 ## Plan review (2026-11-22, LLM council) — what changed
