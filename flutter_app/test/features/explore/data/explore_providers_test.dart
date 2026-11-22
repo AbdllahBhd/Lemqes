@@ -160,20 +160,22 @@ void main() {
     ).called(1);
   });
 
-  test('the origin and bbox survive every other filter change', () {
+  test('the origin survives every other filter change; the shared query '
+      'never holds a box', () async {
     device.status = DevicePermission.approximate;
     container = make();
+    await Future<void>.delayed(Duration.zero);
     final n = container.read(exploreQueryProvider.notifier);
-    n.setBbox(const GeoBounds(2.9, 36.6, 3.2, 36.8));
+    final origin = container.read(exploreQueryProvider).origin;
+    expect(origin, isNotNull);
     n.setText('karim');
     n.setRegion('16');
     n.setLocality(1601);
     n.setKidsOnly(true);
     n.setCategory(ServiceCategory.beard);
     final q = container.read(exploreQueryProvider);
-    expect(q.bbox, const GeoBounds(2.9, 36.6, 3.2, 36.8));
-    n.setBbox(null);
-    expect(container.read(exploreQueryProvider).bbox, isNull);
+    expect(q.origin, origin);
+    expect(q.bbox, isNull);
   });
 
   test('picking a region clears the locality; locality is kept otherwise', () {

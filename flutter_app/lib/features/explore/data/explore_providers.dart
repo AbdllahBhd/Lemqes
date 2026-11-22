@@ -118,19 +118,6 @@ class ExploreQueryController extends Notifier<ExploreQuery> {
     );
   }
 
-  /// Map mode's view; null returns to the plain list.
-  void setBbox(GeoBounds? bbox) {
-    state = ExploreQuery(
-      text: state.text,
-      regionCode: state.regionCode,
-      localityId: state.localityId,
-      kidsOnly: state.kidsOnly,
-      category: state.category,
-      origin: state.origin,
-      bbox: bbox,
-    );
-  }
-
   void _setOrigin(GeoPoint? origin) {
     if (origin == state.origin) return;
     state = ExploreQuery(

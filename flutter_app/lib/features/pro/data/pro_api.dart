@@ -54,7 +54,9 @@ class SupabaseProApi implements ProApi {
       'weekday, opens, closes, break_start, break_end, crosses_midnight';
   static const _photoCols = 'id, path, sort';
 
-  // `search_point` and `place` are not client columns.
+  // `place` and `search_point` are readable under the table grant but not
+  // read: lat/lng are the shown point, and the search point is the server's
+  // ranking point, never needed on the phone.
   static const _placeCols =
       'place_mode, lat, lng, area_radius_m, landmark, updated_at';
 
