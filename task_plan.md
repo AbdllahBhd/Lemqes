@@ -161,8 +161,8 @@ flutter_app/test/ (mirrors lib/, goldens under each test folder's goldens/)  flu
 
 **Files:** create `flutter_app/lib/features/geo/data/{device_location,origin}.dart`; modify `features/geo/data/geo_models.dart` (commune centre), `features/explore/data/explore_providers.dart`, `features/pro/data/{pro_models,pro_api,pro_repository,pro_failure}.dart`, `core/storage/shared_preferences_provider.dart` (only if a key helper is needed), `flutter_app/pubspec.{yaml,lock}` (geolocator, url_launcher), `flutter_app/android/app/src/main/AndroidManifest.xml` (coarse + fine location, `<queries>` for https view intents), `flutter_app/ios/Runner/Info.plist` (location usage strings); tests mirroring each.
 
-- [ ] **Step 1: Failing tests** — fake `DeviceLocation`: denied / approximate / precise / service off; `originProvider`: last explicit choice wins (commune beats device and vice versa), persisted across restarts, device rounded to 3 decimals, refresh on resume only after 10 min (fake clock); a new origin re-runs the explore search; `ProRepository.setPlace` sends a request id and maps every server code to a `ProFailure`; `ProProfile` (owner) reads its `pro_places` row.
-- [ ] **Step 2:** Implement; customer flows request approximate only.
+- [x] **Step 1: Failing tests** — fake `DeviceLocation`: denied / approximate / precise / service off; `originProvider`: last explicit choice wins (commune beats device and vice versa), persisted across restarts, device rounded to 3 decimals, refresh on resume only after 10 min (fake clock); a new origin re-runs the explore search; `ProRepository.setPlace` sends a request id and maps every server code to a `ProFailure`; `ProProfile` (owner) reads its `pro_places` row.
+- [x] **Step 2:** Implement; customer flows request approximate only.
 
 **Done when:** (1) `scripts/sdk flutter test test/features/geo test/features/explore/data test/features/pro/data` green; (2) `npm run lint`, `npm run typecheck`, `scripts/sdk flutter test` (whole app) green; (3) no files changed outside the Files list above.
 
