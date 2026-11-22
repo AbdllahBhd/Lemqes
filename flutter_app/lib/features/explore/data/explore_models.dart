@@ -32,6 +32,19 @@ class ExploreQuery {
       Object.hash(text, regionCode, localityId, kidsOnly, category);
 }
 
+/// What location a pro shows (`public.place_mode`).
+enum PlaceMode {
+  none('none'),
+  area('area'),
+  exact('exact');
+
+  const PlaceMode(this._db);
+  final String _db;
+
+  String toDb() => _db;
+  static PlaceMode fromDb(String v) => values.firstWhere((e) => e._db == v);
+}
+
 /// One `search_pros` row.
 class ProCard {
   const ProCard({
@@ -50,6 +63,14 @@ class ProCard {
     this.customerMix,
     this.minPriceDzd,
     this.live,
+    this.distanceM,
+    this.placeMode,
+    this.lat,
+    this.lng,
+    this.areaRadiusM,
+    this.landmark,
+    this.localityId,
+    this.comesToYou,
   });
 
   factory ProCard.fromRow(Map<String, Object?> r) => ProCard(
@@ -72,6 +93,17 @@ class ProCard {
     live: r['live'] == null
         ? null
         : LiveSnapshot.fromJson(r['live']! as Map<String, Object?>),
+    distanceM: r['distance_m'] as int?,
+    placeMode: r['place_mode'] == null
+        ? null
+        : PlaceMode.fromDb(r['place_mode']! as String),
+    // JSON drops the fraction of a whole number, so 3.0 can arrive as 3.
+    lat: (r['lat'] as num?)?.toDouble(),
+    lng: (r['lng'] as num?)?.toDouble(),
+    areaRadiusM: r['area_radius_m'] as int?,
+    landmark: r['landmark'] as String?,
+    localityId: r['locality_id'] as int?,
+    comesToYou: r['comes_to_you'] as bool?,
   );
 
   final String proId;
@@ -94,6 +126,23 @@ class ProCard {
   /// The pro's live state when the page was searched; the card follows
   /// `proLiveProvider`, which this seeds.
   final LiveSnapshot? live;
+
+  /// Display-rounded metres from the search origin; null without an origin,
+  /// for a pro with no point, or for a pro that blocked the reader.
+  final int? distanceM;
+
+  /// Null when the reader cannot see the pro's place (blocked).
+  final PlaceMode? placeMode;
+
+  /// The shown point (pin or area centre); null for [PlaceMode.none].
+  final double? lat;
+  final double? lng;
+  final int? areaRadiusM;
+  final String? landmark;
+  final int? localityId;
+
+  /// A mobile pro whose service radius reaches the search origin.
+  final bool? comesToYou;
 
   String? regionName(Locale l) =>
       l.languageCode == 'ar' ? regionNameAr : regionNameFr;
