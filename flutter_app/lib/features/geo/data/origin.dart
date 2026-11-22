@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/storage/shared_preferences_provider.dart';
 import '../../../core/time/clock_providers.dart';
+import '../../account/data/account_providers.dart';
 import '../../live/data/live_providers.dart';
 import 'device_location.dart';
 import 'geo_models.dart';
@@ -59,6 +60,13 @@ const originChoiceKey = 'origin_choice_v1';
 /// A device fix younger than this is not refreshed on resume.
 const deviceFixMaxAge = Duration(minutes: 10);
 
+/// The signed-in account's id, null while signed out or loading. The
+/// origin is per account: a shared phone must not hand one customer's
+/// commune to the next.
+final originAccountIdProvider = Provider<String?>(
+  (ref) => ref.watch(accountProvider.select((a) => a.value?.id)),
+);
+
 final originProvider = NotifierProvider<OriginController, Origin>(
   OriginController.new,
   retry: (_, _) => null,
@@ -77,6 +85,17 @@ class OriginController extends Notifier<Origin> {
       unawaited(_onResume());
     });
     ref.onDispose(() => unawaited(sub.cancel()));
+    // Only a change from a known account: the session resolving at start-up
+    // (null, then the id) keeps the stored choice. location_requested_v1 is
+    // the OS's answer for the device, so it stays.
+    ref.listen(originAccountIdProvider, (previous, next) {
+      if (previous == null || previous == next) return;
+      _choice++;
+      _fixAt = null;
+      state = const NoOrigin();
+      unawaited(ref.read(sharedPreferencesProvider).remove(originChoiceKey));
+      if (next != null) unawaited(_resolveDevice());
+    });
 
     // A stored commune wins at once. Otherwise (a stored device choice, or
     // none) the device position is used when permission is already granted.

@@ -12,6 +12,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_device_location.dart';
 
+/// The signed-in account id the origin follows; tests switch it by hand.
+class _AccountId extends Notifier<String?> {
+  @override
+  String? build() => 'u1';
+
+  void set(String? id) => state = id;
+}
+
+final _accountId = NotifierProvider<_AccountId, String?>(_AccountId.new);
+
 const _bab = Locality(
   id: 1601,
   regionCode: '16',
@@ -34,6 +44,7 @@ void main() {
         deviceLocationProvider.overrideWithValue(device),
         utcClockProvider.overrideWithValue(() => now),
         appResumesProvider.overrideWithValue(resumes.stream),
+        originAccountIdProvider.overrideWith((ref) => ref.watch(_accountId)),
       ],
     );
     addTearDown(c.dispose);
@@ -214,5 +225,54 @@ void main() {
         expect(device.requests, isEmpty);
       },
     );
+  });
+
+  group('account change', () {
+    for (final next in [null, 'u2']) {
+      test('${next == null ? 'signing out' : 'another account'} forgets the '
+          'stored choice and the origin', () async {
+        final c = await make();
+        c.read(originProvider.notifier).useCommune(_bab);
+        await Future<void>.delayed(Duration.zero);
+        expect(prefs.getString(originChoiceKey), isNotNull);
+
+        c.read(_accountId.notifier).set(next);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(c.read(originProvider), isA<NoOrigin>());
+        expect(prefs.getString(originChoiceKey), isNull);
+      });
+    }
+
+    test('the OS "asked" flag is device state and stays', () async {
+      await prefs.setBool(locationRequestedKey, true);
+      final c = await make();
+      c.read(_accountId.notifier).set(null);
+      await Future<void>.delayed(Duration.zero);
+      expect(prefs.getBool(locationRequestedKey), isTrue);
+    });
+
+    test('the session resolving at start-up keeps the stored choice', () async {
+      await prefs.setString(
+        originChoiceKey,
+        '{"kind":"commune","id":1601,"lat":36.7233,"lng":3.1832}',
+      );
+      final again = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          deviceLocationProvider.overrideWithValue(device),
+          utcClockProvider.overrideWithValue(() => now),
+          appResumesProvider.overrideWithValue(resumes.stream),
+          originAccountIdProvider.overrideWith((ref) => ref.watch(_accountId)),
+        ],
+      );
+      addTearDown(again.dispose);
+      // Loading (null) first, then the account: not a change of account.
+      again.read(_accountId.notifier).set(null);
+      again.listen(originProvider, (_, _) {});
+      again.read(_accountId.notifier).set('u1');
+      await Future<void>.delayed(Duration.zero);
+      expect(again.read(originProvider), isA<CommuneOrigin>());
+    });
   });
 }
