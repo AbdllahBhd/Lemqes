@@ -64,6 +64,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 
   void _toggleView() {
+    // An open keyboard would hand the map its first layout, and the map's
+    // first search would cover only what the keyboard left visible.
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_location.view == ExploreView.map) {
       _go(ExploreLocation.list);
       return;

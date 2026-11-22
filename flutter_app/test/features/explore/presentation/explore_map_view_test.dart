@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:lemqes/features/explore/data/explore_models.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/presentation/explore_map_view.dart';
@@ -105,6 +108,39 @@ void main() {
     await unmountLive(tester);
   });
 
+  testWidgets('the first map search covers the map once the keyboard has '
+      'gone', (tester) async {
+    final h = await pumpExplore(tester, explore: _repo(list: threeCards()));
+    await tester.tap(byKey('exploreSearch'));
+    await tester.pump();
+    // The search field is focused and the keyboard takes the bottom.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300 * 2);
+    addTearDown(tester.view.resetViewInsets);
+    await settle(tester);
+
+    await tester.tap(byKey('exploreViewToggle'));
+    await settle(tester);
+    // Toggling closes the keyboard: the field gave up its focus.
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isFalse,
+    );
+    tester.view.resetViewInsets();
+    await settle(tester);
+
+    final box = _mapQueries(h).last.bbox!;
+    final size = tester.getSize(byKey('exploreMap'));
+    // Web Mercator at this scale: degrees of latitude per degree of
+    // longitude follow the map's height to width, times cos(latitude).
+    final lat = (box.minLat + box.maxLat) / 2 * math.pi / 180;
+    expect(
+      (box.maxLat - box.minLat) / (box.maxLng - box.minLng),
+      closeTo(size.height / size.width * math.cos(lat), 0.05),
+    );
+    expect(byKey('exploreMapSearchArea'), findsNothing);
+    await unmountLive(tester);
+  });
+
   testWidgets('the map camera round-trips through the route', (tester) async {
     final h = await pumpExplore(
       tester,
@@ -148,6 +184,16 @@ void main() {
     expect(polygons, hasLength(1));
     expect(polygons.single.points.length, greaterThanOrEqualTo(72));
     expect(find.byType(CircleLayer), findsNothing);
+    // Nothing marks the area's exact centre: its tap target sits on the
+    // circle's edge.
+    final areaMarker = tester
+        .widgetList<MarkerLayer>(find.byType(MarkerLayer))
+        .expand((l) => l.markers)
+        .singleWhere((m) => m.key == Key('areaPin_${cardId(2)}'));
+    expect(
+      const Distance()(areaMarker.point, const LatLng(36.745, 3.045)),
+      closeTo(1000, 5),
+    );
 
     // Grouped by commune, at the commune centre.
     final centre = tester.widget<CommunePin>(

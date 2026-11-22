@@ -350,6 +350,9 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
   MapSearchArea? _area;
   late int _zoomBucket;
 
+  /// The size the first search was made for.
+  Size? _firstSize;
+
   /// The camera moved by hand since the last search.
   var _moved = false;
 
@@ -433,7 +436,7 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
     math.min(_controller.camera.zoom + 2, exploreMapMaxZoom),
   );
 
-  void _open(ProCard card) => context.push('/pro/${card.proId}', extra: card);
+  void _open(ProCard card) => context.push('/pro/${card.proId}');
 
   Future<void> _showCards(List<ProCard> cards, {String? title}) =>
       showModalBottomSheet<void>(
@@ -454,8 +457,18 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // The first search needs the visible box, which needs the size.
-        _area ??= () {
+        // The first search needs the visible box, which needs the size. Until
+        // the customer moves or searches, a map that grows (a keyboard
+        // closing) searches its first box again at the full size.
+        final size = constraints.biggest;
+        final first = _firstSize;
+        final grown =
+            first != null &&
+            _area?.seq == 0 &&
+            !_moved &&
+            (size.width > first.width || size.height > first.height);
+        if (_area == null || grown) {
+          _firstSize = size;
           final (box, clamped) = clampToSearchBox(
             _boundsOf(
               MapCamera(
@@ -463,13 +476,13 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
                 center: _initialCentre,
                 zoom: _initialZoom,
                 rotation: 0,
-                nonRotatedSize: constraints.biggest,
+                nonRotatedSize: size,
               ),
             ),
           );
           _clamped = clamped;
-          return MapSearchArea(box, 0);
-        }();
+          _area = MapSearchArea(box, 0);
+        }
         return Consumer(builder: (context, ref, _) => _map(context, ref));
       },
     );
@@ -586,13 +599,15 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
         areaMarkers.add(
           Marker(
             key: Key('areaPin_${c.proId}'),
-            point: centre,
+            // On the circle's northern edge, never its centre: the area is
+            // the place, and a dot on the centre would read as the door.
+            point: const Distance().offset(centre, radius, 0),
             width: _markerBox,
             height: _markerBox,
             child: _Tappable(
               label: _pinLabel(context, c),
               onTap: () => _showCards([c]),
-              child: const _AreaDot(),
+              child: const _AreaHandle(),
             ),
           ),
         );
@@ -823,20 +838,22 @@ class MapClusterPin extends StatelessWidget {
   }
 }
 
-/// The centre of an area circle: small, so the circle reads as the place.
-class _AreaDot extends StatelessWidget {
-  const _AreaDot();
+/// An area's tap target, on the circle's edge: a small ring in the
+/// circle's colour, so it reads as part of the area, not as a pin.
+class _AreaHandle extends StatelessWidget {
+  const _AreaHandle();
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Container(
-        width: 18,
-        height: 18,
+        width: 20,
+        height: 20,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
+          color: scheme.surfaceContainerLowest,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
+          border: Border.all(color: scheme.primary, width: 3),
           boxShadow: const [
             BoxShadow(
               color: Color(0x33141228),
