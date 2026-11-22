@@ -43,7 +43,7 @@ Never edit the seed by hand: change `patches.json` (or re-vendor the dataset) an
 - Coordinates are per commune (1,539 distinct points), but precision varies: a few are rounded to
   whole degrees on one axis (e.g. 510 Guigba `lng 6`, 116 Tinerkouk `lat 29`) and two pairs share
   a point (Belarbi/Makhda, Ouled Bouachra/Si Mahdjoub). Good enough to sort by distance at wilaya
-  scale; not for street-level use. M4 can replace coordinates without changing ids.
+  scale; not for street-level use. M4 corrected the flagged ones, see "Coordinate fixes (M4)".
 - `code_commune` follows the pre-split numbering for communes of the 2019 and 2026 wilayas
   (e.g. Bou Saâda is `2820` in wilaya 68; Tinerkouk is `0116` in wilaya 49), mixed with new
   `55xx` / `56xx` / `58xx` codes for some 2019 wilayas. So the first two digits of
@@ -128,6 +128,23 @@ a value makes the build fail instead of being overwritten silently.
 - **locality** 812 Tabelbala 08 → 52 (Law 19-12 art. 52 bis 3: Béni Abbès has 10 communes).
 - **expected**: 69 / 1,541, plus the per-wilaya counts for the 21 wilayas Law 26-06 lists and for
   08 / 52 (Law 19-12). The build fails if any differs.
+
+## Coordinate fixes (M4)
+
+`scripts/geo/coord_fixes.py --check` flags points that break one of four rules: outside the DZ
+bounds (`geo_countries.bbox`), a whole-degree coordinate, a point shared by two communes, or a
+distance to the wilaya median point above max(4 x the wilaya spread, 60 km). On 2026-11-22 it
+flagged 20 communes; `coord_fixes.json` has one entry for each: 16 moved to the centre of the
+commune's OpenStreetMap boundary (`source: "osm:relation/<id>"`), 5 marked `verified` with a
+reason (Hassi Messaoud, El Borma, Hamraia, Hassi Fehal, and Tinerkouk, which was moved and is
+still far from its wilaya median). Ids never change. The seed, `patches.json` and
+`build_geo_sql.py` stay untouched; `--emit` writes `20261122000100_geo_coords_fix.sql`
+(bbox column, `geo_coord_verified`, the updates).
+
+Credit: corrected coordinates are (c) OpenStreetMap contributors, ODbL
+(https://www.openstreetmap.org/copyright), looked up through Nominatim on 2026-11-22. 16 points
+is far below the 100-feature insubstantiality threshold of the ODbL guidelines, so no share-alike
+obligation attaches to the rest of the data.
 
 ## Human spot-check before M5
 

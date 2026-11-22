@@ -1,5 +1,5 @@
 begin;
-select plan(18);
+select plan(22);
 
 select is(
   (select count(*)::int from public.geo_regions where country_code = 'DZ'),
@@ -29,6 +29,44 @@ select results_eq(
   $$ values ('59', 12), ('60', 8), ('61', 5), ('62', 4), ('63', 4), ('64', 6),
             ('65', 10), ('66', 8), ('67', 21), ('68', 23), ('69', 7) $$,
   'each wilaya 59-69 has the communes Law 26-06 gives it'
+);
+
+-- C1-C4: commune points feed "near me" ranking, so a wrong point is a wrong result. The same four
+-- rules run in scripts/geo/coord_fixes.py --check; communes far from their wilaya on purpose are
+-- listed in geo_coord_verified.
+select is_empty(
+  $$ select l.id from public.geo_localities l join public.geo_countries c on c.code = l.country_code
+     where l.lat is null or l.lng is null
+        or l.lng < c.bbox[1] or l.lat < c.bbox[2] or l.lng > c.bbox[3] or l.lat > c.bbox[4] $$,
+  'C1: every commune point lies inside its country bbox'
+);
+select is_empty(
+  $$ select lat, lng from public.geo_localities group by lat, lng having count(*) > 1 $$,
+  'C2: no two communes share a point'
+);
+select is_empty(
+  $$ select id from public.geo_localities where lat = round(lat) or lng = round(lng) $$,
+  'C3: no commune has a whole-degree coordinate'
+);
+select is_empty(
+  $$ with med as (
+       select region_code,
+              percentile_cont(0.5) within group (order by lat) as mlat,
+              percentile_cont(0.5) within group (order by lng) as mlng
+       from public.geo_localities group by region_code),
+     d as (
+       select l.id, l.region_code,
+              12742 * asin(sqrt(least(1, power(sin(radians(l.lat - m.mlat) / 2), 2)
+                + cos(radians(m.mlat)) * cos(radians(l.lat))
+                  * power(sin(radians(l.lng - m.mlng) / 2), 2)))) as km
+       from public.geo_localities l join med m using (region_code)),
+     spread as (
+       select region_code, percentile_cont(0.5) within group (order by km) as s
+       from d group by region_code)
+     select d.id from d join spread using (region_code)
+     where d.km > greatest(4 * spread.s, 60)
+       and d.id not in (select locality_id from public.geo_coord_verified) $$,
+  'C4: no commune is a wilaya-spread outlier unless verified'
 );
 
 -- id is the official commune code, so later coordinate updates keep foreign keys pointing right.
