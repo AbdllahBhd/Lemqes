@@ -306,7 +306,7 @@ select is((select count(*)::int from realtime.messages), 0, 'P7 set_pro_place br
 -- P8 ------------------------------------------------------------------------------------------
 
 select ok(
-  not has_function_privilege('anon', 'public.viewer_blocked(uuid)', 'execute')
+  not has_function_privilege('anon', 'private.viewer_blocked(uuid)', 'execute')
   and not has_function_privilege('anon', 'public.f_pro_search_point(uuid)', 'execute')
   and not has_function_privilege('anon', 'public.set_pro_place(uuid, public.place_mode, double precision, double precision, integer, text)', 'execute')
   and not has_function_privilege('authenticated', 'public.f_pro_search_point(uuid)', 'execute'),
@@ -314,7 +314,7 @@ select ok(
 );
 select is(
   (select count(*)::int from pg_proc
-    where pronamespace = 'public'::regnamespace
+    where pronamespace in ('public'::regnamespace, 'private'::regnamespace)
       and proname in ('viewer_blocked', 'f_pro_search_point', 'set_pro_place', 'pro_places_create',
                       'pro_places_after_place', 'pro_places_after_locality',
                       'pro_places_after_locality_coords')
@@ -324,13 +324,13 @@ select is(
   'P8 every new function is security definer with search_path = '''''
 );
 do $$ begin perform tests.authenticate_as_anon(); end; $$;
-select throws_ok(format($$ select public.viewer_blocked(%L) $$, current_setting('t.pa')),
+select throws_ok(format($$ select private.viewer_blocked(%L) $$, current_setting('t.pa')),
   '42501', null, 'P8 anon cannot call viewer_blocked');
 do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
-select is(public.viewer_blocked(current_setting('t.pa')::uuid), false,
+select is(private.viewer_blocked(current_setting('t.pa')::uuid), false,
   'P8 viewer_blocked is false for a customer the pro did not block (another one is blocked)');
 do $$ begin perform tests.authenticate_as(current_setting('t.d')::uuid); end; $$;
-select is(public.viewer_blocked(current_setting('t.pa')::uuid), true,
+select is(private.viewer_blocked(current_setting('t.pa')::uuid), true,
   'P8 viewer_blocked is true for the blocked caller');
 do $$ begin perform tests.clear_auth(); end; $$;
 

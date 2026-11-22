@@ -308,9 +308,9 @@ select is(
       and n like 'p\_origin\_%'),
   0, 'N8 no other public function takes an origin parameter');
 select ok(
-  not has_function_privilege('anon', 'public.search_args_check(double precision, double precision, double precision[])', 'execute')
-  and not has_function_privilege('public', 'public.search_args_check(double precision, double precision, double precision[])', 'execute')
-  and has_function_privilege('authenticated', 'public.search_args_check(double precision, double precision, double precision[])', 'execute'),
+  not has_function_privilege('anon', 'private.search_args_check(double precision, double precision, double precision[], text)', 'execute')
+  and not has_function_privilege('public', 'private.search_args_check(double precision, double precision, double precision[], text)', 'execute')
+  and has_function_privilege('authenticated', 'private.search_args_check(double precision, double precision, double precision[], text)', 'execute'),
   'N8 search_args_check is executable by authenticated only'
 );
 

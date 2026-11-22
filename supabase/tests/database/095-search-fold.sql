@@ -28,14 +28,14 @@ $$;
 -- F1 ----------------------------------------------------------------------------------------
 select is(
   (select count(*)::int from pg_proc
-    where oid in ('public.f_search_fold(text)'::regprocedure, 'public.f_name_skeleton(text)'::regprocedure)
+    where oid in ('private.f_search_fold(text)'::regprocedure, 'private.f_name_skeleton(text)'::regprocedure)
       and provolatile = 'i' and proconfig @> array['search_path=""']),
   2,
   'F1: f_search_fold and f_name_skeleton are immutable with search_path = '''''
 );
 select is(
   (select count(*)::int from pg_proc
-    where oid in ('public.f_search_fold(text)'::regprocedure, 'public.f_name_skeleton(text)'::regprocedure)
+    where oid in ('private.f_search_fold(text)'::regprocedure, 'private.f_name_skeleton(text)'::regprocedure)
       and (has_function_privilege('anon', oid, 'execute')
            or has_function_privilege('public', oid, 'execute'))),
   0,
@@ -45,7 +45,7 @@ select is(
 do $$ begin perform tests.authenticate_as(current_setting('t.cm')::uuid); end; $$;
 
 select is(
-  (select public.f_search_fold('أُمِين') || '|' || public.f_name_skeleton('Amine')),
+  (select private.f_search_fold('أُمِين') || '|' || private.f_name_skeleton('Amine')),
   'امين|amn',
   'F1: authenticated can call both fold functions'
 );
@@ -137,8 +137,8 @@ $$;
 set local enable_seqscan = off;
 select ok(
   (select tests.explain_text($$
-     with qp as (select '%' || public.f_search_fold('Amine') || '%' as pattern,
-                        '%' || public.f_name_skeleton('Amine') || '%' as skel_pattern)
+     with qp as (select '%' || private.f_search_fold('Amine') || '%' as pattern,
+                        '%' || private.f_name_skeleton('Amine') || '%' as skel_pattern)
      select p.id from qp, public.pro_profiles p where p.search_key like qp.pattern
      union all
      select p.id from qp, public.pro_profiles p where p.search_skeleton like qp.skel_pattern
