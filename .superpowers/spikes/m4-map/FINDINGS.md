@@ -32,6 +32,15 @@ Also observed, outside the bar:
 - **Cold cache:** on the first Linux run, z12 Algiers still showed blurred lower-zoom substitute tiles after 7 s. Warm runs were sharp. Customers will see a brief blur on first use in an area.
 - **Coverage:** OSM data around Algiers and Tizi Ouzou is dense (streets, POIs, Arabic names). Sparser regions were not checked.
 
+## Real-tile captures (Task 8, `real-tiles/`)
+
+Observed on the built app against the live OpenFreeMap tiles, one line each:
+
+- `explore-map-ar.png`: Arabic labels read `name:ar` (تيلملي، سيدي امحمد، القبة) with Latin only where OSM has no Arabic name; the exact pin and the RTL chrome sit correctly over the tiles, and the (i) attribution stays bottom-right.
+- `explore-map-fr.png`: the same view in Latin labels (Telemly, Sidi M'Hamed, Hydra, Kouba): the per-locale style id keeps the two caches apart, as rule 3 requires.
+- `picker-ar.png`: the Zone circle (polygon) is legible over dense streets; the centre dot marks the exact saved point, and the preview copy then said "وليس عنوانك" (not your address), which the final review found false (fixed: the copy now says the centre is shown).
+- `picker-fr.png`: same in French; the preview then read "pas votre adresse" (since replaced by the honest wording), and the Save button sits under the controls with the S1 warning scrolled below the fold.
+
 ## Implementation rules for Tasks 6–7
 
 1. **No `flutter_map_marker_cluster`.** It cannot be installed alongside `vector_map_tiles`. Cluster by hand: group markers into a pixel grid at the current zoom, a small pure function with unit tests.
