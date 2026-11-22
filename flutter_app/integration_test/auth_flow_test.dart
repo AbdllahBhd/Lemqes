@@ -230,6 +230,18 @@ Future<void> _enterCode(WidgetTester tester) async {
 
 Future<void> _signOut(WidgetTester tester) async {
   await _tap(tester, find.byKey(const Key('settings')));
+  // This test keeps the desktop window size, where the settings list
+  // (taller since the map-data row) does not build its last row unscrolled.
+  final settingsList = find.descendant(
+    of: find.byType(ListView),
+    matching: find.byType(Scrollable),
+  );
+  await _waitForSettledRoute(tester, settingsList);
+  await tester.scrollUntilVisible(
+    find.byKey(const Key('signOut')),
+    200,
+    scrollable: settingsList.first,
+  );
   await _tap(tester, find.byKey(const Key('signOut')));
   await _tap(tester, find.byKey(const Key('confirmSignOut')));
   await _waitFor(tester, find.byKey(const Key('tab_login')));
