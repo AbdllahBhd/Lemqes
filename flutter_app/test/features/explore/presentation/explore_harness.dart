@@ -13,9 +13,12 @@ import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/explore/data/explore_models.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/data/explore_repository.dart';
+import 'package:lemqes/features/explore/presentation/directions_button.dart';
 import 'package:lemqes/features/explore/presentation/pro_public_profile_screen.dart';
+import 'package:lemqes/features/geo/data/device_location.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/live/data/live_models.dart';
+import 'package:lemqes/features/map/presentation/lemqes_base_map.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
 import 'package:lemqes/features/geo/data/geo_repository.dart';
 import 'package:lemqes/features/pro/data/photo_uploader.dart';
@@ -27,6 +30,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/presentation/harness.dart';
+import '../../geo/data/fake_device_location.dart';
 import '../../live/presentation/customer/customer_live_harness.dart';
 import '../../pro/presentation/setup/setup_harness.dart'
     show FakeGeoRepository, FakeProRepository, settle;
@@ -60,6 +64,13 @@ ProCard card(
   CustomerMix? mix = CustomerMix.adults,
   int? minPrice = 600,
   LiveSnapshot? live,
+  int? distanceM,
+  PlaceMode? placeMode,
+  bool? comesToYou,
+  double? lat,
+  double? lng,
+  int? areaRadiusM,
+  int? localityId,
 }) => ProCard(
   proId: cardId(i),
   kind: workplace == WorkplaceType.mobile ? ProKind.homeArtist : ProKind.barber,
@@ -75,6 +86,13 @@ ProCard card(
   customerMix: mix,
   minPriceDzd: minPrice,
   live: live,
+  distanceM: distanceM,
+  placeMode: placeMode,
+  comesToYou: comesToYou,
+  lat: lat,
+  lng: lng,
+  areaRadiusM: areaRadiusM,
+  localityId: localityId,
 );
 
 /// Three cards that cover the variants: verified with a workplace name,
@@ -141,6 +159,7 @@ class FakeExploreRepository extends Fake implements ExploreRepository {
   ProFailure? failure;
   final queries = <ExploreQuery>[];
   final offsets = <int>[];
+  final limits = <int>[];
 
   @override
   Future<List<ProCard>> search(
@@ -150,6 +169,7 @@ class FakeExploreRepository extends Fake implements ExploreRepository {
   }) async {
     queries.add(q);
     offsets.add(offset);
+    limits.add(limit);
     final f = failure;
     if (f != null) throw f;
     final a = answer;
@@ -216,8 +236,10 @@ ProProfile publicBarber({
   bool arabic = false,
   bool showPrices = true,
   int photos = 3,
+  ProPlace? place,
 }) => ProProfile(
   id: id,
+  place: place,
   kind: ProKind.barber,
   space: Space.men,
   displayName: arabic ? 'أمين بن علي' : 'Amine Benali',
@@ -300,12 +322,14 @@ Future<ExploreHarness> pumpExplore(
   PublicProRepository? pros,
   String? location,
   Future<bool> Function(Uri)? launcher,
+  Future<bool> Function(Uri)? directionsLauncher,
   GeoRepository? geo,
   Locale locale = const Locale('fr'),
   ThemeMode themeMode = ThemeMode.light,
   double textScale = 1,
   Size size = const Size(390, 844),
   CustomerLive? live,
+  DeviceLocation? deviceLocation,
 }) async {
   final customerLive = live ?? CustomerLive();
   addTearDown(customerLive.dispose);
@@ -341,12 +365,22 @@ Future<ExploreHarness> pumpExplore(
       proRepositoryProvider.overrideWithValue(fakePros),
       photoUploaderProvider.overrideWithValue(FakePhotoUploader()),
       geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
+      // Never the real platform service: a test that does not script the
+      // device must not be able to prompt.
+      deviceLocationProvider.overrideWithValue(
+        deviceLocation ?? FakeDeviceLocation(),
+      ),
       // A Wednesday, so the hours table's "today" is stable.
       countryClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
       // Cards and the ticket run on the real channels over fakes; a pro
       // passing through /home mounts the Today tab on its own snapshot.
       ...customerLive.overrides(),
       if (launcher != null) phoneLauncherProvider.overrideWithValue(launcher),
+      if (directionsLauncher != null)
+        directionsLauncherProvider.overrideWithValue(directionsLauncher),
+      // Tests never build the vector tile layer (no network, and it fails
+      // at teardown in flutter_test).
+      mapBaseLayerProvider.overrideWithValue((_) => const MapPlainBackground()),
     ],
   );
   addTearDown(container.dispose);

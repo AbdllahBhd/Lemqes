@@ -18,6 +18,9 @@ class ExploreRepository {
       'p_locality_id': q.localityId,
       'p_kids': q.kidsOnly ? true : null,
       'p_category': q.category?.toDb(),
+      'p_origin_lat': q.origin?.lat,
+      'p_origin_lng': q.origin?.lng,
+      'p_bbox': q.bbox?.toRpc(),
       'p_limit': limit,
       'p_offset': offset,
     });

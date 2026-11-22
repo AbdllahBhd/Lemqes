@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:material_ui/material_ui.dart' show TimeOfDay;
 
 import '../../account/data/account.dart';
+import '../../explore/data/explore_models.dart' show PlaceMode;
 
 enum ProKind {
   barber('barber'),
@@ -292,6 +293,34 @@ class ProPhoto {
   final int sort;
 }
 
+/// A pro's own `pro_places` row (what it shows customers).
+class ProPlace {
+  const ProPlace({
+    required this.mode,
+    this.lat,
+    this.lng,
+    this.areaRadiusM,
+    this.landmark,
+  });
+
+  factory ProPlace.fromRow(Map<String, Object?> r) => ProPlace(
+    mode: PlaceMode.fromDb(r['place_mode']! as String),
+    // JSON drops the fraction of a whole number, so 3.0 can arrive as 3.
+    lat: (r['lat'] as num?)?.toDouble(),
+    lng: (r['lng'] as num?)?.toDouble(),
+    areaRadiusM: r['area_radius_m'] as int?,
+    landmark: r['landmark'] as String?,
+  );
+
+  final PlaceMode mode;
+
+  /// The shown point (pin or area centre); null for [PlaceMode.none].
+  final double? lat;
+  final double? lng;
+  final int? areaRadiusM;
+  final String? landmark;
+}
+
 class ProProfile {
   const ProProfile({
     required this.id,
@@ -316,6 +345,7 @@ class ProProfile {
     this.services = const [],
     this.hours = const [],
     this.photos = const [],
+    this.place,
   });
 
   /// [services] come from the row's embedded `pro_services` unless given
@@ -363,7 +393,16 @@ class ProProfile {
         ..sort((a, b) => a.weekday.compareTo(b.weekday)),
       photos: [for (final p in children('pro_photos')) ProPhoto.fromRow(p)]
         ..sort((a, b) => a.sort.compareTo(b.sort)),
+      place: _place(r['pro_places']),
     );
+  }
+
+  // A one-to-one embed arrives as an object; accept a one-element list too.
+  static ProPlace? _place(Object? embed) {
+    final row = embed is List<Object?>
+        ? (embed.isEmpty ? null : embed.first)
+        : embed;
+    return row == null ? null : ProPlace.fromRow(row as Map<String, Object?>);
   }
 
   final String id;
@@ -391,6 +430,11 @@ class ProProfile {
   final List<ProService> services;
   final List<DayHours> hours;
   final List<ProPhoto> photos;
+
+  /// The shown place: the owner's own, or a listed pro's as a customer may
+  /// see it. Null when the pro never chose (same as [PlaceMode.none]) or,
+  /// on the public path, when the pro blocked the reader.
+  final ProPlace? place;
 
   bool get isPublished => publishedAt != null;
 

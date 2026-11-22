@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -25,6 +26,9 @@ List<ServiceCategory> exploreCategories(WidgetRef ref, Space space) {
       if (used.contains(c)) c,
   ];
 }
+
+/// search_pros refuses a longer query (query_invalid).
+const exploreQueryMaxLength = 100;
 
 /// The search field that straddles the home band's lower edge.
 class ExploreSearchField extends StatelessWidget {
@@ -59,6 +63,9 @@ class ExploreSearchField extends StatelessWidget {
             key: const Key('exploreSearch'),
             controller: controller,
             onChanged: onChanged,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(exploreQueryMaxLength),
+            ],
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               hintText: l10n.exploreSearchHint,

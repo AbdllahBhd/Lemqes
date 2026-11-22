@@ -14,6 +14,7 @@ import '../../../../shared/widgets/lemqes_primary_button.dart';
 import '../../../../shared/widgets/price_text.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../account/data/account.dart';
+import '../../../explore/data/explore_models.dart' show PlaceMode;
 import '../../../explore/presentation/pro_avatar.dart';
 import '../../../explore/presentation/pro_labels.dart';
 import '../../../explore/presentation/pro_public_profile_screen.dart'
@@ -27,6 +28,7 @@ import '../edit/photo_gallery_editor.dart';
 import '../edit/privacy_section.dart';
 import '../edit/service_editor.dart';
 import '../pro_failure_listener.dart';
+import '../place/place_picker_screen.dart';
 import '../pro_failure_message.dart';
 import '../setup/profile_step.dart';
 
@@ -294,6 +296,7 @@ class _DashboardBody extends StatelessWidget {
           ),
           child: _ProfileSummary(profile: profile),
         ),
+        _PlaceCard(profile: profile),
         _Card(
           title: l10n.proPublicServices,
           child: _Services(profile: profile),
@@ -649,6 +652,177 @@ class _IconLine extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(child: Text(text, style: theme.textTheme.bodyLarge)),
         ],
+      ),
+    );
+  }
+}
+
+/// What location customers see, with the way to change it. A salon that
+/// shows none is nudged to place itself (S2); studios and home artists
+/// never are. Anything shown can be hidden in one tap (S1).
+class _PlaceCard extends ConsumerStatefulWidget {
+  const _PlaceCard({required this.profile});
+
+  final ProProfile profile;
+
+  @override
+  ConsumerState<_PlaceCard> createState() => _PlaceCardState();
+}
+
+class _PlaceCardState extends ConsumerState<_PlaceCard> {
+  bool _hiding = false;
+
+  // Pushed, so back (and saving) returns here.
+  void _edit() => context.push('/pro/setup/location?edit=1');
+
+  Future<void> _hide() async {
+    if (_hiding) return;
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _hiding = true);
+    final failure = await savePlace(ref, PlaceMode.none);
+    if (!mounted) return;
+    setState(() => _hiding = false);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          failure == null
+              ? l10n.placeHidden
+              : placeFailureMessage(l10n, failure),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final p = widget.profile;
+    final place = p.place;
+    final mode = place?.mode ?? PlaceMode.none;
+    final nudge =
+        mode == PlaceMode.none && p.workplaceType == WorkplaceType.salon;
+    final landmark = place?.landmark;
+
+    final Widget content;
+    if (nudge) {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.secondaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: SizedBox.square(
+                    dimension: 48,
+                    child: Icon(
+                      Icons.add_location_alt_outlined,
+                      color: scheme.onSecondaryContainer,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.placeNudgeTitle,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.placeNudgeBody(p.space.toDb()),
+                      style: _muted(context),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            key: const Key('dashPlaceNudgeAction'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              shape: const StadiumBorder(),
+            ),
+            icon: const Icon(Icons.add_location_alt_outlined),
+            label: Text(l10n.placeNudgeAction),
+            onPressed: _edit,
+          ),
+        ],
+      );
+    } else {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _IconLine(
+            icon: switch (mode) {
+              PlaceMode.exact => Icons.location_on_outlined,
+              PlaceMode.area => Icons.radar_outlined,
+              PlaceMode.none => Icons.location_city_outlined,
+            },
+            text: switch (mode) {
+              PlaceMode.exact => l10n.placeSummaryExact,
+              PlaceMode.area => l10n.placeSummaryArea(
+                placeRadiusLabel(l10n, place?.areaRadiusM ?? 1000),
+              ),
+              PlaceMode.none => l10n.placeSummaryNone,
+            },
+          ),
+          if (mode == PlaceMode.exact && landmark != null)
+            _IconLine(icon: Icons.signpost_outlined, text: landmark),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              _CardAction(
+                actionKey: 'dashEditPlace',
+                icon: Icons.edit_location_alt_outlined,
+                label: l10n.placeEdit,
+                onPressed: _hiding ? null : _edit,
+              ),
+              if (mode != PlaceMode.none)
+                _CardAction(
+                  actionKey: 'dashHidePlace',
+                  icon: Icons.location_off_outlined,
+                  label: l10n.placeHide,
+                  onPressed: _hiding ? null : _hide,
+                ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: _CardFrame(
+        key: const Key('placeCard'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                l10n.placeSectionTitle,
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (_hiding) const LinearProgressIndicator(),
+            content,
+          ],
+        ),
       ),
     );
   }

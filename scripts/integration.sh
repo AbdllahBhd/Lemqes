@@ -2,7 +2,8 @@
 # Runs the app's integration paths on Linux desktop against the local stack.
 # Resets the local database before each file so every file starts from the
 # seed (they sign up with test_otp numbers that must still be free); the live
-# files also get supabase/fixtures/live_seed.sql.
+# files also get supabase/fixtures/live_seed.sql, the map file
+# supabase/fixtures/map_seed.sql.
 #
 # LEMQES_ENV overrides the app env file (default flutter_app/env/local.json).
 set -eu
@@ -62,16 +63,20 @@ wait_for_partition() {
 
 env_arg="$(cd "$(dirname "$env_file")" && pwd)/$(basename "$env_file")"
 for file in auth_flow_test.dart pro_profile_flow_test.dart \
-  live_queue_customer_test.dart live_queue_barber_test.dart; do
+  live_queue_customer_test.dart live_queue_barber_test.dart \
+  place_pro_test.dart map_customer_test.dart; do
   supabase db reset
   wait_for_auth
   case "$file" in
-    live_*)
-      docker exec -i supabase_db_lemqes psql -U postgres -v ON_ERROR_STOP=1 -q \
-        < supabase/fixtures/live_seed.sql
-      wait_for_partition
-      ;;
+    live_*) seed=supabase/fixtures/live_seed.sql ;;
+    map_*) seed=supabase/fixtures/map_seed.sql ;;
+    *) seed= ;;
   esac
+  if [ -n "$seed" ]; then
+    docker exec -i supabase_db_lemqes psql -U postgres -v ON_ERROR_STOP=1 -q \
+      < "$seed"
+    wait_for_partition
+  fi
   scripts/sdk flutter test "integration_test/$file" -d linux \
     --dart-define-from-file="$env_arg"
 done

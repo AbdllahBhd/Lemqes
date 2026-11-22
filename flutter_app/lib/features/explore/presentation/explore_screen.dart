@@ -12,7 +12,9 @@ import '../../pro/presentation/pro_failure_message.dart';
 import '../data/explore_models.dart';
 import '../data/explore_providers.dart';
 import 'explore_filters.dart';
+import 'explore_map_view.dart';
 import 'pro_card_tile.dart';
+import 'pro_labels.dart' show isFarResult;
 
 /// How close to the end of the list the next page starts loading.
 const _loadMoreExtent = 400.0;
@@ -35,6 +37,48 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   late final TextEditingController _search = TextEditingController(
     text: ref.read(exploreQueryProvider).text,
   );
+
+  /// What the route last said; [_location] follows it, and also holds a
+  /// toggle made without a router.
+  ExploreLocation? _routed;
+  var _location = ExploreLocation.list;
+
+  /// The map's last camera, so returning to the map returns there.
+  ExploreLocation? _lastMap;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final routed = ExploreLocationScope.of(context);
+    if (routed == _routed) return;
+    _routed = routed;
+    _location = routed;
+    if (routed.view == ExploreView.map && routed.center != null) {
+      _lastMap = routed;
+    }
+  }
+
+  void _go(ExploreLocation location) {
+    setState(() => _location = location);
+    GoRouter.maybeOf(context)?.go(location.toLocation());
+  }
+
+  void _toggleView() {
+    // An open keyboard would hand the map its first layout, and the map's
+    // first search would cover only what the keyboard left visible.
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (_location.view == ExploreView.map) {
+      _go(ExploreLocation.list);
+      return;
+    }
+    final origin = ref.read(exploreQueryProvider).origin;
+    _go(_lastMap ?? ExploreLocation.map(origin, origin == null ? null : 13));
+  }
+
+  void _onCameraSaved(ExploreLocation location) {
+    _lastMap = location;
+    _go(location);
+  }
 
   @override
   void dispose() {
@@ -67,20 +111,55 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       onChanged: ref.read(exploreQueryProvider.notifier).setText,
     );
 
+    final map = _location.view == ExploreView.map;
     return Column(
       children: [
         widget.header(search),
         Expanded(
-          child: NotificationListener<ScrollNotification>(
-            onNotification: _onScroll,
-            child: CustomScrollView(
-              slivers: [
-                // The customer's place, above everything they browse.
-                const SliverToBoxAdapter(child: ExploreTicketCard()),
-                SliverToBoxAdapter(child: ExploreFilters(space: widget.space)),
-                ..._results(context, results, query),
-              ],
-            ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: map
+                    ? Column(
+                        children: [
+                          const ExploreTicketCard(),
+                          ExploreFilters(space: widget.space),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: ExploreMapView(
+                              space: widget.space,
+                              location: _location,
+                              onCameraSaved: _onCameraSaved,
+                            ),
+                          ),
+                        ],
+                      )
+                    : NotificationListener<ScrollNotification>(
+                        onNotification: _onScroll,
+                        child: CustomScrollView(
+                          slivers: [
+                            // The customer's place, above everything they
+                            // browse.
+                            const SliverToBoxAdapter(
+                              child: ExploreTicketCard(),
+                            ),
+                            SliverToBoxAdapter(
+                              child: ExploreFilters(space: widget.space),
+                            ),
+                            ..._results(context, results, query),
+                          ],
+                        ),
+                      ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: MediaQuery.paddingOf(context).bottom + 16,
+                child: Center(
+                  child: _ViewToggle(map: map, onPressed: _toggleView),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -110,7 +189,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     if (value == null) return const [SliverToBoxAdapter(child: _Skeleton())];
     if (value.items.isEmpty && !results.isLoading) {
       final space = widget.space.toDb();
-      final filtered = query != const ExploreQuery();
+      // The origin is the customer's position, not a filter.
+      final filtered = query != ExploreQuery(origin: query.origin);
       return [
         SliverFillRemaining(
           child: filtered
@@ -133,7 +213,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         ),
       ];
     }
-    final bottom = MediaQuery.paddingOf(context).bottom + 24;
+    // Room for the view toggle floating over the end of the list.
+    final bottom = MediaQuery.paddingOf(context).bottom + 24 + 64;
     return [
       // A new search keeps the previous results on screen until it answers.
       SliverToBoxAdapter(
@@ -142,6 +223,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           child: results.isLoading ? const LinearProgressIndicator() : null,
         ),
       ),
+      if (value.items.isNotEmpty && isFarResult(value.items.first))
+        const SliverToBoxAdapter(child: _FarNotice()),
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         sliver: SliverList.separated(
@@ -162,6 +245,88 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         sliver: SliverToBoxAdapter(child: _Footer(results: value)),
       ),
     ];
+  }
+}
+
+/// List ⇄ map: a dark pill floating at the bottom centre, over both views.
+class _ViewToggle extends StatelessWidget {
+  const _ViewToggle({required this.map, required this.onPressed});
+
+  /// The map shows, so the pill offers the list.
+  final bool map;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Material(
+      color: scheme.inverseSurface,
+      shape: const StadiumBorder(),
+      elevation: 3,
+      shadowColor: const Color(0x66141228),
+      child: InkWell(
+        key: const Key('exploreViewToggle'),
+        customBorder: const StadiumBorder(),
+        onTap: onPressed,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  map ? Icons.view_list_outlined : Icons.map_outlined,
+                  size: 20,
+                  color: scheme.onInverseSurface,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  map ? l10n.exploreViewList : l10n.exploreViewMap,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: scheme.onInverseSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Nothing within 10 km": the list is sorted, so only the first row matters.
+class _FarNotice extends StatelessWidget {
+  const _FarNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Row(
+        key: const Key('exploreFarNotice'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ExcludeSemantics(
+            child: Icon(Icons.info_outline, size: 20, color: scheme.primary),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.exploreFarNotice,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -20,6 +20,8 @@ const _localityRow = {
   'region_code': '16',
   'name_ar': 'باب الزوار',
   'name_fr': 'Bab Ezzouar',
+  'lat': 36.7233,
+  'lng': 3,
 };
 
 void main() {
@@ -33,6 +35,15 @@ void main() {
     when(() => api.localities(any(), any()))
         .thenAnswer((_) async => [_localityRow]);
     when(() => api.locality(any())).thenAnswer((_) async => _localityRow);
+  });
+
+  test('a locality carries its centre; JSON may drop the fraction', () async {
+    final l = await repo.locality(1601);
+    expect(l!.lat, 36.7233);
+    expect(l.lng, 3.0);
+    final bare = Locality.fromRow({..._localityRow, 'lat': null, 'lng': null});
+    expect(bare.lat, isNull);
+    expect(bare.lng, isNull);
   });
 
   test('regions are cached per country', () async {

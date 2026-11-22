@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/account/data/account.dart';
+import 'package:lemqes/features/explore/data/explore_models.dart'
+    show PlaceMode;
 import 'package:lemqes/features/pro/data/pro_api.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
@@ -511,5 +513,151 @@ void main() {
     expect(PhoneVisibility.fromDb('followers'), PhoneVisibility.followers);
     expect(ServiceCategory.fromDb('skincare'), ServiceCategory.skincare);
     expect(const Locale('ar'), isNotNull);
+  });
+
+  group('setPlace', () {
+    Map<String, Object?> placeRow({
+      String mode = 'exact',
+      Object? lat = 36.75,
+      Object? lng = 3,
+      int? radius,
+      String? landmark = 'Near the mosque',
+    }) => {
+      'pro_id': 'p1',
+      'place_mode': mode,
+      'place': '0101000020E6100000',
+      'area_radius_m': radius,
+      'landmark': landmark,
+      'lat': lat,
+      'lng': lng,
+      'search_point': null,
+      'updated_at': '2026-11-22T10:00:00+00:00',
+    };
+
+    test('sends a fresh request id each call and parses the row', () async {
+      final ids = <Object?>[];
+      Map<String, Object?>? sent;
+      when(() => api.rpc('set_pro_place', any())).thenAnswer((i) async {
+        sent = i.positionalArguments[1] as Map<String, Object?>;
+        ids.add(sent!['p_request_id']);
+        return placeRow();
+      });
+      final place = await repo.setPlace(
+        PlaceMode.exact,
+        lat: 36.75,
+        lng: 3,
+        landmark: 'Near the mosque',
+      );
+      await repo.setPlace(PlaceMode.exact, lat: 36.75, lng: 3);
+      expect(sent!['p_mode'], 'exact');
+      expect(sent!['p_lat'], 36.75);
+      expect(sent!['p_lng'], 3);
+      expect(sent!['p_radius_m'], isNull);
+      expect(ids.first, matches(RegExp(r'^[0-9a-f-]{36}$')));
+      expect(ids.first, isNot(ids.last));
+      expect(place.mode, PlaceMode.exact);
+      expect(place.lat, 36.75);
+      expect(place.lng, 3.0);
+      expect(place.landmark, 'Near the mosque');
+    });
+
+    test('none and area parse their shapes', () async {
+      when(() => api.rpc('set_pro_place', any())).thenAnswer(
+        (_) async =>
+            placeRow(mode: 'none', lat: null, lng: null, landmark: null),
+      );
+      final none = await repo.setPlace(PlaceMode.none);
+      expect(none.mode, PlaceMode.none);
+      expect(none.lat, isNull);
+      when(() => api.rpc('set_pro_place', any())).thenAnswer(
+        (_) async => placeRow(mode: 'area', radius: 1000, landmark: null),
+      );
+      final area = await repo.setPlace(
+        PlaceMode.area,
+        lat: 36.75,
+        lng: 3,
+        radiusM: 1000,
+      );
+      expect(area.areaRadiusM, 1000);
+    });
+
+    final cases = <String, Matcher>{
+      'no_locality': isA<PlaceNoLocality>(),
+      'not_owner': isA<NotOwner>(),
+      'place_invalid': isA<PlaceInvalid>(),
+      'place_out_of_country': isA<PlaceOutOfCountry>(),
+      'place_too_far': isA<PlaceTooFar>(),
+      'request_id_required': isA<UnknownProFailure>(),
+      'request_reused': isA<PlaceRequestReused>(),
+    };
+    cases.forEach((message, matcher) {
+      test('maps $message', () async {
+        when(() => api.rpc('set_pro_place', any()))
+            .thenThrow(PostgrestException(message: message));
+        await expectLater(repo.setPlace(PlaceMode.none), throwsA(matcher));
+      });
+    });
+
+    test('network errors map to ProNetworkFailure', () async {
+      when(() => api.rpc('set_pro_place', any()))
+          .thenThrow(const SocketException('x'));
+      await expectLater(
+        repo.setPlace(PlaceMode.none),
+        throwsA(isA<ProNetworkFailure>()),
+      );
+    });
+  });
+
+  group('owner place', () {
+    test('mine reads the own pro_places row (object embed)', () async {
+      when(() => api.selectMine('barber')).thenAnswer(
+        (_) async => {
+          ..._row(),
+          'pro_places': {
+            'place_mode': 'area',
+            'lat': 36.75,
+            'lng': 3.0,
+            'area_radius_m': 500,
+            'landmark': null,
+            'updated_at': '2026-11-22T10:00:00+00:00',
+          },
+        },
+      );
+      final p = (await repo.mine(ProKind.barber, activeRole: AppRole.barber))!;
+      expect(p.place!.mode, PlaceMode.area);
+      expect(p.place!.areaRadiusM, 500);
+    });
+
+    test(
+      'a profile with no place row has place null; list embeds work',
+      () async {
+        when(() => api.selectMine('barber')).thenAnswer((_) async => _row());
+        final none = (await repo.mine(
+          ProKind.barber,
+          activeRole: AppRole.barber,
+        ))!;
+        expect(none.place, isNull);
+        when(() => api.selectMine('barber')).thenAnswer(
+          (_) async => {
+            ..._row(),
+            'pro_places': [
+              {
+                'place_mode': 'none',
+                'lat': null,
+                'lng': null,
+                'area_radius_m': null,
+                'landmark': null,
+                'updated_at': '2026-11-22T10:00:00+00:00',
+              },
+            ],
+          },
+        );
+        final p = (await repo.mine(
+          ProKind.barber,
+          activeRole: AppRole.barber,
+        ))!;
+        expect(p.place!.mode, PlaceMode.none);
+      },
+    );
   });
 }

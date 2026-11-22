@@ -1,0 +1,95 @@
+{
+  "116": {
+    "lat": 30.461939,
+    "lng": 1.3611996,
+    "source": "osm:relation/4171625",
+    "verified": "OSM relation/4171625 puts the commune at 30.46,1.36, about 190 km from the Timimoun wilaya median, which is dragged south by neighbouring communes; Tinerkouk is a remote Saharan commune"
+  },
+  "510": {
+    "lat": 35.7341561,
+    "lng": 5.5896477,
+    "source": "osm:relation/5149244"
+  },
+  "552": {
+    "lat": 35.2179401,
+    "lng": 6.132079,
+    "source": "osm:relation/5201376"
+  },
+  "819": {
+    "lat": 29.1270304,
+    "lng": -0.9856597,
+    "source": "osm:relation/6530996"
+  },
+  "1343": {
+    "lat": 34.3026316,
+    "lng": -1.6021224,
+    "source": "osm:relation/6666588"
+  },
+  "1557": {
+    "lat": 36.5950832,
+    "lng": 4.007301,
+    "source": "osm:relation/4293795"
+  },
+  "1566": {
+    "lat": 36.5055421,
+    "lng": 4.0145154,
+    "source": "osm:relation/4293167"
+  },
+  "1802": {
+    "lat": 36.5864588,
+    "lng": 5.5812865,
+    "source": "osm:relation/5802951"
+  },
+  "1822": {
+    "lat": 36.5901257,
+    "lng": 5.7595624,
+    "source": "osm:relation/5802582"
+  },
+  "2242": {
+    "lat": 35.1300317,
+    "lng": -0.4490699,
+    "source": "osm:relation/6661976"
+  },
+  "2627": {
+    "lat": 36.1019093,
+    "lng": 2.7121868,
+    "source": "osm:relation/2540223"
+  },
+  "2644": {
+    "lat": 36.1613133,
+    "lng": 2.7215517,
+    "source": "osm:relation/2583963"
+  },
+  "2704": {
+    "lat": 35.8329584,
+    "lng": -0.0035725,
+    "source": "osm:relation/6660577"
+  },
+  "2915": {
+    "lat": 35.1888989,
+    "lng": 0.2709283,
+    "source": "osm:relation/6668178"
+  },
+  "3004": {
+    "verified": "OSM relation/6542939 centre 31.6957,6.0604 is 1.4 km from the point; Hassi Messaoud is a remote Saharan commune"
+  },
+  "3021": {
+    "verified": "OSM relation/6542938 centre 31.5949,9.1635 is 7 km from the point (which sits on the settlement); El Borma is a remote Saharan commune on the Tunisian border"
+  },
+  "3214": {
+    "lat": 33.0170236,
+    "lng": 0.0896971,
+    "source": "osm:relation/6533979"
+  },
+  "3909": {
+    "verified": "OSM relation/5144163 centre 34.1103,6.2299 matches the point within 0.1 km; Hamraia lies in the north of the El Oued region"
+  },
+  "4014": {
+    "lat": 35.2514688,
+    "lng": 6.9973328,
+    "source": "osm:relation/6561890"
+  },
+  "5802": {
+    "verified": "OSM relation/5117624 centre 31.6053,3.6743 matches the point within 0.2 km; Hassi Fehal is a remote Saharan commune"
+  }
+}

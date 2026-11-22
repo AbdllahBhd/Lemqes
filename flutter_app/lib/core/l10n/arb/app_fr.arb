@@ -1734,5 +1734,378 @@
   "ticketOpenPro": "Voir le profil",
   "@ticketOpenPro": {
     "description": "Ticket card: screen-reader hint, opens the pro profile"
+  },
+  "locationChipNone": "Distances depuis…",
+  "@locationChipNone": {
+    "description": "Distance chip: nothing chosen yet"
+  },
+  "locationChipHint": "Changer le point de départ des distances",
+  "@locationChipHint": {
+    "description": "Screen-reader hint of the location chip"
+  },
+  "locationSheetTitle": "Mesurer les distances depuis",
+  "@locationSheetTitle": {
+    "description": "Title of the sheet that picks where distances are measured from"
+  },
+  "locationOptionDevice": "Ma position",
+  "@locationOptionDevice": {
+    "description": "Option: use the device position"
+  },
+  "locationOptionDeviceHint": "Position approximative, gardée sur votre téléphone",
+  "@locationOptionDeviceHint": {
+    "description": "Option sub-line under 'My location'"
+  },
+  "locationOptionCommune": "Choisir une commune",
+  "@locationOptionCommune": {
+    "description": "Option: pick a commune as the starting point"
+  },
+  "locationOptionCommuneHint": "Depuis le centre de la commune",
+  "@locationOptionCommuneHint": {
+    "description": "Option sub-line under 'Choose a commune'"
+  },
+  "locationExplainerTitle": "Trouvez les pros près de vous",
+  "@locationExplainerTitle": {
+    "description": "Title of the sheet shown before the OS location prompt"
+  },
+  "locationExplainerBody": "Lemqes utilise votre position approximative pour classer les pros du plus proche au plus loin. Elle reste sur votre téléphone : nous ne l’enregistrons pas.",
+  "@locationExplainerBody": {
+    "description": "Body of the pre-prompt explainer (position stays on the device)"
+  },
+  "locationExplainerAllow": "Continuer",
+  "@locationExplainerAllow": {
+    "description": "Explainer button: goes on to the OS prompt"
+  },
+  "locationExplainerBack": "Plus tard",
+  "@locationExplainerBack": {
+    "description": "Explainer button: dismisses without asking"
+  },
+  "locationPickerTitle": "Votre commune",
+  "@locationPickerTitle": {
+    "description": "Title of the commune picker sheet for the starting point"
+  },
+  "locationNoCentre": "Cette commune n’a pas de position connue. Choisissez-en une autre.",
+  "@locationNoCentre": {
+    "description": "Snackbar: the picked commune has no coordinates"
+  },
+  "locationBlockedTitle": "Position bloquée",
+  "@locationBlockedTitle": {
+    "description": "Dialog title: location permission denied forever"
+  },
+  "locationBlockedBody": "La position est refusée à LEMQES. Autorisez-la dans les réglages du téléphone, ou choisissez une commune.",
+  "@locationBlockedBody": {
+    "description": "Dialog body: allow location in the system settings or pick a commune"
+  },
+  "locationOpenSettings": "Ouvrir les réglages",
+  "@locationOpenSettings": {
+    "description": "Dialog button: opens the app's page in the system settings"
+  },
+  "exploreDistanceM": "{value} m",
+  "@exploreDistanceM": {
+    "description": "Distance under 1 km; value is the metre figure",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceKm": "{value} km",
+  "@exploreDistanceKm": {
+    "description": "Distance from 1 km; value is a number with the locale decimal separator",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceAbout": "≈ {value} km",
+  "@exploreDistanceAbout": {
+    "description": "Distance of a commune-only pro (whole km, approximate)",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreComesToYou": "Se déplace jusqu’à vous",
+  "@exploreComesToYou": {
+    "description": "Tag on a home artist whose service radius reaches the customer"
+  },
+  "exploreFarNotice": "Rien à moins de 10 km — voici les plus proches",
+  "@exploreFarNotice": {
+    "description": "Notice above the list when the nearest result is over 10 km away"
+  },
+  "mapUnavailable": "Carte indisponible",
+  "@mapUnavailable": {
+    "description": "Small note on a map whose tiles could not load"
+  },
+  "placeTitle": "Votre emplacement",
+  "@placeTitle": {
+    "description": "Title of the pro place picker (setup step and edit)"
+  },
+  "placeBody": "{space, select, women{Choisissez ce que vos clientes voient : votre porte, une zone, ou seulement votre commune.} other{Choisissez ce que vos clients voient : votre porte, une zone, ou seulement votre commune.}}",
+  "@placeBody": {
+    "description": "Intro under the place picker title; space = men | women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeModeLabel": "Ce que vous montrez",
+  "@placeModeLabel": {
+    "description": "Heading of the place mode control"
+  },
+  "placeModeExact": "Épingle",
+  "@placeModeExact": {
+    "description": "Place mode: an exact pin"
+  },
+  "placeModeArea": "Zone",
+  "@placeModeArea": {
+    "description": "Place mode: an area circle the pro places"
+  },
+  "placeModeNone": "Commune seulement",
+  "@placeModeNone": {
+    "description": "Place mode: no point, the commune only"
+  },
+  "placeRadiusLabel": "Taille de la zone",
+  "@placeRadiusLabel": {
+    "description": "Heading of the area radius chips"
+  },
+  "placeLandmarkLabel": "Repère (facultatif)",
+  "@placeLandmarkLabel": {
+    "description": "Label of the optional landmark field (pin mode)"
+  },
+  "placeLandmarkHint": "Ex. : en face de la poste",
+  "@placeLandmarkHint": {
+    "description": "Hint inside the landmark field"
+  },
+  "placePreviewExact": "{space, select, women{Les clientes verront : ce point exact, avec l’itinéraire.} other{Les clients verront : ce point exact, avec l’itinéraire.}}",
+  "@placePreviewExact": {
+    "description": "Preview line, pin mode; space = men | women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewArea": "{space, select, women{Les clientes verront : une zone de {size} et son centre, ce point.} other{Les clients verront : une zone de {size} et son centre, ce point.}}",
+  "@placePreviewArea": {
+    "description": "Preview line, area mode; size = \"1 km\"; space = men | women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewNone": "{space, select, women{Les clientes verront : seulement votre commune, aucun point sur la carte.} other{Les clients verront : seulement votre commune, aucun point sur la carte.}}",
+  "@placePreviewNone": {
+    "description": "Preview line, commune-only mode; space = men | women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeLocate": "Ma position actuelle",
+  "@placeLocate": {
+    "description": "Button: move the map to the device position (asks precise location)"
+  },
+  "placeLocateFailed": "Position indisponible. Déplacez la carte jusqu’à votre lieu de travail.",
+  "@placeLocateFailed": {
+    "description": "Snackbar when no device position is available"
+  },
+  "placeAreaDeviceNote": "Le centre de la zone est votre position actuelle : il sera visible sur la carte. Déplacez la carte si c’est votre domicile.",
+  "@placeAreaDeviceNote": {
+    "description": "Note under the area preview after \"Ma position actuelle\": the area's centre is public"
+  },
+  "placeMoveHint": "Déplacez la carte pour placer le point",
+  "@placeMoveHint": {
+    "description": "Hint over the map: the point is the map centre"
+  },
+  "placeChosenPoint": "Point choisi, au centre de la carte",
+  "@placeChosenPoint": {
+    "description": "Screen-reader label of the crosshair at the map centre"
+  },
+  "placeWarningTitle": "Tout le monde peut voir ce point",
+  "@placeWarningTitle": {
+    "description": "S1 warning title in the women space before saving a pin or an area"
+  },
+  "placeWarningBody": "Chacun choisit son espace à l’inscription : n’importe qui peut ouvrir l’espace femmes.",
+  "@placeWarningBody": {
+    "description": "S1 warning body: spaces are self-chosen"
+  },
+  "placeWarningAck": "J’ai compris",
+  "@placeWarningAck": {
+    "description": "Checkbox acknowledging the S1 warning"
+  },
+  "placeLater": "Plus tard",
+  "@placeLater": {
+    "description": "Setup: skip the location step"
+  },
+  "placeErrorTooFar": "Ce point est à plus de 30 km de votre commune. Rapprochez-le, ou changez de commune dans votre profil.",
+  "@placeErrorTooFar": {
+    "description": "Refusal: the point is more than 30 km from the commune"
+  },
+  "placeErrorOutOfCountry": "Ce point est hors d’Algérie.",
+  "@placeErrorOutOfCountry": {
+    "description": "Refusal: the point is outside Algeria"
+  },
+  "placeErrorNoLocality": "Choisissez d’abord votre commune dans votre profil.",
+  "@placeErrorNoLocality": {
+    "description": "Refusal: the pro has no commune yet"
+  },
+  "placeRemoved": "Votre emplacement a été retiré : il était à plus de 30 km de votre nouvelle commune.",
+  "@placeRemoved": {
+    "description": "Snackbar after a commune change moved the pro more than 30 km: the server reset the place"
+  },
+  "placeSectionTitle": "Emplacement",
+  "@placeSectionTitle": {
+    "description": "Dashboard card title: the place"
+  },
+  "placeSummaryExact": "Point exact sur la carte",
+  "@placeSummaryExact": {
+    "description": "Dashboard: pin mode"
+  },
+  "placeSummaryArea": "Zone de {size} autour de votre point",
+  "@placeSummaryArea": {
+    "description": "Dashboard: area mode; size = \"1 km\"",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placeSummaryNone": "Commune seulement : aucun point sur la carte",
+  "@placeSummaryNone": {
+    "description": "Dashboard: commune-only mode"
+  },
+  "placeEdit": "Modifier l’emplacement",
+  "@placeEdit": {
+    "description": "Dashboard action: open the place picker"
+  },
+  "placeHide": "Masquer mon emplacement",
+  "@placeHide": {
+    "description": "S1: one tap sets the place to commune only"
+  },
+  "placeHidden": "Emplacement masqué : seule votre commune est visible.",
+  "@placeHidden": {
+    "description": "Snackbar after hiding the place"
+  },
+  "placeNudgeTitle": "Placez votre salon sur la carte",
+  "@placeNudgeTitle": {
+    "description": "S2 dashboard nudge (salons with no place)"
+  },
+  "placeNudgeBody": "{space, select, women{Les clientes proches vous trouvent plus vite. Vous choisissez ce qu’elles voient.} other{Les clients proches vous trouvent plus vite. Vous choisissez ce qu’ils voient.}}",
+  "@placeNudgeBody": {
+    "description": "S2 nudge body; space = men | women",
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeNudgeAction": "Placer mon salon",
+  "@placeNudgeAction": {
+    "description": "S2 nudge button"
+  },
+  "settingsMapData": "Données cartographiques",
+  "@settingsMapData": {
+    "description": "Settings row and screen title: map data credits"
+  },
+  "mapLicencesIntro": "La carte de Lemqes est faite avec ces données et services ouverts.",
+  "@mapLicencesIntro": {
+    "description": "Intro of the map data screen"
+  },
+  "mapLicenceOsm": "Données cartographiques © les contributeurs d’OpenStreetMap, sous licence Open Database License (ODbL).",
+  "@mapLicenceOsm": {
+    "description": "Credit: OpenStreetMap data under the ODbL"
+  },
+  "mapLicenceOpenMapTiles": "Schéma des tuiles vectorielles © OpenMapTiles.",
+  "@mapLicenceOpenMapTiles": {
+    "description": "Credit: the OpenMapTiles vector tile schema"
+  },
+  "mapLicenceOpenFreeMap": "Tuiles et style de carte fournis gratuitement par OpenFreeMap.",
+  "@mapLicenceOpenFreeMap": {
+    "description": "Credit: the tile host"
+  },
+  "mapLicenceMore": "En savoir plus",
+  "@mapLicenceMore": {
+    "description": "Link button under each credit"
+  },
+  "exploreViewMap": "Carte",
+  "@exploreViewMap": {
+    "description": "Toggle to the map view"
+  },
+  "exploreViewList": "Liste",
+  "@exploreViewList": {
+    "description": "Toggle back to the list view"
+  },
+  "exploreMapSearchArea": "Rechercher dans cette zone",
+  "@exploreMapSearchArea": {
+    "description": "Map button after the camera moved: search the visible area"
+  },
+  "exploreMapZoomIn": "Zoomez pour voir plus",
+  "@exploreMapZoomIn": {
+    "description": "Map notice when the area holds more than 100 pros or is too wide"
+  },
+  "exploreMapEmpty": "Aucun pro dans cette zone",
+  "@exploreMapEmpty": {
+    "description": "Map notice when the searched area has no pro"
+  },
+  "exploreMapCluster": "{count, plural, =1{1 pro ici. Touchez pour zoomer.} other{{count} pros ici. Touchez pour zoomer.}}",
+  "@exploreMapCluster": {
+    "description": "Screen-reader label of a map cluster (count ≥ 2)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "exploreMapCommune": "{count, plural, =1{{commune} : 1 pro} other{{commune} : {count} pros}}",
+  "@exploreMapCommune": {
+    "description": "Screen-reader label of a commune pin: commune name and how many commune-only pros",
+    "placeholders": {
+      "commune": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "exploreMapCommuneNote": "Ces pros n’affichent que leur commune.",
+  "@exploreMapCommuneNote": {
+    "description": "Under the commune name in the sheet of a commune pin"
+  },
+  "directionsOpen": "Itinéraire",
+  "@directionsOpen": {
+    "description": "Button on an exact pin's card and profile: opens Google Maps directions"
+  },
+  "directionsMore": "Autres applis d’itinéraire",
+  "@directionsMore": {
+    "description": "Tooltip of the overflow next to the directions button"
+  },
+  "directionsWaze": "Ouvrir dans Waze",
+  "@directionsWaze": {
+    "description": "Overflow item: directions in Waze"
+  },
+  "directionsFailed": "Impossible d’ouvrir l’itinéraire.",
+  "@directionsFailed": {
+    "description": "Snackbar when no app could open the directions link"
+  },
+  "exploreMapStatusCount": "{status} : {count}",
+  "@exploreMapStatusCount": {
+    "description": "Screen-reader part of a commune or cluster pin: how many of its pros have this live status (status is liveStatusOpen/OnBreak/Closed)",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

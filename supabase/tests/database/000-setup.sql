@@ -173,6 +173,33 @@ begin
 end;
 $$;
 
+-- Writes a pro's place directly (no set_pro_place checks), so a test that is not about the RPC can
+-- seed any mode. Text mode and dynamic SQL: place_mode and PostGIS come from a later migration.
+create or replace function tests.set_place(
+  pro uuid,
+  mode text,
+  lat double precision default null,
+  lng double precision default null,
+  radius_m integer default null,
+  landmark text default null
+)
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  execute
+    'update public.pro_places
+        set place_mode = $2::public.place_mode,
+            place = case when $3 is null then null
+                         else extensions.st_point($4, $3, 4326)::extensions.geography end,
+            area_radius_m = $5,
+            landmark = $6
+      where pro_id = $1'
+  using pro, mode, lat, lng, radius_m, landmark;
+end;
+$$;
+
 -- Test-only schema (never shipped): tests switch to these roles and must still reach the helpers.
 grant usage on schema tests to anon, authenticated;
 grant execute on all functions in schema tests to anon, authenticated;
@@ -180,6 +207,10 @@ grant execute on all functions in schema tests to anon, authenticated;
 revoke execute on function tests.freeze_now(timestamptz) from public, anon;
 -- set_hours is a definer too: tests call it as authenticated or postgres, never as anon.
 revoke execute on function tests.set_hours(uuid, int, time, time) from public, anon;
+-- set_place is a definer too, for the same reason.
+revoke execute on function
+  tests.set_place(uuid, text, double precision, double precision, integer, text)
+from public, anon;
 
 select plan(1);
 select has_schema('tests');

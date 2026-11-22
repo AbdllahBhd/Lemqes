@@ -16,7 +16,7 @@ class SupabaseGeoApi implements GeoApi {
 
   static const _regionCols =
       'country_code, code, parent_code, name_ar, name_fr';
-  static const _localityCols = 'id, region_code, name_ar, name_fr';
+  static const _localityCols = 'id, region_code, name_ar, name_fr, lat, lng';
 
   @override
   Future<List<Map<String, Object?>>> regions(String country) => _client

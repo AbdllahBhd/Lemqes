@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../account/data/account.dart';
 import '../../account/data/account_providers.dart';
+import '../../geo/data/geo_models.dart';
+import '../../geo/data/origin.dart';
 import '../../live/data/live_providers.dart';
 import '../../pro/data/pro_models.dart';
 import 'explore_api.dart';
@@ -47,7 +49,12 @@ class ExploreQueryController extends Notifier<ExploreQuery> {
         setCategory(null);
       }
     });
-    return const ExploreQuery();
+    // The origin follows the chip; a change re-runs the search (no debounce:
+    // it is not typed text).
+    ref.listen(originProvider.select((o) => o.point), (_, next) {
+      _setOrigin(next);
+    });
+    return ExploreQuery(origin: ref.read(originProvider).point);
   }
 
   void setText(String text) {
@@ -58,6 +65,8 @@ class ExploreQueryController extends Notifier<ExploreQuery> {
       localityId: state.localityId,
       kidsOnly: state.kidsOnly,
       category: state.category,
+      origin: state.origin,
+      bbox: state.bbox,
     );
   }
 
@@ -68,6 +77,8 @@ class ExploreQueryController extends Notifier<ExploreQuery> {
       regionCode: regionCode,
       kidsOnly: state.kidsOnly,
       category: state.category,
+      origin: state.origin,
+      bbox: state.bbox,
     );
   }
 
@@ -78,6 +89,8 @@ class ExploreQueryController extends Notifier<ExploreQuery> {
       localityId: localityId,
       kidsOnly: state.kidsOnly,
       category: state.category,
+      origin: state.origin,
+      bbox: state.bbox,
     );
   }
 
@@ -88,6 +101,8 @@ class ExploreQueryController extends Notifier<ExploreQuery> {
       localityId: state.localityId,
       kidsOnly: value,
       category: state.category,
+      origin: state.origin,
+      bbox: state.bbox,
     );
   }
 
@@ -98,10 +113,26 @@ class ExploreQueryController extends Notifier<ExploreQuery> {
       localityId: state.localityId,
       kidsOnly: state.kidsOnly,
       category: category,
+      origin: state.origin,
+      bbox: state.bbox,
     );
   }
 
-  void reset() => state = const ExploreQuery();
+  void _setOrigin(GeoPoint? origin) {
+    if (origin == state.origin) return;
+    state = ExploreQuery(
+      text: state.text,
+      regionCode: state.regionCode,
+      localityId: state.localityId,
+      kidsOnly: state.kidsOnly,
+      category: state.category,
+      origin: origin,
+      bbox: state.bbox,
+    );
+  }
+
+  /// Clears the filters; the origin is the customer's, not a filter.
+  void reset() => state = ExploreQuery(origin: state.origin);
 }
 
 class ExploreResults {

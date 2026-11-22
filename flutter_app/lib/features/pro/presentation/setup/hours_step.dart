@@ -100,7 +100,7 @@ class _HoursStepState extends ConsumerState<HoursStep> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return SetupStepScaffold(
-      index: 2,
+      index: 3,
       title: l10n.setupHoursTitle,
       body: l10n.setupHoursBody,
       onBack: () => context.go('/pro/setup/services'),

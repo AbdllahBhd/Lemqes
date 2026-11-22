@@ -447,5 +447,147 @@
   "ticketLeft": "Teffɣeḍ seg tebdart",
   "ticketServed": "Yekfa. Ar tufat!",
   "ticketEnded": "Ur telliḍ ara deg tebdart-a",
-  "ticketOpenPro": "Wali amaɣnu"
+  "ticketOpenPro": "Wali amaɣnu",
+  "locationChipNone": "Ameccaq seg…",
+  "locationChipHint": "Snifel ansa i d-tettwasnaq tehri",
+  "locationSheetTitle": "Ccuḍ tehri seg",
+  "locationOptionDevice": "Adig-iw",
+  "locationOptionDeviceHint": "Adig s lqedder, ad yeqqim ɣef tiliɣri-inek",
+  "locationOptionCommune": "Fren taɣiwant",
+  "locationOptionCommuneHint": "Seg yiwen n tlemmast n taɣiwant",
+  "locationExplainerTitle": "Af-d iseqdacen i k-iqerben",
+  "locationExplainerBody": "Lemqes yesseqdac adig-ik s lqedder i usmizzwer n yiseqdacen seg i yellan d aqrib ar i yellan d aretyan. Ad yeqqim ɣef tiliɣri-inek, ur t-neṭṭef ara.",
+  "locationExplainerAllow": "Kemmel",
+  "locationExplainerBack": "Ɣer zdat",
+  "locationPickerTitle": "Taɣiwant-ik",
+  "locationNoCentre": "Taɣiwant-a ur tesɛi ara adig yettwasnen. Fren tayeḍ.",
+  "locationBlockedTitle": "Adig yettwagdel",
+  "locationBlockedBody": "Adig yettwagi i LEMQES. Sireg-it deg yiɣewwaren n tiliɣri, neɣ fren tamnaḍt.",
+  "locationOpenSettings": "Ldi iɣewwaren",
+  "exploreDistanceM": "{value} m",
+  "@exploreDistanceM": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceKm": "{value} km",
+  "@exploreDistanceKm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceAbout": "≈ {value} km",
+  "@exploreDistanceAbout": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreComesToYou": "Yusa-d ɣur-k",
+  "exploreFarNotice": "Ulac ayen yellan ddaw 10 km — ha-t-an wid i yellan d imezdayen",
+  "mapUnavailable": "Takarḍa ulac-itt",
+  "placeTitle": "Adig-ik",
+  "placeBody": "{space, select, women{Fren ayen ara walint tmsaɣin-im: tabburt-im, tamnaḍt, neɣ taɣiwant-im kan.} other{Fren ayen ara walin imsaɣen-ik: tabburt-ik, tamnaḍt, neɣ taɣiwant-ik kan.}}",
+  "@placeBody": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeModeLabel": "Ayen i d-tesskaneḍ",
+  "placeModeExact": "Tanqiḍt",
+  "placeModeArea": "Tamnaḍt",
+  "placeModeNone": "Taɣiwant kan",
+  "placeRadiusLabel": "Tiddi n temnaḍt",
+  "placeLandmarkLabel": "Tamatart (ma tebɣiḍ)",
+  "placeLandmarkHint": "Amedya: zdat lbusṭa",
+  "placePreviewExact": "{space, select, women{Ad walint tmsaɣin: tanqiḍt-a s telqay, d ubrid.} other{Ad walin imsaɣen: tanqiḍt-a s telqay, d ubrid.}}",
+  "@placePreviewExact": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewArea": "{space, select, women{Ad walint tmsaɣin: tamnaḍt n {size} d tlemmast-is, tanqiḍt-a.} other{Ad walin imsaɣen: tamnaḍt n {size} d tlemmast-is, tanqiḍt-a.}}",
+  "@placePreviewArea": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewNone": "{space, select, women{Ad walint tmsaɣin: taɣiwant-im kan, ulac tanqiḍt ɣef tkarḍa.} other{Ad walin imsaɣen: taɣiwant-ik kan, ulac tanqiḍt ɣef tkarḍa.}}",
+  "@placePreviewNone": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeLocate": "Adig-iw tura",
+  "placeLocateFailed": "Adig ulac-it. Smutti takarḍa ar wadeg n uxeddim-ik.",
+  "placeAreaDeviceNote": "Talemmast n tmnaḍt d adeg-ik tura: ad d-tban di tkarḍa. Smutti takarḍa ma yella d axxam-ik.",
+  "placeMoveHint": "Smutti takarḍa akken ad tesrseḍ tanqiḍt",
+  "placeChosenPoint": "Tanqiḍt yettwafernen, di tlemmast n tkarḍa",
+  "placeWarningTitle": "Yal yiwen yezmer ad iwali tanqiḍt-a",
+  "placeWarningBody": "Yal yiwen ifren tallunt-is mi ara yjerred: yal yiwen yezmer ad yeldi tallunt n tlawin.",
+  "placeWarningAck": "Fehmeɣ",
+  "placeLater": "Ticki kan",
+  "placeErrorTooFar": "Tanqiḍt-a tebɛed ugar n 30 km ɣef taɣiwant-ik. Qerreb-itt, neɣ beddel taɣiwant deg umaɣnu-k.",
+  "placeErrorOutOfCountry": "Tanqiḍt-a beṛṛa n Lezzayer.",
+  "placeErrorNoLocality": "Fren taɣiwant-ik deg umaɣnu-k di tazwara.",
+  "placeRemoved": "Adig-ik yettwakkes: yebɛed ugar n 30 km ɣef taɣiwant-ik tamaynut.",
+  "placeSectionTitle": "Adig",
+  "placeSummaryExact": "Tanqiḍt s telqay ɣef tkarḍa",
+  "placeSummaryArea": "Tamnaḍt n {size} i tenqiḍt-ik",
+  "@placeSummaryArea": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placeSummaryNone": "Taɣiwant kan: ulac tanqiḍt ɣef tkarḍa",
+  "placeEdit": "Ẓreg adig",
+  "placeHide": "Ffer adig-iw",
+  "placeHidden": "Adig yettwaffer: d taɣiwant-ik kan i d-yettbanen.",
+  "placeNudgeTitle": "Sers aḥanut-ik ɣef tkarḍa",
+  "placeNudgeBody": "{space, select, women{Timsaɣin yeqreben ad m-afent s tazzla. Kemm i yettferrnen ayen ara walint.} other{Imsaɣen yeqreben ad k-afen s tazzla. Kečč i yettferrnen ayen ara walin.}}",
+  "@placeNudgeBody": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeNudgeAction": "Sers aḥanut-iw",
+  "settingsMapData": "Isefka n tkarḍa",
+  "mapLicencesIntro": "Takarḍa n Lemqes tettwag s yisefka d yimeẓla-a yeldin.",
+  "mapLicenceOsm": "Isefka n tkarḍa © imttekkiyen n OpenStreetMap, s turagt Open Database License (ODbL).",
+  "mapLicenceOpenMapTiles": "Azenziɣ n tferkiwin © OpenMapTiles.",
+  "mapLicenceOpenFreeMap": "Tiferkiwin d uɣanib n tkarḍa s baṭel sɣur OpenFreeMap.",
+  "mapLicenceMore": "Issin ugar",
+  "exploreViewMap": "Takarḍa",
+  "exploreViewList": "Tabdart",
+  "exploreMapSearchArea": "Nadi deg temnaḍt-a",
+  "exploreMapZoomIn": "Simɣer takarḍa akken ad twaliḍ ugar",
+  "exploreMapEmpty": "Ulac imahilen deg temnaḍt-a",
+  "exploreMapCluster": "{count, plural, =1{1 n umahil da. Sit akken ad tsimɣreḍ.} other{{count} n imahilen da. Sit akken ad tsimɣreḍ.}}",
+  "exploreMapCommune": "{count, plural, =1{{commune}: 1 n umahil} other{{commune}: {count} n imahilen}}",
+  "exploreMapCommuneNote": "Imahilen-a sbanen-d kan taɣiwant-nsen.",
+  "directionsOpen": "Abrid",
+  "directionsMore": "Isnasen-nniḍen n ubrid",
+  "directionsWaze": "Ldi deg Waze",
+  "directionsFailed": "Ur yezmir ara ad yeldi ubrid.",
+  "exploreMapStatusCount": "{status}: {count}"
 }

@@ -39,21 +39,110 @@ const _latin = {
   'č': 'c',
 };
 
-/// Lower-cases and strips Latin diacritics, apostrophes and hyphens so
-/// "Bou Saâda" matches "bou saada" and "M'Sila" matches "msila".
-///
-/// Arabic passes through unchanged: folding Arabic letters is a later
-/// milestone, so Arabic search is an exact substring match.
-String foldLatin(String input) {
+// Dart port of private.f_search_fold / private.f_name_skeleton (supabase/migrations/
+// 20261122000200_search_fold.sql). supabase/tests/fold_vectors.json is the one table both are
+// tested against, so a change to either side starts there.
+
+const _arabicFrom = 'أإآٱةىؤئکی٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹';
+const _arabicTo = 'ااااهيويكي01234567890123456789';
+
+// Letters of the sound skeleton: each Arabic letter as the Algerian-French reading of it.
+const _skeletonFrom = 'اءبتثجحخدذرزسشصضطظعغفقكلمنهويپ';
+const _skeletonTo = 'aabttjhxddrzscsdtzagfkklmnhuib';
+
+final _marks = RegExp(
+  '[\u064B-\u065F\u0670\u0640\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]',
+);
+final _punct = RegExp(
+  '[!-/:-@[-`{-~¡-¿'
+  '،؛؟٪-٭۔‐-‧‰-⁞]',
+);
+final _spaces = RegExp('[\\s\u00A0]+');
+final _hasLetter = RegExp('[a-zء-ي]');
+final _doubled = RegExp(r'([a-z])\1+');
+final _article = RegExp('^ال(.)');
+final _loneArticle = RegExp('^[ae]l\$');
+final _initialWaw = RegExp('^و');
+final _initialYa = RegExp('^ي');
+final _initialOu = RegExp('^ou([aeiouy])');
+final _initialTh = RegExp('^th');
+final _softC = RegExp('c([eiy])');
+final _droppedVowels = RegExp('[aeiouyw]');
+final _initialVowel = RegExp('^[aeiou]');
+final _space = RegExp(' ');
+
+String _translate(String s, String from, String to) {
   final b = StringBuffer();
-  for (final ch in input.toLowerCase().split('')) {
-    if (ch == "'" || ch == '’') continue;
-    b.write(ch == '-' ? ' ' : _latin[ch] ?? ch);
+  for (final ch in s.split('')) {
+    final i = from.indexOf(ch);
+    b.write(i < 0 ? ch : to[i]);
   }
   return b.toString();
 }
 
-/// Whether [query] finds [nameFr], [nameAr] or [code].
+/// The key both sides of a name search compare: lower case, Latin diacritics and apostrophes
+/// gone, Arabic hamza/ya/ta marbuta variants merged, harakat, tatweel and zero-width or
+/// direction marks removed, Arabic-Indic and Persian digits as 0-9, punctuation as a space.
+/// "Bou Saâda" and "bou saada" meet, and so do "أحمد" and "احمد".
+String searchFold(String input) {
+  final b = StringBuffer();
+  for (final ch in input.toLowerCase().split('')) {
+    if (_apostrophes.contains(ch)) continue;
+    b.write(_latin[ch] ?? ch);
+  }
+  final s = _translate(
+    b.toString().replaceAll(_marks, ''),
+    _arabicFrom,
+    _arabicTo,
+  );
+  return s.replaceAll(_punct, ' ').replaceAll(_spaces, ' ').trim();
+}
+
+const _apostrophes = "'’‘ʿʾʼ`";
+
+/// A sound skeleton that makes "Amine" and "أمين" equal: per word, Arabic read the
+/// Algerian-French way and Latin digraphs (ch, kh, gh, dj ...) merged into one letter, vowels
+/// dropped except a word's first, doubled letters collapsed, spaces gone. Arabizi digits 3 7 9
+/// 5 2 count as ع ح ق خ ء. Mirrors f_name_skeleton step for step.
+String nameSkeleton(String input) {
+  final out = StringBuffer();
+  var n = 0;
+  // ة is a final "a" (the fold would merge it into ه, a real h in Allah or Salah).
+  for (var t in searchFold(input.replaceAll('ة', 'a')).split(_space)) {
+    n++;
+    if (!_hasLetter.hasMatch(t)) {
+      out.write(t);
+      continue;
+    }
+    if (n > 1) {
+      t = t.replaceFirstMapped(_article, (m) => 'l${m[1]}');
+      t = t.replaceFirst(_loneArticle, 'l');
+    }
+    t = t.replaceFirst(_initialWaw, 'w');
+    t = t.replaceFirst(_initialYa, 'y');
+    t = t.replaceFirstMapped(_initialOu, (m) => 'w${m[1]}');
+    t = t.replaceFirst(_initialTh, 't');
+    t = t
+        .replaceAll('ch', '#')
+        .replaceAll('sh', '#')
+        .replaceAll('kh', 'x')
+        .replaceAll('gh', 'g')
+        .replaceAll('ph', 'f')
+        .replaceAll('dj', 'j')
+        .replaceAll('dh', 'd');
+    t = t.replaceAllMapped(_softC, (m) => 's${m[1]}');
+    t = _translate(t, 'cq#37952', 'kkcahkxa');
+    t = _translate(t, _skeletonFrom, _skeletonTo);
+    t = t.substring(0, 1) + t.substring(1).replaceAll(_droppedVowels, '');
+    t = t.replaceFirst(_initialVowel, 'a');
+    out.write(t.replaceAllMapped(_doubled, (m) => m[1]!));
+  }
+  return out.toString();
+}
+
+/// Whether [query] finds [nameFr], [nameAr] or [code]: by fold (either script, so "Tizi" finds
+/// "تيزي وزو" through its French name), or by skeleton for spelling variants ("Tizi Wezzu").
+/// The skeleton needs three letters, as on the server.
 bool matchesPlace(
   String query, {
   required String nameFr,
@@ -62,8 +151,15 @@ bool matchesPlace(
 }) {
   final q = query.trim();
   if (q.isEmpty) return true;
-  if (nameAr.contains(q)) return true;
-  final folded = foldLatin(q);
-  return foldLatin(nameFr).contains(folded) ||
-      (code != null && code.startsWith(folded));
+  final folded = searchFold(q);
+  if (folded.isEmpty) return false;
+  if (searchFold(nameFr).contains(folded) ||
+      searchFold(nameAr).contains(folded) ||
+      (code != null && code.startsWith(folded))) {
+    return true;
+  }
+  final skeleton = nameSkeleton(q);
+  return skeleton.length >= 3 &&
+      (nameSkeleton(nameFr).contains(skeleton) ||
+          nameSkeleton(nameAr).contains(skeleton));
 }

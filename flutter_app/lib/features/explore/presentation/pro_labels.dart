@@ -4,6 +4,7 @@ import '../../../core/l10n/gen/app_localizations.dart';
 import '../../../core/l10n/locale_controller.dart';
 import '../../geo/presentation/search_fold.dart';
 import '../../pro/data/pro_models.dart';
+import '../data/explore_models.dart';
 
 /// "Salon · Salon El Bahdja", or the workplace word alone.
 String workplaceLine(AppLocalizations l10n, WorkplaceType type, String? name) {
@@ -19,10 +20,38 @@ String? placeLine(String? locality, String? region) {
     for (final p in [locality, region])
       if (p != null && p.isNotEmpty) p,
   ];
-  if (parts.length == 2 && foldLatin(parts[0]) == foldLatin(parts[1])) {
+  if (parts.length == 2 && searchFold(parts[0]) == searchFold(parts[1])) {
     return parts.first;
   }
   return parts.isEmpty ? null : parts.join(' · ');
+}
+
+/// The distance of a result: "700 m", "1,5 km", or "≈ 3 km" for a pro that
+/// shows only its commune. Null without an origin, and for a pro the server
+/// hides the point of (a blocked reader), so no distance leaks.
+String? distanceLabel(AppLocalizations l10n, Locale locale, ProCard card) {
+  final m = card.distanceM;
+  if (m == null) return null;
+  if (card.placeMode == PlaceMode.none) {
+    // Whole kilometres only: the commune centre is not the pro's place.
+    return l10n.exploreDistanceAbout('${(m / 1000).round().clamp(1, 99999)}');
+  }
+  if (m < 1000) return l10n.exploreDistanceM('$m');
+  final tenths = (m / 100).round();
+  final whole = tenths ~/ 10;
+  final frac = tenths % 10;
+  final sep = locale.languageCode == 'en' ? '.' : ',';
+  return l10n.exploreDistanceKm(frac == 0 ? '$whole' : '$whole$sep$frac');
+}
+
+/// Whether the nearest result is far enough for the "nothing within 10 km"
+/// notice. Judged on the distance as displayed, so a commune-only pro shown
+/// as "≈ 10 km" never sits under a notice that says nothing is within 10 km.
+bool isFarResult(ProCard card) {
+  final m = card.distanceM;
+  if (m == null) return false;
+  if (card.placeMode == PlaceMode.none) return (m / 1000).round() > 10;
+  return m > 10000;
 }
 
 /// The kids tag of a customer mix; null for adults only.

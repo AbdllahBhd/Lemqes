@@ -1,12 +1,16 @@
 import '../../account/data/account.dart';
+import '../../explore/data/explore_models.dart' show PlaceMode;
+import '../../live/data/live_repository.dart' show newRequestId;
 import 'pro_api.dart';
 import 'pro_failure.dart';
 import 'pro_models.dart';
 
 class ProRepository {
-  ProRepository(this._api);
+  ProRepository(this._api, {String Function()? newId})
+    : _newId = newId ?? newRequestId;
 
   final ProApi _api;
+  final String Function() _newId;
 
   /// The caller's own profile of [kind]. [activeRole] must be that kind's pro
   /// role: acting as anything else, the database would also return other
@@ -69,6 +73,29 @@ class ProRepository {
       'p_week': [for (final d in week) d.toJson()],
     }),
   );
+
+  /// Sets the caller's own place (`set_pro_place`: the pro is the one of the
+  /// active role). Only the fields of [mode] are sent meaningfully: [radiusM]
+  /// with [PlaceMode.area], [landmark] with [PlaceMode.exact]; the server
+  /// refuses a mismatch with `place_invalid`. Each call is a new request id:
+  /// the server is idempotent by value, so a repeated tap is harmless.
+  Future<ProPlace> setPlace(
+    PlaceMode mode, {
+    double? lat,
+    double? lng,
+    int? radiusM,
+    String? landmark,
+  }) => guardPro(() async {
+    final row = await _api.rpc('set_pro_place', {
+      'p_request_id': _newId(),
+      'p_mode': mode.toDb(),
+      'p_lat': lat,
+      'p_lng': lng,
+      'p_radius_m': radiusM,
+      'p_landmark': landmark,
+    });
+    return ProPlace.fromRow(row! as Map<String, Object?>);
+  });
 
   Future<DateTime> publish(String proId) => guardPro(() async {
     final at = await _api.rpc('publish_pro_profile', {'p_pro_id': proId});

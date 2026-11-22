@@ -93,7 +93,7 @@ select ok(
 
 select is(
   (select count(*)::int from pg_proc
-    where pronamespace = 'public'::regnamespace
+    where pronamespace in ('public'::regnamespace, 'private'::regnamespace)
       and proname in ('live_snapshot', 'pro_live_snapshots', 'live_broadcast',
                       'live_topic_allowed', 'queue_end_of_day', 'pro_profiles_live_broadcast')
       and prosecdef
@@ -103,7 +103,7 @@ select is(
 );
 select is(
   (select count(*)::int from pg_proc
-    where pronamespace = 'public'::regnamespace
+    where pronamespace in ('public'::regnamespace, 'private'::regnamespace)
       and proname in ('live_snapshot', 'pro_live_snapshots', 'live_broadcast',
                       'live_topic_allowed', 'queue_end_of_day', 'pro_profiles_live_broadcast',
                       'search_pros')
@@ -114,7 +114,7 @@ select is(
 );
 select ok(
   has_function_privilege('authenticated', 'public.pro_live_snapshots(uuid[])', 'execute')
-  and has_function_privilege('authenticated', 'public.live_topic_allowed(text)', 'execute'),
+  and has_function_privilege('authenticated', 'private.live_topic_allowed(text)', 'execute'),
   'pro_live_snapshots and live_topic_allowed are executable by authenticated'
 );
 
@@ -553,7 +553,7 @@ select is(tests.one_broadcast(current_setting('t.pb')::uuid), 'ok', 'R8 ... exac
 select realtime.send(jsonb_build_object('probe', 1), 'live', 'pro:' || current_setting('t.pa'), true);
 select realtime.send(jsonb_build_object('probe', 2), 'live', 'pro:' || current_setting('t.pb'), true);
 select ok(
-  (select pg_get_expr(polqual, polrelid) ~ 'SELECT (public\.)?live_topic_allowed\('
+  (select pg_get_expr(polqual, polrelid) ~ 'SELECT (private\.)?live_topic_allowed\('
           and pg_get_expr(polqual, polrelid) ~ '(^|[ (.])topic = \( SELECT realtime\.topic\(\)'
      from pg_policy where polname = 'live_topics' and polrelid = 'realtime.messages'::regclass),
   'R9 live_topics evaluates the helper once (initPlan) and pins the row''s topic'
@@ -571,26 +571,26 @@ select is(
 );
 
 do $$ begin perform tests.authenticate_as(current_setting('t.a')::uuid); end; $$;
-select ok(public.live_topic_allowed('pro:' || current_setting('t.pa')), 'R9 owner: own topic allowed');
-select ok(not public.live_topic_allowed('pro:' || current_setting('t.pb')),
+select ok(private.live_topic_allowed('pro:' || current_setting('t.pa')), 'R9 owner: own topic allowed');
+select ok(not private.live_topic_allowed('pro:' || current_setting('t.pb')),
   'R9 acting as barber: another pro''s topic refused');
 do $$ begin perform tests.clear_auth(); end; $$;
 
 do $$ begin perform tests.authenticate_as(current_setting('t.c')::uuid); end; $$;
-select ok(public.live_topic_allowed('pro:' || current_setting('t.pa')),
+select ok(private.live_topic_allowed('pro:' || current_setting('t.pa')),
   'R9 same-space customer: listable pro allowed');
-select ok(not public.live_topic_allowed('pro:' || current_setting('t.pw')),
+select ok(not private.live_topic_allowed('pro:' || current_setting('t.pw')),
   'R9 customer: other-space pro refused');
-select ok(not public.live_topic_allowed('pro:' || current_setting('t.pu')),
+select ok(not private.live_topic_allowed('pro:' || current_setting('t.pu')),
   'R9 customer: unpublished pro refused');
-select ok(not public.live_topic_allowed('pro:abc'), 'R9 pro:abc refused without error');
-select ok(not public.live_topic_allowed('pro:' || current_setting('t.pa') || 'x'),
+select ok(not private.live_topic_allowed('pro:abc'), 'R9 pro:abc refused without error');
+select ok(not private.live_topic_allowed('pro:' || current_setting('t.pa') || 'x'),
   'R9 pro:<uuid>x refused without error');
-select ok(not public.live_topic_allowed('pro:------------------------------------'),
+select ok(not private.live_topic_allowed('pro:------------------------------------'),
   'R9 a uuid-length run of dashes refused without error');
-select ok(not public.live_topic_allowed('PRO:' || current_setting('t.pa')),
+select ok(not private.live_topic_allowed('PRO:' || current_setting('t.pa')),
   'R9 another prefix refused');
-select ok(not coalesce(public.live_topic_allowed(null), false), 'R9 null refused');
+select ok(not coalesce(private.live_topic_allowed(null), false), 'R9 null refused');
 select set_config('realtime.topic', 'pro:' || current_setting('t.pa'), true);
 select ok((select count(*) from realtime.messages) > 0,
   'R9 policy: a same-space customer reads the topic''s broadcasts');
@@ -609,7 +609,7 @@ do $$ begin perform tests.authenticate_as_anon(); end; $$;
 select set_config('realtime.topic', 'pro:' || current_setting('t.pa'), true);
 select is((select count(*)::int from realtime.messages), 0, 'R9 anon reads nothing on the topic');
 select throws_ok(
-  format($$ select public.live_topic_allowed(%L) $$, 'pro:' || current_setting('t.pa')),
+  format($$ select private.live_topic_allowed(%L) $$, 'pro:' || current_setting('t.pa')),
   '42501', null, 'R9 anon cannot call live_topic_allowed');
 do $$ begin perform tests.clear_auth(); end; $$;
 select set_config('realtime.topic', '', true);
@@ -746,7 +746,7 @@ update public.pro_live set hide_queue_count = true where pro_id = current_settin
 
 select realtime.send(jsonb_build_object('probe', 3), 'live', 'pro:' || current_setting('t.pa'), true);
 do $$ begin perform tests.authenticate_as(current_setting('t.d')::uuid); end; $$;
-select ok(not public.live_topic_allowed('pro:' || current_setting('t.pa')),
+select ok(not private.live_topic_allowed('pro:' || current_setting('t.pa')),
   'R13 the blocked customer is refused pa''s channel');
 select set_config('realtime.topic', 'pro:' || current_setting('t.pa'), true);
 select is((select count(*)::int from realtime.messages), 0,

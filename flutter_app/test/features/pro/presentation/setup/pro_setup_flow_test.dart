@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
+import 'package:lemqes/features/explore/data/explore_models.dart'
+    show PlaceMode;
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:lemqes/features/pro/presentation/edit/service_editor.dart';
@@ -43,8 +45,8 @@ void main() {
 
       expect(h.location, '/pro/setup/profile');
       expect(find.byType(ProfileStep), findsOneWidget);
-      // Sign-up's four steps, then profile, services, hours.
-      expect(find.text(fr.stepProgress(5, 7)), findsOneWidget);
+      // Sign-up's four steps, then profile, location, services, hours.
+      expect(find.text(fr.stepProgress(5, 8)), findsOneWidget);
     });
 
     testWidgets('a customer who finishes sign-up goes home', (tester) async {
@@ -82,8 +84,8 @@ void main() {
       );
       expect(h.location, '/pro/setup/services');
       expect(find.byType(ServicesStep), findsOneWidget);
-      // Outside sign-up, setup counts its own three steps.
-      expect(find.text(fr.stepProgress(2, 3)), findsOneWidget);
+      // Outside sign-up, setup counts its own four steps.
+      expect(find.text(fr.stepProgress(3, 4)), findsOneWidget);
 
       h.router.go('/pro/setup/hours');
       await settle(tester);
@@ -234,7 +236,7 @@ void main() {
       expect(p.experienceYears, 7);
       expect(p.localityId, 1601);
       expect(p.customerMix, CustomerMix.adultsAndKids);
-      expect(h.location, '/pro/setup/services');
+      expect(h.location, '/pro/setup/location');
     });
 
     testWidgets('a missing commune and clientele are named, nothing saved', (
@@ -269,7 +271,58 @@ void main() {
       await tapAndSettle(tester, 'setupContinue');
 
       expect(h.pros.calls, ['updateProfile']);
-      expect(h.location, '/pro/setup/services');
+      expect(h.location, '/pro/setup/location');
+    });
+
+    testWidgets('a commune change that drops the place says so', (
+      tester,
+    ) async {
+      final pros = FakeProRepository(
+        profile: copyProfile(
+          barberProfile(),
+          place: const ProPlace(mode: PlaceMode.exact, lat: 36.77, lng: 3.05),
+        ),
+      )..resetPlaceOnCommuneChange = true;
+      final h = await pumpSetup(
+        tester,
+        account: proAccount(),
+        pros: pros,
+        location: '/home',
+      );
+      h.router.push('/pro/setup/profile?edit=1');
+      await settle(tester);
+      await tapAndSettle(tester, 'pickLocality');
+      await tapAndSettle(tester, 'option_1602');
+      await tapAndSettle(tester, 'setupContinue');
+
+      expect(h.pros.profile!.localityId, 1602);
+      expect(h.location, '/home');
+      expect(find.text(fr.placeRemoved), findsOneWidget);
+    });
+
+    testWidgets('a commune change that keeps the place says nothing', (
+      tester,
+    ) async {
+      final pros = FakeProRepository(
+        profile: copyProfile(
+          barberProfile(),
+          place: const ProPlace(mode: PlaceMode.exact, lat: 36.77, lng: 3.05),
+        ),
+      );
+      final h = await pumpSetup(
+        tester,
+        account: proAccount(),
+        pros: pros,
+        location: '/home',
+      );
+      h.router.push('/pro/setup/profile?edit=1');
+      await settle(tester);
+      await tapAndSettle(tester, 'pickLocality');
+      await tapAndSettle(tester, 'option_1602');
+      await tapAndSettle(tester, 'setupContinue');
+
+      expect(h.location, '/home');
+      expect(find.text(fr.placeRemoved), findsNothing);
     });
 
     testWidgets('a home artist works mobile and sets a radius and a fee', (
@@ -317,7 +370,7 @@ void main() {
 
       expect(h.pros.calls, ['create', 'updateProfile']);
       expect(h.pros.profile!.customerMix, CustomerMix.adults);
-      expect(h.location, '/pro/setup/services');
+      expect(h.location, '/pro/setup/location');
     });
 
     testWidgets('a failed reload after a lost create says so and frees the '
@@ -537,7 +590,7 @@ void main() {
   });
 
   group('200 % text in Arabic', () {
-    for (final step in ['profile', 'services', 'hours']) {
+    for (final step in ['profile', 'location', 'services', 'hours']) {
       testWidgets('the $step step does not overflow', (tester) async {
         await pumpSetup(
           tester,

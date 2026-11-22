@@ -9,7 +9,9 @@ import '../../features/signup/data/signup_draft.dart';
 const signupSteps = ['space', 'role', 'credentials', 'code'];
 
 /// The pro setup steps in order; their names are the `/pro/setup/:step` paths.
-const proSetupSteps = ['profile', 'services', 'hours'];
+/// `location` is optional ("Plus tard") and never a gap, so a resumed setup
+/// skips it.
+const proSetupSteps = ['profile', 'location', 'services', 'hours'];
 
 /// Whether the user is signed in. Until the session stream emits (cold start),
 /// the stored session answers synchronously, so a signed-in user never sees

@@ -7,6 +7,7 @@ import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/account/data/account_repository.dart';
 import 'package:lemqes/features/account/presentation/role_switch_sheet.dart';
+import 'package:lemqes/features/settings/presentation/map_licences_screen.dart';
 import 'package:lemqes/features/settings/presentation/settings_screen.dart';
 import 'package:lemqes/features/signup/data/signup_draft_store.dart';
 import 'package:lemqes/features/signup/presentation/signup_completion.dart';
@@ -85,6 +86,16 @@ void main() {
     await tester.tap(find.text(fr.actionCancel));
     await tester.pumpAndSettle();
     verifyNever(() => h.auth.signOut());
+  });
+
+  testWidgets('"Données cartographiques" opens the map credits', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.ensureVisible(byKey('mapData'));
+    await tester.tap(byKey('mapData'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MapLicencesScreen), findsOneWidget);
   });
 
   testWidgets('the role switch entry opens the sheet', (tester) async {

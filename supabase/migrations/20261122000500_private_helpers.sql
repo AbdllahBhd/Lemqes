@@ -1,0 +1,376 @@
+-- Helpers out of the API (M4 final review, security M1 and M4).
+--
+-- PostgREST exposes `public` and `graphql_public` only (config.toml [api] schemas), so every
+-- function in `public` that authenticated may execute is also a POST /rest/v1/rpc endpoint. Some
+-- helpers must stay executable by authenticated, because a policy or a security invoker function
+-- evaluates them as the caller, yet must not be callable directly:
+--
+--   * viewer_blocked(uuid) and live_topic_allowed(text) answer "has this pro blocked me?". Called
+--     as RPCs they were a direct block oracle (M3 §6b promises a blocked customer reads the pro as
+--     closed, not as blocked). They now live in `private`; the pro_places and realtime.messages
+--     policies point at them there.
+--   * f_search_fold / f_name_skeleton: execute cannot be revoked from authenticated, since
+--     search_pros (security invoker) folds the query as the caller and the pro_profiles generated
+--     columns are computed for whoever updates display_name. As RPCs they were free CPU for any
+--     caller, so they move to `private` too. A generated column records the function by oid, so
+--     moving it keeps the columns and their indexes; f_name_skeleton is recreated only because
+--     its body names f_search_fold by schema.
+--   * search_args_check moves as well, and now also caps p_query at 100 characters
+--     (query_invalid): the services branch folds every published pro's service names per call,
+--     so an unbounded pattern was an unbounded CPU cost.
+--
+-- `private` grants usage to authenticated only (never anon or public); nothing in it is reachable
+-- through the API whatever its function grants say.
+
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+-- Block helpers -----------------------------------------------------------------------------------
+
+alter function public.viewer_blocked(uuid) set schema private;
+alter function public.live_topic_allowed(text) set schema private;
+
+revoke execute on function private.viewer_blocked(uuid), private.live_topic_allowed(text)
+from public, anon;
+grant execute on function private.viewer_blocked(uuid), private.live_topic_allowed(text)
+to authenticated;
+
+drop policy pro_places_select on public.pro_places;
+create policy pro_places_select on public.pro_places
+for select to authenticated
+using (
+  (select public.owns_pro(pro_id))
+  or ((select public.is_listable(pro_id)) and not (select private.viewer_blocked(pro_id)))
+);
+
+drop policy live_topics on realtime.messages;
+create policy live_topics on realtime.messages
+for select to authenticated
+using (
+  realtime.messages.extension = 'broadcast'
+  and realtime.messages.topic = (select realtime.topic())
+  and (select private.live_topic_allowed((select realtime.topic())))
+);
+
+-- Fold functions ----------------------------------------------------------------------------------
+
+alter function public.f_search_fold(text) set schema private;
+alter function public.f_name_skeleton(text) set schema private;
+
+create or replace function private.f_name_skeleton(p_text text)
+returns text
+language plpgsql
+immutable
+parallel safe
+strict
+set search_path = ''
+as $$
+declare
+  v_token text;
+  v_n int := 0;
+  v_out text := '';
+begin
+  -- ة is a final "a" (the fold would merge it into ه, which is a real h in Allah or Salah).
+  for v_token in
+    select t from regexp_split_to_table(private.f_search_fold(replace(p_text, 'ة', 'a')), ' ') as t
+  loop
+    v_n := v_n + 1;
+    -- A word with no letter (a number) is kept as it is.
+    if v_token !~ '[a-zء-ي]' then
+      v_out := v_out || v_token;
+      continue;
+    end if;
+    if v_n > 1 then
+      -- Abdelkader / عبد القادر: the article is a bare l, not a kept first vowel.
+      v_token := regexp_replace(v_token, '^ال(.)', 'l\1');
+      v_token := regexp_replace(v_token, '^[ae]l$', 'l');
+    end if;
+    v_token := regexp_replace(v_token, '^و', 'w');
+    v_token := regexp_replace(v_token, '^ي', 'y');
+    v_token := regexp_replace(v_token, '^ou([aeiouy])', 'w\1');
+    v_token := regexp_replace(v_token, '^th', 't');
+    v_token := replace(v_token, 'ch', '#');
+    v_token := replace(v_token, 'sh', '#');
+    v_token := replace(v_token, 'kh', 'x');
+    v_token := replace(v_token, 'gh', 'g');
+    v_token := replace(v_token, 'ph', 'f');
+    v_token := replace(v_token, 'dj', 'j');
+    v_token := replace(v_token, 'dh', 'd');
+    v_token := regexp_replace(v_token, 'c([eiy])', 's\1', 'g');
+    v_token := translate(v_token, 'cq#37952', 'kkcahkxa');
+    v_token := translate(v_token, 'اءبتثجحخدذرزسشصضطظعغفقكلمنهويپ', 'aabttjhxddrzscsdtzagfkklmnhuib');
+    v_token := left(v_token, 1) || regexp_replace(substr(v_token, 2), '[aeiouyw]', '', 'g');
+    v_token := regexp_replace(v_token, '^[aeiou]', 'a');
+    v_token := regexp_replace(v_token, '([a-z])\1+', '\1', 'g');
+    v_out := v_out || v_token;
+  end loop;
+  return v_out;
+end;
+$$;
+
+revoke execute on function private.f_search_fold(text), private.f_name_skeleton(text)
+from public, anon;
+grant execute on function private.f_search_fold(text), private.f_name_skeleton(text)
+to authenticated;
+
+-- search_pros -------------------------------------------------------------------------------------
+
+drop function public.search_args_check(double precision, double precision, double precision[]);
+
+-- Same checks as 20261122000400, plus the query length. Raw length, before any trim: the cap
+-- bounds the work, and a real search is a name or a service, far under 100 characters.
+create function private.search_args_check(
+  p_lat double precision,
+  p_lng double precision,
+  p_bbox double precision[],
+  p_text text
+)
+returns boolean
+language plpgsql
+immutable
+set search_path = ''
+as $$
+begin
+  if char_length(p_text) > 100 then
+    raise exception 'query_invalid';
+  end if;
+  -- NaN fails every range test below (it sorts above all numbers in Postgres).
+  if (p_lat is null) <> (p_lng is null)
+     or (p_lat is not null
+         and not (p_lat between -90 and 90 and p_lng between -180 and 180)) then
+    raise exception 'origin_invalid';
+  end if;
+  if p_bbox is not null
+     and (array_ndims(p_bbox) is distinct from 1
+          or cardinality(p_bbox) <> 4
+          or array_position(p_bbox, null) is not null
+          or not (p_bbox[1] between -180 and 180 and p_bbox[3] between -180 and 180
+                  and p_bbox[2] between -90 and 90 and p_bbox[4] between -90 and 90)
+          or not (p_bbox[3] - p_bbox[1] > 0 and p_bbox[3] - p_bbox[1] <= 8)
+          or not (p_bbox[4] - p_bbox[2] > 0 and p_bbox[4] - p_bbox[2] <= 8)) then
+    raise exception 'bbox_invalid';
+  end if;
+  return true;
+end;
+$$;
+
+revoke execute on function
+  private.search_args_check(double precision, double precision, double precision[], text)
+from public, anon;
+grant execute on function
+  private.search_args_check(double precision, double precision, double precision[], text)
+to authenticated;
+
+-- Body unchanged from 20261122000400 but for the schema of the helpers and the query argument of
+-- the check (see that migration for the branches and the order).
+create or replace function public.search_pros(
+  p_query text default null,
+  p_region_code text default null,
+  p_locality_id integer default null,
+  p_kids boolean default null,
+  p_category public.service_category default null,
+  p_limit int default 30,
+  p_offset int default 0,
+  p_origin_lat double precision default null,
+  p_origin_lng double precision default null,
+  p_bbox double precision[] default null
+)
+returns table (
+  pro_id uuid,
+  kind public.pro_kind,
+  display_name text,
+  avatar_path text,
+  workplace_type public.workplace_type,
+  workplace_name text,
+  region_code text,
+  region_name_ar text,
+  region_name_fr text,
+  locality_name_ar text,
+  locality_name_fr text,
+  customer_mix public.customer_mix,
+  min_price_dzd integer,
+  is_verified boolean,
+  distance_m integer,
+  place_mode public.place_mode,
+  lat double precision,
+  lng double precision,
+  area_radius_m integer,
+  landmark text,
+  locality_id integer,
+  comes_to_you boolean,
+  live jsonb
+)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  with q as (
+    select nullif(btrim(p_query), '') is not null as active,
+           private.f_search_fold(nullif(btrim(p_query), '')) as fold,
+           private.f_name_skeleton(nullif(btrim(p_query), '')) as skeleton
+  ),
+  qp as (
+    select q.active, q.fold <> '' as folds, '%' || q.fold || '%' as pattern,
+           case when char_length(q.skeleton) >= 3 then '%' || q.skeleton || '%' end as skel_pattern
+    from q
+  ),
+  -- Unchanged from 20261122000200: fold matches are tier 0, skeleton-only matches tier 1.
+  matched as (
+    select u.id, min(u.tier) as tier
+    from (
+      select p.id, 0 as tier
+      from qp, public.pro_profiles p
+      where qp.active and qp.folds and p.search_key like qp.pattern
+      union all
+      select p.id, 1
+      from qp, public.pro_profiles p
+      where qp.active and qp.folds and p.search_skeleton like qp.skel_pattern
+      union all
+      select p.id, 0
+      from qp, public.pro_profiles p
+      cross join lateral public.pro_public_services(p.id) s
+      left join public.service_presets sp on sp.key = s.preset_key
+      where qp.active and qp.folds
+        and p.published_at is not null
+        and p.space = (select public.current_space())
+        and private.f_search_fold(concat_ws(' ', s.name, sp.name_ar, sp.name_fr, sp.name_en,
+                                           sp.name_kab)) like qp.pattern
+    ) u
+    group by u.id
+  ),
+  -- The listable pros under every filter but the text; inlined into each branch, so the KNN
+  -- branches can drive the join from the index.
+  base as not materialized (
+    select p.id, p.kind, p.display_name, p.avatar_path, p.workplace_type, p.workplace_name,
+           l.region_code, r.name_ar as region_name_ar, r.name_fr as region_name_fr,
+           l.name_ar as locality_name_ar, l.name_fr as locality_name_fr, p.customer_mix,
+           p.is_verified, p.published_at, p.locality_id, p.service_radius_km,
+           -- A blocked reader sees no pro_places row; every pro has one, so a null mode would
+           -- reveal the block. It reads as none (and, having no point, as no distance).
+           coalesce(pl.place_mode, 'none'::public.place_mode) as place_mode,
+           pl.lat, pl.lng, pl.area_radius_m, pl.landmark, pl.search_point
+    from public.pro_profiles p
+    left join public.pro_places pl on pl.pro_id = p.id
+    left join public.geo_localities l on l.id = p.locality_id
+    left join public.geo_regions r on r.country_code = l.country_code and r.code = l.region_code
+    where p.published_at is not null
+      and p.space = (select public.current_space())
+      and (select public.acts_as('customer'))
+      and (p_region_code is null or l.region_code = p_region_code)
+      and (p_locality_id is null or p.locality_id = p_locality_id)
+      and (p_kids is not true or p.customer_mix in ('adults_and_kids', 'kids_only'))
+      and (p_category is null or exists (
+        select 1 from public.pro_public_services(p.id) s where s.category = p_category
+      ))
+  ),
+  ranked as (
+    -- No query, origin, list: the points, nearest first (KNN on pro_places_search_point_idx).
+    (select b.*, 0 as tier,
+            b.search_point operator(extensions.<->)
+              extensions.st_point(p_origin_lng, p_origin_lat, 4326)::extensions.geography as sort_m
+     from base b
+     where nullif(btrim(p_query), '') is null and p_bbox is null
+       and p_origin_lat is not null and p_origin_lng is not null
+       and b.search_point is not null
+     order by b.search_point operator(extensions.<->)
+                extensions.st_point(p_origin_lng, p_origin_lat, 4326)::extensions.geography,
+              b.is_verified desc, b.published_at desc, b.id
+     limit least(greatest(coalesce(p_limit, 30), 0), 50)
+           + least(greatest(coalesce(p_offset, 0), 0), 1000))
+    union all
+    -- ... then the pros with no visible point (no coordinates, or the reader is blocked).
+    (select b.*, 0, null::double precision
+     from base b
+     where nullif(btrim(p_query), '') is null and p_bbox is null
+       and p_origin_lat is not null and p_origin_lng is not null
+       and b.search_point is null
+     order by b.is_verified desc, b.published_at desc, b.id
+     limit least(greatest(coalesce(p_limit, 30), 0), 50)
+           + least(greatest(coalesce(p_offset, 0), 0), 1000))
+    union all
+    -- Map: the points inside the view, nearest its centre first. The && test serves the index;
+    -- the lat/lng test is the exact one. A geography box follows great circles, and a view edge
+    -- along a parallel bows poleward between its corners (by atan(tan(lat) / cos(w / 2)) - lat,
+    -- at most ~0.07 degrees for an 8-degree side), so && on the bare view misses points just
+    -- inside its equatorward edge (measured: up to 0.06 degrees inside, at lon 0). The latitude
+    -- edges are padded by 0.1 degree; the longitude edges are meridians, which need none.
+    (select b.*, 0,
+            b.search_point operator(extensions.<->)
+              extensions.st_point((p_bbox[1] + p_bbox[3]) / 2, (p_bbox[2] + p_bbox[4]) / 2,
+                                  4326)::extensions.geography
+     from base b
+     cross join qp
+     left join matched m on m.id = b.id
+     where p_bbox is not null
+       and (not qp.active or m.id is not null)
+       and b.search_point operator(extensions.&&) extensions.st_makeenvelope(
+             p_bbox[1], greatest(p_bbox[2] - 0.1, -90),
+             p_bbox[3], least(p_bbox[4] + 0.1, 90), 4326)::extensions.geography
+       and extensions.st_x(b.search_point::extensions.geometry) between p_bbox[1] and p_bbox[3]
+       and extensions.st_y(b.search_point::extensions.geometry) between p_bbox[2] and p_bbox[4]
+     order by b.search_point operator(extensions.<->)
+                extensions.st_point((p_bbox[1] + p_bbox[3]) / 2, (p_bbox[2] + p_bbox[4]) / 2,
+                                    4326)::extensions.geography,
+              b.is_verified desc, b.published_at desc, b.id
+     limit 101)
+    union all
+    -- Everything else: a list with a query, or without an origin.
+    (select b.*, coalesce(m.tier, 0),
+            b.search_point operator(extensions.<->)
+              extensions.st_point(p_origin_lng, p_origin_lat, 4326)::extensions.geography
+     from base b
+     cross join qp
+     left join matched m on m.id = b.id
+     where p_bbox is null
+       and (nullif(btrim(p_query), '') is not null
+            or p_origin_lat is null or p_origin_lng is null)
+       and (not qp.active or m.id is not null)
+     order by coalesce(m.tier, 0),
+              b.search_point operator(extensions.<->)
+                extensions.st_point(p_origin_lng, p_origin_lat, 4326)::extensions.geography nulls last,
+              b.is_verified desc, b.published_at desc, b.id
+     limit least(greatest(coalesce(p_limit, 30), 0), 50)
+           + least(greatest(coalesce(p_offset, 0), 0), 1000))
+  ),
+  page as (
+    select g.*
+    from ranked g
+    order by g.tier, g.sort_m nulls last, g.is_verified desc, g.published_at desc, g.id
+    -- The argument check sits in the limit: the executor evaluates it before fetching the first
+    -- row, whichever branch runs and even for an empty page.
+    limit case when private.search_args_check(p_origin_lat, p_origin_lng, p_bbox, p_query) then
+            case when p_bbox is not null then 101
+                 else least(greatest(coalesce(p_limit, 30), 0), 50) end
+          end
+    offset case when p_bbox is not null then 0
+                else least(greatest(coalesce(p_offset, 0), 0), 1000) end
+  )
+  select g.id, g.kind, g.display_name, g.avatar_path, g.workplace_type, g.workplace_name,
+         g.region_code, g.region_name_ar, g.region_name_fr, g.locality_name_ar,
+         g.locality_name_fr, g.customer_mix,
+         (select min(s.price_dzd) from public.pro_public_services(g.id) s),
+         g.is_verified,
+         case
+           when d.m is null then null
+           when g.place_mode = 'none' then greatest(1000, round(d.m / 1000) * 1000)
+           when d.m < 1000 then greatest(100, round(d.m / 100) * 100)
+           else round(d.m / 500) * 500
+         end::integer,
+         g.place_mode, g.lat, g.lng, g.area_radius_m::integer, g.landmark, g.locality_id,
+         coalesce(g.workplace_type = 'mobile'
+                  and extensions.st_dwithin(
+                        extensions.st_point(p_origin_lng, p_origin_lat, 4326)::extensions.geography,
+                        g.search_point, g.service_radius_km * 1000), false),
+         (select s.live from public.pro_live_snapshots(array[g.id]) s)
+  from page g
+  cross join lateral (
+    -- Measured on the spheroid (st_distance's default); the order uses the index's sphere
+    -- distance, which differs by well under one display step.
+    select extensions.st_distance(
+             g.search_point,
+             extensions.st_point(p_origin_lng, p_origin_lat, 4326)::extensions.geography) as m
+  ) d
+  order by g.tier, g.sort_m nulls last, g.is_verified desc, g.published_at desc, g.id;
+$$;

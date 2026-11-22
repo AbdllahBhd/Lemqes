@@ -63,6 +63,32 @@ class PhotoTooLarge extends ProFailure {
   const PhotoTooLarge();
 }
 
+/// The pro has no commune yet (`no_locality`): a place needs one to be
+/// checked against.
+class PlaceNoLocality extends ProFailure {
+  const PlaceNoLocality();
+}
+
+/// Mode and fields disagree, or the radius/landmark/point is not acceptable
+/// (`place_invalid`).
+class PlaceInvalid extends ProFailure {
+  const PlaceInvalid();
+}
+
+class PlaceOutOfCountry extends ProFailure {
+  const PlaceOutOfCountry();
+}
+
+/// The point is too far from the pro's commune (`place_too_far`).
+class PlaceTooFar extends ProFailure {
+  const PlaceTooFar();
+}
+
+/// The same request id came back with different values (`request_reused`).
+class PlaceRequestReused extends ProFailure {
+  const PlaceRequestReused();
+}
+
 class ProNetworkFailure extends ProFailure {
   const ProNetworkFailure();
 }
@@ -124,6 +150,11 @@ ProFailure _map(PostgrestException e) {
   if (m.contains('too_many_services')) return const TooManyServices();
   if (m.contains('too_many_photos')) return const TooManyPhotos();
   if (m.contains('preset_space_mismatch')) return const PresetSpaceMismatch();
+  if (m.contains('no_locality')) return const PlaceNoLocality();
+  if (m.contains('place_invalid')) return const PlaceInvalid();
+  if (m.contains('place_out_of_country')) return const PlaceOutOfCountry();
+  if (m.contains('place_too_far')) return const PlaceTooFar();
+  if (m.contains('request_reused')) return const PlaceRequestReused();
   return UnknownProFailure(m);
 }
 

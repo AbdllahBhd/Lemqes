@@ -135,6 +135,20 @@ void main() {
     expect(h.explore.queries.last.text, 'amine');
   });
 
+  testWidgets('the search text is capped at the server limit', (tester) async {
+    final h = await pumpExplore(
+      tester,
+      explore: FakeExploreRepository(cards: threeCards()),
+    );
+
+    await tester.enterText(byKey('exploreSearch'), 'a' * 120);
+    await settle(tester);
+
+    // search_pros refuses more than 100 characters (query_invalid).
+    expect(h.query.text, 'a' * 100);
+    expect(h.explore.queries.last.text, 'a' * 100);
+  });
+
   testWidgets('the kids and category chips update the query', (tester) async {
     final h = await pumpExplore(
       tester,
@@ -254,6 +268,25 @@ void main() {
     expect(find.text('Amine Benali'), findsOneWidget);
   });
 
+  testWidgets('a new search after an empty answer keeps the screen up', (
+    tester,
+  ) async {
+    final gate = Completer<List<ProCard>>();
+    final explore = _PendingExplore(gate.future, first: const []);
+    await pumpExplore(tester, explore: explore);
+    expect(find.byType(EmptyView), findsOneWidget);
+
+    // The empty answer stays on screen while the next search loads.
+    await tester.enterText(byKey('exploreSearch'), 'amine');
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    expect(byKey('exploreFarNotice'), findsNothing);
+
+    gate.complete(threeCards());
+    await settle(tester);
+    expect(find.text('Amine Benali'), findsOneWidget);
+  });
+
   testWidgets('the first load shows a skeleton, not a spinner', (tester) async {
     final gate = Completer<List<ProCard>>();
     await pumpExplore(tester, explore: _PendingExplore(gate.future));
@@ -366,17 +399,22 @@ void main() {
 
 /// A search that never answers until [gate] completes.
 class _PendingExplore extends FakeExploreRepository {
-  _PendingExplore(this.gate);
+  _PendingExplore(this.gate, {this.first});
 
   final Future<List<ProCard>> gate;
+
+  /// When set, the first search answers it at once; the next ones wait.
+  final List<ProCard>? first;
 
   @override
   Future<List<ProCard>> search(
     ExploreQuery q, {
     required int offset,
     required int limit,
-  }) {
+  }) async {
     queries.add(q);
+    final first = this.first;
+    if (first != null && queries.length == 1) return first;
     return gate;
   }
 }

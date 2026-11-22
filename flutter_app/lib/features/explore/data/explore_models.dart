@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import '../../live/data/live_models.dart';
+import '../../geo/data/geo_models.dart';
 import '../../pro/data/pro_models.dart';
 
 class ExploreQuery {
@@ -10,6 +11,8 @@ class ExploreQuery {
     this.localityId,
     this.kidsOnly = false,
     this.category,
+    this.origin,
+    this.bbox,
   });
 
   final String? text;
@@ -18,9 +21,17 @@ class ExploreQuery {
   final bool kidsOnly;
   final ServiceCategory? category;
 
+  /// Distances are measured from here; null sends no origin.
+  final GeoPoint? origin;
+
+  /// Map mode: only pros inside this view.
+  final GeoBounds? bbox;
+
   @override
   bool operator ==(Object other) =>
       other is ExploreQuery &&
+      other.origin == origin &&
+      other.bbox == bbox &&
       other.text == text &&
       other.regionCode == regionCode &&
       other.localityId == localityId &&
@@ -28,8 +39,28 @@ class ExploreQuery {
       other.category == category;
 
   @override
-  int get hashCode =>
-      Object.hash(text, regionCode, localityId, kidsOnly, category);
+  int get hashCode => Object.hash(
+    text,
+    regionCode,
+    localityId,
+    kidsOnly,
+    category,
+    origin,
+    bbox,
+  );
+}
+
+/// What location a pro shows (`public.place_mode`).
+enum PlaceMode {
+  none('none'),
+  area('area'),
+  exact('exact');
+
+  const PlaceMode(this._db);
+  final String _db;
+
+  String toDb() => _db;
+  static PlaceMode fromDb(String v) => values.firstWhere((e) => e._db == v);
 }
 
 /// One `search_pros` row.
@@ -50,6 +81,14 @@ class ProCard {
     this.customerMix,
     this.minPriceDzd,
     this.live,
+    this.distanceM,
+    this.placeMode,
+    this.lat,
+    this.lng,
+    this.areaRadiusM,
+    this.landmark,
+    this.localityId,
+    this.comesToYou,
   });
 
   factory ProCard.fromRow(Map<String, Object?> r) => ProCard(
@@ -72,6 +111,17 @@ class ProCard {
     live: r['live'] == null
         ? null
         : LiveSnapshot.fromJson(r['live']! as Map<String, Object?>),
+    distanceM: r['distance_m'] as int?,
+    placeMode: r['place_mode'] == null
+        ? null
+        : PlaceMode.fromDb(r['place_mode']! as String),
+    // JSON drops the fraction of a whole number, so 3.0 can arrive as 3.
+    lat: (r['lat'] as num?)?.toDouble(),
+    lng: (r['lng'] as num?)?.toDouble(),
+    areaRadiusM: r['area_radius_m'] as int?,
+    landmark: r['landmark'] as String?,
+    localityId: r['locality_id'] as int?,
+    comesToYou: r['comes_to_you'] as bool?,
   );
 
   final String proId;
@@ -94,6 +144,24 @@ class ProCard {
   /// The pro's live state when the page was searched; the card follows
   /// `proLiveProvider`, which this seeds.
   final LiveSnapshot? live;
+
+  /// Display-rounded metres from the search origin; null without an origin,
+  /// for a pro with no point, or for a pro that blocked the reader.
+  final int? distanceM;
+
+  /// [PlaceMode.none] when the pro shows no point, and also when it blocked
+  /// the reader (so a block reads like any commune-only pro).
+  final PlaceMode? placeMode;
+
+  /// The shown point (pin or area centre); null for [PlaceMode.none].
+  final double? lat;
+  final double? lng;
+  final int? areaRadiusM;
+  final String? landmark;
+  final int? localityId;
+
+  /// A mobile pro whose service radius reaches the search origin.
+  final bool? comesToYou;
 
   String? regionName(Locale l) =>
       l.languageCode == 'ar' ? regionNameAr : regionNameFr;

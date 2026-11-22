@@ -447,5 +447,147 @@
   "ticketLeft": "You left the queue",
   "ticketServed": "All done. See you soon!",
   "ticketEnded": "You are no longer in this queue",
-  "ticketOpenPro": "View profile"
+  "ticketOpenPro": "View profile",
+  "locationChipNone": "Distances from…",
+  "locationChipHint": "Change where distances are measured from",
+  "locationSheetTitle": "Measure distances from",
+  "locationOptionDevice": "My location",
+  "locationOptionDeviceHint": "Approximate position, kept on your phone",
+  "locationOptionCommune": "Choose a commune",
+  "locationOptionCommuneHint": "From the centre of the commune",
+  "locationExplainerTitle": "Find pros near you",
+  "locationExplainerBody": "Lemqes uses your approximate position to sort pros from nearest to farthest. It stays on your phone: we do not store it.",
+  "locationExplainerAllow": "Continue",
+  "locationExplainerBack": "Not now",
+  "locationPickerTitle": "Your commune",
+  "locationNoCentre": "This commune has no known position. Choose another one.",
+  "locationBlockedTitle": "Location blocked",
+  "locationBlockedBody": "Location is refused to LEMQES. Allow it in your phone’s settings, or choose a commune.",
+  "locationOpenSettings": "Open settings",
+  "exploreDistanceM": "{value} m",
+  "@exploreDistanceM": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceKm": "{value} km",
+  "@exploreDistanceKm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreDistanceAbout": "≈ {value} km",
+  "@exploreDistanceAbout": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreComesToYou": "Travels to you",
+  "exploreFarNotice": "Nothing within 10 km — here are the closest",
+  "mapUnavailable": "Map unavailable",
+  "placeTitle": "Your location",
+  "placeBody": "{space, select, women{Choose what your customers see: your door, an area, or just your town.} other{Choose what your customers see: your door, an area, or just your town.}}",
+  "@placeBody": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeModeLabel": "What you show",
+  "placeModeExact": "Pin",
+  "placeModeArea": "Area",
+  "placeModeNone": "Commune only",
+  "placeRadiusLabel": "Area size",
+  "placeLandmarkLabel": "Landmark (optional)",
+  "placeLandmarkHint": "E.g. opposite the post office",
+  "placePreviewExact": "{space, select, women{Customers will see: this exact point, with directions.} other{Customers will see: this exact point, with directions.}}",
+  "@placePreviewExact": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewArea": "{space, select, women{Customers will see: an area of {size} and its centre, this point.} other{Customers will see: an area of {size} and its centre, this point.}}",
+  "@placePreviewArea": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placePreviewNone": "{space, select, women{Customers will see: only your town, no point on the map.} other{Customers will see: only your town, no point on the map.}}",
+  "@placePreviewNone": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeLocate": "My current location",
+  "placeLocateFailed": "Location unavailable. Move the map to your workplace.",
+  "placeAreaDeviceNote": "The area’s centre is your current position: it will show on the map. Move the map if this is your home.",
+  "placeMoveHint": "Move the map to place the point",
+  "placeChosenPoint": "Chosen point, at the map centre",
+  "placeWarningTitle": "Anyone can see this point",
+  "placeWarningBody": "Everyone picks their own space at sign-up: anyone can open the women’s space.",
+  "placeWarningAck": "I understand",
+  "placeLater": "Later",
+  "placeErrorTooFar": "This point is more than 30 km from your town. Move it closer, or change your town in your profile.",
+  "placeErrorOutOfCountry": "This point is outside Algeria.",
+  "placeErrorNoLocality": "Choose your town in your profile first.",
+  "placeRemoved": "Your location was removed: it was more than 30 km from your new town.",
+  "placeSectionTitle": "Location",
+  "placeSummaryExact": "Exact point on the map",
+  "placeSummaryArea": "Area of {size} around your point",
+  "@placeSummaryArea": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "placeSummaryNone": "Commune only: no point on the map",
+  "placeEdit": "Edit location",
+  "placeHide": "Hide my location",
+  "placeHidden": "Location hidden: only your town is shown.",
+  "placeNudgeTitle": "Put your salon on the map",
+  "placeNudgeBody": "{space, select, women{Customers nearby find you faster. You choose what they see.} other{Customers nearby find you faster. You choose what they see.}}",
+  "@placeNudgeBody": {
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "placeNudgeAction": "Place my salon",
+  "settingsMapData": "Map data",
+  "mapLicencesIntro": "The Lemqes map is made with these open data and services.",
+  "mapLicenceOsm": "Map data © OpenStreetMap contributors, under the Open Database License (ODbL).",
+  "mapLicenceOpenMapTiles": "Vector tile schema © OpenMapTiles.",
+  "mapLicenceOpenFreeMap": "Map tiles and style provided free of charge by OpenFreeMap.",
+  "mapLicenceMore": "Learn more",
+  "exploreViewMap": "Map",
+  "exploreViewList": "List",
+  "exploreMapSearchArea": "Search this area",
+  "exploreMapZoomIn": "Zoom in to see more",
+  "exploreMapEmpty": "No pros in this area",
+  "exploreMapCluster": "{count, plural, =1{1 pro here. Tap to zoom in.} other{{count} pros here. Tap to zoom in.}}",
+  "exploreMapCommune": "{count, plural, =1{{commune}: 1 pro} other{{commune}: {count} pros}}",
+  "exploreMapCommuneNote": "These pros only show their commune.",
+  "directionsOpen": "Directions",
+  "directionsMore": "Other directions apps",
+  "directionsWaze": "Open in Waze",
+  "directionsFailed": "Couldn’t open directions.",
+  "exploreMapStatusCount": "{status}: {count}"
 }
