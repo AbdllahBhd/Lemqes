@@ -93,7 +93,7 @@ flutter_app/test/ (mirrors lib/, goldens under each test folder's goldens/)  flu
 
 ### Task 0: Commit the design and plan
 
-- [ ] **Step 1:** `git add docs/superpowers/specs/2026-11-22-lemqes-m4-map-near-me-design.md task_plan.md && git commit` with subject `docs: add milestone 4 map and near-me design and plan`.
+- [x] **Step 1:** `git add docs/superpowers/specs/2026-11-22-lemqes-m4-map-near-me-design.md task_plan.md && git commit` with subject `docs: add milestone 4 map and near-me design and plan`.
 
 **Done when:** (1) `git log -1 --format=%s` = `docs: add milestone 4 map and near-me design and plan`; (2) nothing to run (docs only); (3) `git show --stat HEAD` lists only those two files.
 
