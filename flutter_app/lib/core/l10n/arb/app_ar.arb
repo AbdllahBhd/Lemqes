@@ -515,7 +515,7 @@
       }
     }
   },
-  "placePreviewArea": "{space, select, women{سترى الزبونات: منطقة بقطر {size} ومركزها، أي هذه النقطة.} other{سيرى الزبائن: منطقة بقطر {size} ومركزها، أي هذه النقطة.}}",
+  "placePreviewArea": "{space, select, women{سترى الزبونات: منطقة بنصف قطر {size} ومركزها، أي هذه النقطة.} other{سيرى الزبائن: منطقة بنصف قطر {size} ومركزها، أي هذه النقطة.}}",
   "@placePreviewArea": {
     "placeholders": {
       "space": {
