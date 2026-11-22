@@ -114,9 +114,9 @@ flutter_app/test/ (mirrors lib/, goldens under each test folder's goldens/)  flu
 
 **Files:** create `scripts/geo/coord_fixes.py`, `supabase/data/geo/dz/coord_fixes.json`, generated `supabase/migrations/20261122000100_geo_coords_fix.sql`; modify `supabase/data/geo/dz/SOURCE.md`, `supabase/tests/database/030-geo.sql`.
 
-- [ ] **Step 1: Failing checks** — `coord_fixes.py --check` (four rules, design §5; "wilaya spread" defined there) lists the flagged ids (≈ 22 on 2026-11-22) and exits 1. pgTAP `030` cases **C1** every point inside `geo_countries.bbox`; **C2** no shared point; **C3** no whole-degree coordinate; **C4** no wilaya-spread outlier outside `geo_coord_verified` — fail first (no bbox/table yet).
-- [ ] **Step 2:** One `coord_fixes.json` entry per flagged id: `{lat, lng, source: "osm:node/<id>"}` or `{verified: "<reason>"}`. `SOURCE.md` records the OSM credit and the count (< 100).
-- [ ] **Step 3:** `coord_fixes.py --emit supabase/migrations/20261122000100_geo_coords_fix.sql`.
+- [x] **Step 1: Failing checks** — `coord_fixes.py --check` (four rules, design §5; "wilaya spread" defined there) lists the flagged ids (≈ 22 on 2026-11-22) and exits 1. pgTAP `030` cases **C1** every point inside `geo_countries.bbox`; **C2** no shared point; **C3** no whole-degree coordinate; **C4** no wilaya-spread outlier outside `geo_coord_verified` — fail first (no bbox/table yet).
+- [x] **Step 2:** One `coord_fixes.json` entry per flagged id: `{lat, lng, source: "osm:node/<id>"}` or `{verified: "<reason>"}`. `SOURCE.md` records the OSM credit and the count (< 100).
+- [x] **Step 3:** `coord_fixes.py --emit supabase/migrations/20261122000100_geo_coords_fix.sql`.
 
 **Done when:** (1) `python3 -I scripts/geo/coord_fixes.py --check` exits 0; `supabase db reset && supabase test db` shows `030 .. ok` with C1–C4 and `plan(N)` matching; `git diff --quiet 5dcf477 -- scripts/geo/build_geo_sql.py supabase/data/geo/dz/patches.json supabase/migrations/20261115000110_geo_dz_seed.sql` exits 0; (2) `npm test` green (run when Task 2 is not using the stack); (3) no files changed outside the Files list above.
 
