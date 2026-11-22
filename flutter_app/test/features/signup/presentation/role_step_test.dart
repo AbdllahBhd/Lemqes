@@ -101,11 +101,12 @@ void main() {
     );
     expect(find.text('Étape 2 sur 4'), findsOneWidget);
 
-    // Space, role, credentials, code, then profile, services and hours.
+    // Space, role, credentials, code, then profile, location, services and
+    // hours.
     await tapKey(tester, 'role_barber');
-    expect(find.text('Étape 2 sur 7'), findsOneWidget);
+    expect(find.text('Étape 2 sur 8'), findsOneWidget);
     await tapKey(tester, 'role_home_artist');
-    expect(find.text('Étape 2 sur 7'), findsOneWidget);
+    expect(find.text('Étape 2 sur 8'), findsOneWidget);
 
     // Salon setup comes with salons (M7): no extra steps yet.
     await tapKey(tester, 'role_salon_owner');

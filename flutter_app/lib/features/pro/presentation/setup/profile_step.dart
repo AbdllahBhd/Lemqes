@@ -13,6 +13,7 @@ import '../../../../shared/widgets/ltr.dart';
 import '../../../account/data/account.dart';
 import '../../../account/data/account_providers.dart';
 import '../../../auth/presentation/auth_widgets.dart';
+import '../../../explore/data/explore_models.dart' show PlaceMode;
 import '../../../geo/data/geo_providers.dart';
 import '../../../geo/presentation/locality_picker.dart';
 import '../../../signup/presentation/signup_completion.dart';
@@ -166,6 +167,8 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
     final l10n = context.l10n;
     if (_busy || !_validate(l10n)) return;
     final router = GoRouter.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final shown = _showsPlace(ref.read(myProProvider).value);
     setState(() => _busy = true);
     final failure = await _save();
     if (!mounted) return;
@@ -176,12 +179,20 @@ class _ProfileStepState extends ConsumerState<ProfileStep> {
       });
       return;
     }
+    // The server drops a place more than 30 km from the new commune; the
+    // pro must hear it, or customers silently stop seeing the point.
+    if (shown && !_showsPlace(ref.read(myProProvider).value)) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.placeRemoved)));
+    }
     if (_edit) {
       _backToDashboard(router);
     } else {
-      router.go('/pro/setup/services');
+      router.go('/pro/setup/location');
     }
   }
+
+  static bool _showsPlace(ProProfile? p) =>
+      (p?.place?.mode ?? PlaceMode.none) != PlaceMode.none;
 
   // Edit mode is pushed over the dashboard; a deep link has none below.
   void _backToDashboard(GoRouter router) =>

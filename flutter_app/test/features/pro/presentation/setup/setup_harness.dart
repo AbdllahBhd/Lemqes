@@ -15,9 +15,13 @@ import 'package:lemqes/core/theme/theme_mode_controller.dart';
 import 'package:lemqes/core/time/clock_providers.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
+import 'package:lemqes/features/explore/data/explore_models.dart'
+    show PlaceMode;
+import 'package:lemqes/features/geo/data/device_location.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
 import 'package:lemqes/features/geo/data/geo_repository.dart';
+import 'package:lemqes/features/map/presentation/lemqes_base_map.dart';
 import 'package:lemqes/features/pro/data/photo_uploader.dart';
 import 'package:lemqes/features/pro/data/pro_failure.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
@@ -31,6 +35,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../auth/presentation/harness.dart';
+import '../../../geo/data/fake_device_location.dart';
 import '../../../live/presentation/today/today_harness.dart'
     show quietLiveOverrides;
 
@@ -86,7 +91,20 @@ const _algerCentre = Locality(
   regionCode: '16',
   nameAr: 'الجزائر الوسطى',
   nameFr: 'Alger Centre',
+  lat: algerCentreLat,
+  lng: algerCentreLng,
 );
+const _babElOued = Locality(
+  id: 1602,
+  regionCode: '16',
+  nameAr: 'باب الوادي',
+  nameFr: 'Bab El Oued',
+  lat: 36.7906,
+  lng: 3.0503,
+);
+
+const algerCentreLat = 36.7731;
+const algerCentreLng = 3.0588;
 
 class FakeGeoRepository extends Fake implements GeoRepository {
   FakeGeoRepository({this.failLocality = false});
@@ -99,12 +117,16 @@ class FakeGeoRepository extends Fake implements GeoRepository {
 
   @override
   Future<List<Locality>> localities(String country, String regionCode) async =>
-      regionCode == '16' ? [_algerCentre] : [];
+      regionCode == '16' ? [_algerCentre, _babElOued] : [];
 
   @override
   Future<Locality?> locality(int id) async {
     if (failLocality) throw const ProNetworkFailure();
-    return id == 1601 ? _algerCentre : null;
+    return switch (id) {
+      1601 => _algerCentre,
+      1602 => _babElOued,
+      _ => null,
+    };
   }
 }
 
@@ -174,6 +196,50 @@ class FakeProRepository extends Fake implements ProRepository {
 
   ProProfilePatch? lastPatch;
 
+  /// Like the database's trigger on `locality_id`: a commune change resets
+  /// the place to none (the fake does not measure the 30 km).
+  bool resetPlaceOnCommuneChange = false;
+
+  /// Every `set_pro_place` call, in order.
+  final placeCalls =
+      <
+        ({
+          PlaceMode mode,
+          double? lat,
+          double? lng,
+          int? radiusM,
+          String? landmark,
+        })
+      >[];
+
+  @override
+  Future<ProPlace> setPlace(
+    PlaceMode mode, {
+    double? lat,
+    double? lng,
+    int? radiusM,
+    String? landmark,
+  }) async {
+    calls.add('setPlace');
+    placeCalls.add((
+      mode: mode,
+      lat: lat,
+      lng: lng,
+      radiusM: radiusM,
+      landmark: landmark,
+    ));
+    _failIfScripted();
+    final place = ProPlace(
+      mode: mode,
+      lat: lat,
+      lng: lng,
+      areaRadiusM: radiusM,
+      landmark: landmark,
+    );
+    profile = copyProfile(profile!, place: place);
+    return place;
+  }
+
   @override
   Future<void> updateProfile(String proId, ProProfilePatch patch) async {
     calls.add('updateProfile');
@@ -187,6 +253,7 @@ class FakeProRepository extends Fake implements ProRepository {
       throw const UnknownProFailure('pro_profiles_public_phone_has_number');
     }
     bool cleared(PatchField f) => patch.clear.contains(f);
+    final moved = patch.localityId != null && patch.localityId != p.localityId;
     profile = copyProfile(
       p,
       displayName: patch.displayName ?? p.displayName,
@@ -205,6 +272,9 @@ class FakeProRepository extends Fake implements ProRepository {
       contactPhone: patch.contactPhone,
       showPrices: patch.showPrices,
       avatarPath: patch.avatarPath,
+      place: resetPlaceOnCommuneChange && moved
+          ? const ProPlace(mode: PlaceMode.none)
+          : null,
     );
   }
 
@@ -296,6 +366,7 @@ ProProfile copyProfile(
   bool? showPrices,
   String? avatarPath,
   bool? isVerified,
+  ProPlace? place,
   bool unpublish = false,
 }) => ProProfile(
   id: p.id,
@@ -318,6 +389,7 @@ ProProfile copyProfile(
   services: services ?? p.services,
   hours: hours ?? p.hours,
   photos: photos ?? p.photos,
+  place: place ?? p.place,
 );
 
 /// The photo backend over [FakeProRepository]'s profile, with the
@@ -468,6 +540,7 @@ Future<SetupHarness> pumpSetup(
   void Function()? stubSignup,
   List<TimeOfDay>? timeAnswers,
   FakeGeoRepository? geo,
+  DeviceLocation? device,
   FakeProPhotoUploader Function(FakeProRepository pros)? photos,
   List<Override> overrides = const [],
   Locale locale = const Locale('fr'),
@@ -518,6 +591,9 @@ Future<SetupHarness> pumpSetup(
       proRepositoryProvider.overrideWithValue(fakePros),
       geoRepositoryProvider.overrideWithValue(geo ?? FakeGeoRepository()),
       photoUploaderProvider.overrideWithValue(fakePhotos),
+      deviceLocationProvider.overrideWithValue(device ?? FakeDeviceLocation()),
+      // Tests never build the vector tile layer (it fails in flutter_test).
+      mapBaseLayerProvider.overrideWithValue((_) => const MapPlainBackground()),
       // A Wednesday, so the hours table's "today" is stable.
       countryClockProvider.overrideWithValue(() => DateTime(2026, 11, 18, 10)),
       // A pro reaching /home lands on the Today tab, which reads live state.

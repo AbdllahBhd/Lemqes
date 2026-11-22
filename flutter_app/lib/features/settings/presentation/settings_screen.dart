@@ -18,7 +18,7 @@ const IconData logoutIcon = IconData(
   matchTextDirection: true,
 );
 
-/// Language, theme, role switch and sign-out.
+/// Language, theme, role switch, map data credits and sign-out.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -128,6 +128,12 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.swap_horiz,
                     label: l10n.roleSwitchTitle,
                     onTap: () => showRoleSwitchSheet(context),
+                  ),
+                  _NavRow(
+                    key: const Key('mapData'),
+                    icon: Icons.map_outlined,
+                    label: l10n.settingsMapData,
+                    onTap: () => context.push('/settings/map-data'),
                   ),
                 ],
               ),

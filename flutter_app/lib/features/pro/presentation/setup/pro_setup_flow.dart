@@ -12,10 +12,12 @@ import '../../data/pro_models.dart';
 import '../../data/pro_providers.dart';
 import '../pro_failure_message.dart';
 import 'hours_step.dart';
+import 'location_step.dart';
 import 'profile_step.dart';
 import 'services_step.dart';
 
-/// `/pro/setup/:step`: profile, services, hours for the active pro role.
+/// `/pro/setup/:step`: profile, location, services, hours for the active pro
+/// role.
 class ProSetupScreen extends ConsumerWidget {
   const ProSetupScreen({
     required this.step,
@@ -52,6 +54,7 @@ class ProSetupScreen extends ConsumerWidget {
     return KeyedSubtree(
       key: ValueKey(kind),
       child: switch (step) {
+        'location' => LocationStep(edit: edit),
         'services' => ServicesStep(incomplete: incomplete),
         'hours' => HoursStep(incomplete: incomplete),
         _ => ProfileStep(incomplete: incomplete, edit: edit),

@@ -135,7 +135,7 @@ void main() {
       phone: _barberPhone,
     );
 
-    // Setup 1/3: profile. The display name comes from sign-up.
+    // Setup 1/4: profile. The display name comes from sign-up.
     await _waitFor(tester, find.byKey(const Key('displayNameField')));
     await shot('setup_profile');
     await _tap(tester, find.byKey(const Key('pickRegion')));
@@ -149,7 +149,10 @@ void main() {
     await _tap(tester, find.byKey(const Key('mix_adults_and_kids')));
     await _tap(tester, find.byKey(const Key('setupContinue')));
 
-    // Setup 2/3: two presets and a custom service priced in Arabic digits.
+    // Setup 2/4: the location is optional; this path leaves it for later.
+    await _tap(tester, find.byKey(const Key('placeLater')));
+
+    // Setup 3/4: two presets and a custom service priced in Arabic digits.
     await _waitFor(tester, find.byKey(const Key('addCustomService')));
     await _addService(
       tester,
@@ -170,7 +173,7 @@ void main() {
     await shot('setup_services');
     await _tap(tester, find.byKey(const Key('setupContinue')));
 
-    // Setup 3/3: the offered week is Sat-Thu 09:00-19:00, Friday closed. A
+    // Setup 4/4: the offered week is Sat-Thu 09:00-19:00, Friday closed. A
     // 13:00-14:00 break on Saturday, copied to every day.
     await _waitFor(tester, find.byKey(const Key('day_6_addBreak')));
     expect(

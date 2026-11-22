@@ -9,6 +9,7 @@ import '../../features/home/presentation/home_screen.dart';
 import '../../features/pro/data/pro_providers.dart';
 import '../../features/pro/presentation/dashboard/pro_profile_preview_screen.dart';
 import '../../features/pro/presentation/setup/pro_setup_flow.dart';
+import '../../features/settings/presentation/map_licences_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/signup/data/signup_draft_store.dart';
@@ -72,6 +73,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      GoRoute(
+        path: '/settings/map-data',
+        builder: (_, _) => const MapLicencesScreen(),
+      ),
       GoRoute(
         path: '/pro/setup',
         redirect: (context, state) => proSetupEntry(ref.read(myProProvider)),

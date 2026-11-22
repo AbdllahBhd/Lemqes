@@ -527,6 +527,17 @@ void main() {
       );
     });
 
+    test('the location step follows the profile and is never a gap', () {
+      expect(proSetupSteps, ['profile', 'location', 'services', 'hours']);
+      expect(step('location', const AsyncData(null)), '/pro/setup/profile');
+      expect(
+        step('location', AsyncData(_pro(localityId: null))),
+        '/pro/setup/profile',
+      );
+      expect(step('location', AsyncData(_pro(service: false))), isNull);
+      expect(step('location', AsyncData(_pro())), isNull);
+    });
+
     test('earlier steps stay open for going back', () {
       expect(step('profile', AsyncData(_pro(hours: false))), isNull);
       expect(step('hours', AsyncData(_pro(hours: false))), isNull);
@@ -550,6 +561,18 @@ void main() {
         '/pro/setup/services',
       );
       expect(proSetupEntry(AsyncData(_pro(hours: false))), '/pro/setup/hours');
+    });
+
+    test('an interrupted setup never resumes at the location step', () {
+      for (final pro in [
+        _pro(service: false),
+        _pro(hours: false),
+        _pro(service: false, hours: false),
+      ]) {
+        expect(proSetupEntry(AsyncData(pro)), isNot('/pro/setup/location'));
+      }
+      expect(setupStepForGaps(ProfileGap.values.toSet()), 'profile');
+      expect(setupStepForGaps({ProfileGap.services}), 'services');
     });
 
     test('a complete profile goes home', () {

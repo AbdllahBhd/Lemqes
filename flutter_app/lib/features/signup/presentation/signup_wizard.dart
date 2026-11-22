@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router/redirect.dart';
 import '../../../shared/widgets/step_progress.dart';
 import '../../account/data/account.dart';
 import '../../pro/data/pro_models.dart';
@@ -54,10 +55,14 @@ class WizardStepScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final role = ref.watch(signupDraftProvider)?.role;
-    // Space, role, credentials, code; then profile, services and hours for
-    // the roles with a pro profile.
+    // Space, role, credentials, code; then the setup steps for the roles
+    // with a pro profile.
     final total =
-        this.total ?? (role != null && ProKind.forRole(role) != null ? 7 : 4);
+        this.total ??
+        signupSteps.length +
+            (role != null && ProKind.forRole(role) != null
+                ? proSetupSteps.length
+                : 0);
     final body = this.body;
     final action = this.action;
     final onBack = this.onBack;

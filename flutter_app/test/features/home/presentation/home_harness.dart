@@ -14,6 +14,7 @@ import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/geo/data/geo_providers.dart';
 import 'package:lemqes/features/pro/data/pro_providers.dart';
+import 'package:lemqes/features/settings/presentation/map_licences_screen.dart';
 import 'package:lemqes/features/settings/presentation/settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -113,6 +114,10 @@ Future<HomeHarness> pumpHome(
     routes: [
       GoRoute(path: '/', builder: (_, _) => home),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      GoRoute(
+        path: '/settings/map-data',
+        builder: (_, _) => const MapLicencesScreen(),
+      ),
       GoRoute(
         path: '/auth',
         builder: (_, _) => const Scaffold(body: Text('route:/auth')),

@@ -94,10 +94,10 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
     );
 
     return SetupStepScaffold(
-      index: 1,
+      index: 2,
       title: l10n.setupServicesTitle,
       body: l10n.setupServicesBody,
-      onBack: () => context.go('/pro/setup/profile'),
+      onBack: () => context.go('/pro/setup/location'),
       action: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
