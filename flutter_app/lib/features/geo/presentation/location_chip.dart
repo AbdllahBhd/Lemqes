@@ -43,23 +43,57 @@ class _LocationChipState extends ConsumerState<LocationChip> {
   }
 
   Future<void> _useDevice() async {
-    // The explainer comes only when the OS has never been asked: after a
-    // refusal the prompt cannot return, so the commune picker takes over.
+    // The explainer comes only when the OS has never been asked. After one
+    // refusal Android prompts again (the tap is the request); after "never
+    // ask again" only the system settings can grant it.
     final status = await ref.read(deviceLocationProvider).permission();
     if (!mounted) return;
     switch (status) {
-      case DevicePermission.denied:
-      case DevicePermission.deniedForever:
       case DevicePermission.serviceOff:
         return _pickCommune();
+      case DevicePermission.deniedForever:
+        return _offerSettings();
       case DevicePermission.notAsked:
         if (!await showLocationExplainerSheet(context) || !mounted) return;
+      case DevicePermission.denied:
       case DevicePermission.approximate:
       case DevicePermission.precise:
         break;
     }
     final result = await ref.read(originProvider.notifier).useDevice();
     if (!mounted || result.granted) return;
+    await _pickCommune();
+  }
+
+  Future<void> _offerSettings() async {
+    final settings = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final l10n = context.l10n;
+        return AlertDialog(
+          title: Text(l10n.locationBlockedTitle),
+          content: Text(l10n.locationBlockedBody),
+          actions: [
+            TextButton(
+              key: const Key('locationBlockedCommune'),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.locationOptionCommune),
+            ),
+            TextButton(
+              key: const Key('locationOpenSettings'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.locationOpenSettings),
+            ),
+          ],
+        );
+      },
+    );
+    if (settings == null || !mounted) return;
+    // Back from the settings, resume picks up a new grant (OriginController).
+    if (settings) {
+      await ref.read(deviceLocationProvider).openSettings();
+      return;
+    }
     await _pickCommune();
   }
 

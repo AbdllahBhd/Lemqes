@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lemqes/core/l10n/gen/app_localizations_fr.dart';
 import 'package:lemqes/features/explore/data/explore_models.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/geo/data/device_location.dart';
@@ -38,6 +39,7 @@ Future<void> _tapDeviceOption(WidgetTester tester) async {
 
 void main() {
   setUpAll(registerHarnessFallbacks);
+  final fr = AppLocalizationsFr();
 
   Future<ExploreHarness> pump(
     WidgetTester tester, {
@@ -109,24 +111,67 @@ void main() {
       expect(byKey('pickRegion'), findsOneWidget);
     });
 
-    for (final status in [
-      DevicePermission.denied,
-      DevicePermission.deniedForever,
-      DevicePermission.serviceOff,
-    ]) {
-      testWidgets('$status goes straight to the commune picker', (
-        tester,
-      ) async {
-        final device = FakeDeviceLocation(status: status);
-        await pump(tester, device: device);
+    testWidgets('location switched off goes straight to the commune picker', (
+      tester,
+    ) async {
+      final device = FakeDeviceLocation(status: DevicePermission.serviceOff);
+      await pump(tester, device: device);
 
-        await _tapDeviceOption(tester);
+      await _tapDeviceOption(tester);
 
-        expect(byKey('locationExplainerAllow'), findsNothing);
-        expect(byKey('pickRegion'), findsOneWidget);
-        expect(device.requests, isEmpty);
-      });
-    }
+      expect(byKey('locationExplainerAllow'), findsNothing);
+      expect(byKey('pickRegion'), findsOneWidget);
+      expect(device.requests, isEmpty);
+    });
+
+    testWidgets('after one refusal the OS is asked again, without the '
+        'explainer', (tester) async {
+      final device = FakeDeviceLocation(
+        status: DevicePermission.denied,
+        onRequest: DevicePermission.approximate,
+      );
+      final h = await pump(tester, device: device);
+
+      await _tapDeviceOption(tester);
+
+      expect(byKey('locationExplainerAllow'), findsNothing);
+      expect(device.requests, [false]);
+      expect(h.container.read(originProvider), isA<DeviceOrigin>());
+    });
+
+    testWidgets('refused again, the commune picker takes over', (tester) async {
+      final device = FakeDeviceLocation(
+        status: DevicePermission.denied,
+        onRequest: DevicePermission.denied,
+      );
+      await pump(tester, device: device);
+
+      await _tapDeviceOption(tester);
+
+      expect(device.requests, [false]);
+      expect(byKey('pickRegion'), findsOneWidget);
+    });
+
+    testWidgets('"never ask again" offers the settings or a commune', (
+      tester,
+    ) async {
+      final device = FakeDeviceLocation(status: DevicePermission.deniedForever);
+      await pump(tester, device: device);
+
+      await _tapDeviceOption(tester);
+      expect(find.text(fr.locationBlockedTitle), findsOneWidget);
+      expect(device.requests, isEmpty);
+      await tester.tap(byKey('locationOpenSettings'));
+      await settle(tester);
+      expect(device.openSettingsCalls, 1);
+      expect(byKey('pickRegion'), findsNothing);
+
+      await _tapDeviceOption(tester);
+      await tester.tap(byKey('locationBlockedCommune'));
+      await settle(tester);
+      expect(byKey('pickRegion'), findsOneWidget);
+      expect(device.openSettingsCalls, 1);
+    });
 
     testWidgets('a granted permission takes the fix without an explainer', (
       tester,

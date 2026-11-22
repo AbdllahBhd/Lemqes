@@ -20,6 +20,7 @@ class FakeDeviceLocation implements DeviceLocation {
 
   final requests = <bool>[];
   var currentCalls = 0;
+  var openSettingsCalls = 0;
 
   @override
   Future<DevicePermission> permission() async => status;
@@ -35,5 +36,11 @@ class FakeDeviceLocation implements DeviceLocation {
   Future<GeoPoint?> current() async {
     currentCalls++;
     return status.granted ? position : null;
+  }
+
+  @override
+  Future<bool> openSettings() async {
+    openSettingsCalls++;
+    return true;
   }
 }

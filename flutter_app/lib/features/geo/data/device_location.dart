@@ -40,6 +40,10 @@ abstract interface class DeviceLocation {
   /// One fix, or null when none is available (not granted, service off,
   /// timeout).
   Future<GeoPoint?> current();
+
+  /// Opens the app's page in the system settings, the only way back from
+  /// [DevicePermission.deniedForever]. False when it could not be opened.
+  Future<bool> openSettings();
 }
 
 final deviceLocationProvider = Provider<DeviceLocation>(
@@ -128,6 +132,9 @@ class GeolocatorDeviceLocation implements DeviceLocation {
     );
     return GeoPoint(p.latitude, p.longitude);
   }, null);
+
+  @override
+  Future<bool> openSettings() => _guard(g.Geolocator.openAppSettings, false);
 
   /// Platform failures (no plugin, DBus refusal, timeout) mean "no position",
   /// never a crash; the cause goes to the log.
