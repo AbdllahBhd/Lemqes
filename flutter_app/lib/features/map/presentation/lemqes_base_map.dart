@@ -70,6 +70,11 @@ final mapLinkLauncherProvider = Provider<Future<bool> Function(Uri)>(
       (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
 );
 
+/// The HTTP client the style fetch opens; tests answer it themselves.
+final mapHttpClientProvider = Provider<http.Client Function()>(
+  (_) => http.Client.new,
+);
+
 class MapStyleUnavailable implements Exception {
   const MapStyleUnavailable(this.message);
 
@@ -79,21 +84,31 @@ class MapStyleUnavailable implements Exception {
   String toString() => 'MapStyleUnavailable: $message';
 }
 
+/// The build has no MAP_STYLE_URL: asking again cannot help.
+class MapStyleNotConfigured extends MapStyleUnavailable {
+  const MapStyleNotConfigured() : super('MAP_STYLE_URL is empty');
+}
+
 /// The style as fetched, with its tile sources and sprites resolved.
-class _FetchedStyle {
-  const _FetchedStyle(this.json, this.providers, this.sprites);
+class FetchedMapStyle {
+  const FetchedMapStyle(this.json, this.providers, this.sprites);
 
   final Map<String, dynamic> json;
   final vmt.TileProviders providers;
   final vmt.SpriteStyle? sprites;
 }
 
-/// Fetched once per app run (kept alive); each locale patches its own copy.
-final _fetchedStyleProvider = FutureProvider<_FetchedStyle>((ref) async {
+/// Fetched once per app run: a success is kept alive, a failure is not, so
+/// the next map mounted fetches again (a map opened offline recovers once
+/// the network is back). Never retried on a timer: a missing URL cannot
+/// recover, and a failing server is not hammered.
+final fetchedMapStyleProvider = FutureProvider.autoDispose<FetchedMapStyle>((
+  ref,
+) async {
   final url = ref.watch(mapStyleUrlProvider);
-  if (url.isEmpty) throw const MapStyleUnavailable('MAP_STYLE_URL is empty');
+  if (url.isEmpty) throw const MapStyleNotConfigured();
   const headers = {'User-Agent': mapUserAgent};
-  final client = http.Client();
+  final client = ref.read(mapHttpClientProvider)();
   ref.onDispose(client.close);
 
   Future<Map<String, dynamic>> getJson(String at) async {
@@ -122,9 +137,12 @@ final _fetchedStyleProvider = FutureProvider<_FetchedStyle>((ref) async {
     final source = tileJsonUrl is String ? await getJson(tileJsonUrl) : value;
     final tiles = source['tiles'];
     if (tiles is! List || tiles.isEmpty) continue;
+    final template = tiles.first;
+    // Tile requests reveal the area being looked at: never in clear text.
+    if (template is! String || !template.startsWith('https://')) continue;
     providers[key as String] = vmt.NetworkVectorTileProvider(
       type: type,
-      urlTemplate: tiles.first as String,
+      urlTemplate: template,
       maximumZoom: source['maxzoom'] as int? ?? 14,
       minimumZoom: source['minzoom'] as int? ?? 0,
       httpHeaders: headers,
@@ -160,20 +178,20 @@ final _fetchedStyleProvider = FutureProvider<_FetchedStyle>((ref) async {
       }
     }
   }
-  return _FetchedStyle(style, vmt.TileProviders(providers), sprites);
-});
+  ref.keepAlive();
+  return FetchedMapStyle(style, vmt.TileProviders(providers), sprites);
+}, retry: (_, _) => null);
 
-final _mapStyleProvider = FutureProvider.family<vmt.Style, MapLabelScript>((
-  ref,
-  script,
-) async {
-  final fetched = await ref.watch(_fetchedStyleProvider.future);
-  return vmt.Style(
-    theme: vtr.ThemeReader().read(localizeMapStyle(fetched.json, script)),
-    providers: fetched.providers,
-    sprites: fetched.sprites,
-  );
-});
+final _mapStyleProvider = FutureProvider.autoDispose
+    .family<vmt.Style, MapLabelScript>((ref, script) async {
+      final fetched = await ref.watch(fetchedMapStyleProvider.future);
+      ref.keepAlive();
+      return vmt.Style(
+        theme: vtr.ThemeReader().read(localizeMapStyle(fetched.json, script)),
+        providers: fetched.providers,
+        sprites: fetched.sprites,
+      );
+    }, retry: (_, _) => null);
 
 typedef MapBaseLayerBuilder = Widget Function(BuildContext context);
 

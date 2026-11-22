@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:lemqes/app.dart' show appDelegates;
 import 'package:lemqes/core/l10n/locale_controller.dart' show supportedLocales;
@@ -220,6 +224,107 @@ void main() {
       expect(find.byType(CircleLayer), findsNothing);
       expect(find.byType(ProPin), findsOneWidget);
       expect(find.byType(CommunePin), findsOneWidget);
+    });
+  });
+
+  group('the style fetch', () {
+    const styleUrl = 'https://tiles.test/styles/liberty';
+
+    Map<String, dynamic> styleWith(String tiles) => {
+      'version': 8,
+      'sources': {
+        'openmaptiles': {
+          'type': 'vector',
+          'tiles': [tiles],
+          'maxzoom': 14,
+        },
+      },
+      'layers': <Object>[],
+    };
+
+    late List<Uri> requests;
+    late http.Response Function(Uri) answer;
+
+    ProviderContainer make({String url = styleUrl}) {
+      requests = [];
+      final c = ProviderContainer(
+        overrides: [
+          mapStyleUrlProvider.overrideWithValue(url),
+          mapHttpClientProvider.overrideWithValue(
+            () => MockClient((r) async {
+              requests.add(r.url);
+              return answer(r.url);
+            }),
+          ),
+        ],
+      );
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    Future<Object?> fetchError(ProviderContainer c) async {
+      final sub = c.listen(fetchedMapStyleProvider, (_, _) {});
+      try {
+        await c.read(fetchedMapStyleProvider.future);
+        return null;
+      } on Object catch (e) {
+        return e;
+      } finally {
+        sub.close();
+        // Let an auto-disposed provider go.
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    test('a failure is not kept: the next mount fetches again', () async {
+      var fail = true;
+      answer = (_) => fail
+          ? http.Response('down', 503)
+          : http.Response(
+              jsonEncode(styleWith('https://t.test/{z}/{x}/{y}')),
+              200,
+            );
+      final c = make();
+
+      expect(await fetchError(c), isA<MapStyleUnavailable>());
+      expect(requests, hasLength(1));
+
+      fail = false;
+      expect(await fetchError(c), isNull);
+      expect(requests, hasLength(2));
+
+      // A fetched style is kept for the run.
+      expect(await fetchError(c), isNull);
+      expect(requests, hasLength(2));
+    });
+
+    test('a failure is never retried on a timer', () async {
+      answer = (_) => http.Response('down', 503);
+      final c = make();
+      final sub = c.listen(fetchedMapStyleProvider, (_, _) {});
+      addTearDown(sub.close);
+      await expectLater(
+        c.read(fetchedMapStyleProvider.future),
+        throwsA(isA<MapStyleUnavailable>()),
+      );
+      await Future<void>.delayed(const Duration(seconds: 1));
+      expect(requests, hasLength(1));
+    });
+
+    test('an empty MAP_STYLE_URL fails at once and asks nothing', () async {
+      final c = make(url: '');
+      expect(await fetchError(c), isA<MapStyleNotConfigured>());
+      expect(await fetchError(c), isA<MapStyleNotConfigured>());
+      expect(requests, isEmpty);
+    });
+
+    test('only https tile templates are used', () async {
+      answer = (_) => http.Response(
+        jsonEncode(styleWith('http://t.test/{z}/{x}/{y}')),
+        200,
+      );
+      final c = make();
+      expect(await fetchError(c), isA<MapStyleUnavailable>());
     });
   });
 }
