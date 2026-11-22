@@ -135,6 +135,20 @@ void main() {
     expect(h.explore.queries.last.text, 'amine');
   });
 
+  testWidgets('the search text is capped at the server limit', (tester) async {
+    final h = await pumpExplore(
+      tester,
+      explore: FakeExploreRepository(cards: threeCards()),
+    );
+
+    await tester.enterText(byKey('exploreSearch'), 'a' * 120);
+    await settle(tester);
+
+    // search_pros refuses more than 100 characters (query_invalid).
+    expect(h.query.text, 'a' * 100);
+    expect(h.explore.queries.last.text, 'a' * 100);
+  });
+
   testWidgets('the kids and category chips update the query', (tester) async {
     final h = await pumpExplore(
       tester,
