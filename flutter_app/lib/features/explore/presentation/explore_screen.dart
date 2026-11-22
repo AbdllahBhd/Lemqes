@@ -7,19 +7,16 @@ import '../../../core/theme/lemqes_tokens.dart';
 import '../../../shared/widgets/lemqes_primary_button.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../account/data/account.dart';
-import '../../geo/presentation/location_chip.dart';
 import '../../live/presentation/customer/my_ticket_card.dart';
 import '../../pro/presentation/pro_failure_message.dart';
 import '../data/explore_models.dart';
 import '../data/explore_providers.dart';
 import 'explore_filters.dart';
 import 'pro_card_tile.dart';
+import 'pro_labels.dart' show isFarResult;
 
 /// How close to the end of the list the next page starts loading.
 const _loadMoreExtent = 400.0;
-
-/// Past this distance the nearest result is called out (design: far notice).
-const _farNoticeM = 10000;
 
 /// The customer's list of pros in their space: search, filters, results.
 ///
@@ -74,15 +71,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     return Column(
       children: [
         widget.header(search),
-        // Below the search, not in the band: the band is built by the home
-        // screen and is shared with the pro home.
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: LocationChip(),
-          ),
-        ),
         Expanded(
           child: NotificationListener<ScrollNotification>(
             onNotification: _onScroll,
@@ -156,7 +144,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           child: results.isLoading ? const LinearProgressIndicator() : null,
         ),
       ),
-      if ((value.items.first.distanceM ?? 0) > _farNoticeM)
+      if (isFarResult(value.items.first))
         const SliverToBoxAdapter(child: _FarNotice()),
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),

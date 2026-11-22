@@ -7,6 +7,7 @@ import '../../account/data/account.dart';
 import '../../account/data/account_providers.dart';
 import '../../account/presentation/space_switch.dart';
 import '../../explore/presentation/explore_screen.dart';
+import '../../geo/presentation/location_chip.dart';
 import 'home_header.dart';
 
 /// Customer home: the header band with the search on its edge, then the
@@ -44,6 +45,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
         space: space,
         header: (search) => HomeHeader(
           overlap: search,
+          extraRows: 2,
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -55,6 +57,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             ],
           ),
           children: [
+            const Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: LocationChip(onBand: true),
+            ),
             SpaceSwitch(
               value: space,
               onChanged: (s) {

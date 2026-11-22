@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/l10n/locale_controller.dart';
 import '../../../core/theme/lemqes_tokens.dart';
 import '../../../core/theme/lemqes_typography.dart';
-import '../../../shared/widgets/ltr.dart';
 import '../../../shared/widgets/price_text.dart';
 import '../../live/data/live_providers.dart';
 import '../../live/presentation/customer/live_ring.dart';
@@ -163,14 +162,14 @@ class _DistanceLabel extends StatelessWidget {
           child: Icon(Icons.near_me_outlined, size: 16, color: color),
         ),
         const SizedBox(width: 4),
-        Ltr(
-          child: Text(
-            text,
-            key: const Key('proDistance'),
-            style: theme.textTheme.bodyMedium!
-                .merge(lemqesNumeric)
-                .copyWith(color: color),
-          ),
+        // Not wrapped in Ltr: the digits are Latin and tabular, the unit
+        // keeps the reading order of the surrounding script ("700 م").
+        Text(
+          text,
+          key: const Key('proDistance'),
+          style: theme.textTheme.bodyMedium!
+              .merge(lemqesNumeric)
+              .copyWith(color: color),
         ),
       ],
     );

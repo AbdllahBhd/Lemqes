@@ -14,7 +14,10 @@ enum _Choice { device, commune }
 /// Where distances are measured from. It only sets the origin (sort and
 /// distances); the place filter beside it stays a filter.
 class LocationChip extends ConsumerStatefulWidget {
-  const LocationChip({super.key});
+  const LocationChip({this.onBand = false, super.key});
+
+  /// Styled for the Lagoon band (translucent white) instead of a surface.
+  final bool onBand;
 
   @override
   ConsumerState<LocationChip> createState() => _LocationChipState();
@@ -104,6 +107,10 @@ class _LocationChipState extends ConsumerState<LocationChip> {
       ),
     };
     const radius = BorderRadius.all(Radius.circular(24));
+    final onBand = widget.onBand;
+    final ink = onBand ? Colors.white : scheme.onSurface;
+    final accent = onBand ? Colors.white : scheme.primary;
+    final muted = onBand ? Colors.white : scheme.onSurfaceVariant;
     return Semantics(
       button: true,
       label: label,
@@ -111,10 +118,16 @@ class _LocationChipState extends ConsumerState<LocationChip> {
       excludeSemantics: true,
       onTap: _open,
       child: Material(
-        color: scheme.surfaceContainerLow,
+        color: onBand
+            ? Colors.white.withValues(alpha: 0.08)
+            : scheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: BorderSide(color: scheme.outlineVariant),
+          side: BorderSide(
+            color: onBand
+                ? Colors.white.withValues(alpha: 0.35)
+                : scheme.outlineVariant,
+          ),
         ),
         child: InkWell(
           key: const Key('locationChip'),
@@ -127,22 +140,18 @@ class _LocationChipState extends ConsumerState<LocationChip> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, size: 20, color: scheme.primary),
+                  Icon(icon, size: 20, color: accent),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelLarge,
+                      style: theme.textTheme.labelLarge?.copyWith(color: ink),
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(
-                    Icons.expand_more,
-                    size: 20,
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  Icon(Icons.expand_more, size: 20, color: muted),
                 ],
               ),
             ),

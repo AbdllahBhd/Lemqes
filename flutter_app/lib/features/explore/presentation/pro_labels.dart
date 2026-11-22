@@ -44,6 +44,16 @@ String? distanceLabel(AppLocalizations l10n, Locale locale, ProCard card) {
   return l10n.exploreDistanceKm(frac == 0 ? '$whole' : '$whole$sep$frac');
 }
 
+/// Whether the nearest result is far enough for the "nothing within 10 km"
+/// notice. Judged on the distance as displayed, so a commune-only pro shown
+/// as "≈ 10 km" never sits under a notice that says nothing is within 10 km.
+bool isFarResult(ProCard card) {
+  final m = card.distanceM;
+  if (m == null) return false;
+  if (card.placeMode == PlaceMode.none) return (m / 1000).round() > 10;
+  return m > 10000;
+}
+
 /// The kids tag of a customer mix; null for adults only.
 String? kidsTagOf(AppLocalizations l10n, CustomerMix? mix) => switch (mix) {
   CustomerMix.adultsAndKids => l10n.exploreKidsWelcome,

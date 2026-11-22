@@ -235,37 +235,41 @@ void main() {
       expect(find.textContaining(' km'), findsNothing);
       expect(find.textContaining(RegExp(r'\d m$')), findsNothing);
       expect(find.textContaining('Rien à moins de 10 km'), findsNothing);
-      final top = [
-        for (final n in ['Amine Benali', 'Yacine Mourad', 'Karim Saadi'])
-          tester.getTopLeft(find.text(n)).dy,
-      ];
-      expect(top, [...top]..sort());
+      // The fake answers threeCards() in that order: the list shows it as is.
+      final names = ['Amine Benali', 'Yacine Mourad', 'Karim Saadi'];
+      final top = [for (final n in names) tester.getTopLeft(find.text(n)).dy];
+      expect(top[0], lessThan(top[1]));
+      expect(top[1], lessThan(top[2]));
     });
 
     testWidgets('a blocked viewer reads closed and gets no distance', (
       tester,
     ) async {
-      final live = CustomerLive();
-      await pumpExplore(
-        tester,
-        explore: FakeExploreRepository(
-          cards: [
-            card(
-              1,
-              live: closedSnap(cardId(1)),
-              placeMode: PlaceMode.none,
-              distanceM: null,
-            ),
-          ],
-        ),
-        deviceLocation: FakeDeviceLocation(),
-        geo: _CentresGeo(),
-        live: live,
+      // Same shape as the server's closed answer for a blocked reader: a
+      // none place and no distance, next to a row that does have one.
+      final blocked = card(
+        1,
+        live: closedSnap(cardId(1)),
+        placeMode: PlaceMode.none,
       );
+      final open = card(
+        2,
+        live: custSnap(cardId(2)),
+        distanceM: 4000,
+        placeMode: PlaceMode.none,
+      );
+      await pump(tester, cards: [blocked, open]);
 
-      expect(find.text('Pro 1'), findsOneWidget);
-      expect(find.textContaining(' km'), findsNothing);
-      expect(find.textContaining('≈'), findsNothing);
+      expect(find.text('≈ 4 km'), findsOneWidget);
+      final tile = byKey('proCard_${cardId(1)}');
+      expect(
+        find.descendant(of: tile, matching: find.textContaining('Fermé')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: tile, matching: byKey('proDistance')),
+        findsNothing,
+      );
     });
   });
 
@@ -297,6 +301,25 @@ void main() {
 
       expect(find.text(notice), findsOneWidget);
       expect(find.text('≈ 15 km'), findsOneWidget);
+    });
+
+    testWidgets('judges a commune-only pro on the km it displays', (
+      tester,
+    ) async {
+      // 10 400 m shows "≈ 10 km": no notice. 10 600 m shows "≈ 11 km".
+      await pump(
+        tester,
+        cards: [card(1, distanceM: 10400, placeMode: PlaceMode.none)],
+      );
+      expect(find.text('≈ 10 km'), findsOneWidget);
+      expect(find.text(notice), findsNothing);
+
+      await pump(
+        tester,
+        cards: [card(1, distanceM: 10600, placeMode: PlaceMode.none)],
+      );
+      expect(find.text('≈ 11 km'), findsOneWidget);
+      expect(find.text(notice), findsOneWidget);
     });
 
     testWidgets('stays hidden at exactly 10 km and below', (tester) async {
