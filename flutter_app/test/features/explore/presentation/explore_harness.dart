@@ -236,8 +236,10 @@ ProProfile publicBarber({
   bool arabic = false,
   bool showPrices = true,
   int photos = 3,
+  ProPlace? place,
 }) => ProProfile(
   id: id,
+  place: place,
   kind: ProKind.barber,
   space: Space.men,
   displayName: arabic ? 'أمين بن علي' : 'Amine Benali',

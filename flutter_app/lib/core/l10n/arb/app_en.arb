@@ -584,5 +584,6 @@
   "directionsOpen": "Directions",
   "directionsMore": "Other directions apps",
   "directionsWaze": "Open in Waze",
-  "directionsFailed": "Couldn’t open directions."
+  "directionsFailed": "Couldn’t open directions.",
+  "exploreMapStatusCount": "{status}: {count}"
 }

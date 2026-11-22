@@ -590,7 +590,7 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
             width: _markerBox,
             height: _markerBox,
             child: _Tappable(
-              label: c.displayName,
+              label: _pinLabel(context, c),
               onTap: () => _showCards([c]),
               child: const _AreaDot(),
             ),
@@ -633,7 +633,12 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
             height: _markerBox,
             child: _Tappable(
               onTap: () => _zoomInto(cluster.point),
-              child: MapClusterPin(count: cluster.count),
+              child: MapClusterPin(
+                count: cluster.count,
+                statuses: _statusSummary(context, [
+                  for (final m in cluster.members) ...m.item.cards,
+                ]),
+              ),
             ),
           ),
         );
@@ -652,7 +657,7 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
             // The tip on the point.
             alignment: Alignment.topCenter,
             child: _Tappable(
-              label: card.displayName,
+              label: _pinLabel(context, card),
               onTap: () => _showCards([card]),
               child: Align(
                 alignment: Alignment.bottomCenter,
@@ -670,7 +675,11 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
             width: _markerBox,
             height: _markerBox,
             child: _Tappable(
-              label: context.l10n.exploreMapCommune(name, item.cards.length),
+              label: _withStatuses(
+                context,
+                context.l10n.exploreMapCommune(name, item.cards.length),
+                item.cards,
+              ),
               onTap: () => _showCards(item.cards, title: name),
               child: CommunePin(count: item.cards.length),
             ),
@@ -680,6 +689,48 @@ class _ExploreMapViewState extends ConsumerState<ExploreMapView> {
     }
     return (polygons: polygons, markers: markers);
   }
+}
+
+String _statusWord(BuildContext context, LiveStatus status) {
+  final l10n = context.l10n;
+  return switch (status) {
+    LiveStatus.open => l10n.liveStatusOpen,
+    LiveStatus.onBreak => l10n.liveStatusOnBreak,
+    LiveStatus.closed => l10n.liveStatusClosed,
+  };
+}
+
+/// A pin's spoken name: the dot's colour is not the only signal.
+String _pinLabel(BuildContext context, ProCard card) {
+  final status = card.live?.status;
+  return status == null
+      ? card.displayName
+      : '${card.displayName}, ${_statusWord(context, status)}';
+}
+
+/// "Ouvert : 1, En pause : 2" over [cards] that came with a live status;
+/// null when none did.
+String? _statusSummary(BuildContext context, Iterable<ProCard> cards) {
+  final counts = <LiveStatus, int>{};
+  for (final c in cards) {
+    final status = c.live?.status;
+    if (status != null) counts[status] = (counts[status] ?? 0) + 1;
+  }
+  if (counts.isEmpty) return null;
+  return [
+    for (final s in LiveStatus.values)
+      if (counts[s] case final n?)
+        context.l10n.exploreMapStatusCount(_statusWord(context, s), n),
+  ].join(', ');
+}
+
+String _withStatuses(
+  BuildContext context,
+  String label,
+  Iterable<ProCard> cards,
+) {
+  final statuses = _statusSummary(context, cards);
+  return statuses == null ? label : '$label. $statuses';
 }
 
 /// The live status as of the search; the card in the sheet follows the
@@ -728,16 +779,19 @@ class _Tappable extends StatelessWidget {
 /// Several pins sharing a cell: a filled primary disc with how many pros it
 /// holds; a tap zooms in.
 class MapClusterPin extends StatelessWidget {
-  const MapClusterPin({required this.count, super.key});
+  const MapClusterPin({required this.count, this.statuses, super.key});
 
   final int count;
+
+  /// The members' live statuses, spoken after the count.
+  final String? statuses;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Semantics(
-      label: context.l10n.exploreMapCluster(count),
+      label: [context.l10n.exploreMapCluster(count), ?statuses].join(' '),
       container: true,
       excludeSemantics: true,
       child: Container(

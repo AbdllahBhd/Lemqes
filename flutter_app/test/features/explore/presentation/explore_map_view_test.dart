@@ -7,6 +7,7 @@ import 'package:lemqes/features/explore/presentation/pro_card_tile.dart';
 import 'package:lemqes/features/geo/data/device_location.dart';
 import 'package:lemqes/features/geo/data/geo_models.dart';
 import 'package:lemqes/features/map/presentation/commune_pin.dart';
+import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../geo/data/fake_device_location.dart';
@@ -347,61 +348,152 @@ void main() {
     await settle(tester);
     await tester.tap(byKey('directions'));
     await settle(tester);
+    // The sheet closes so the message is not dimmed under its barrier.
+    expect(byKey('exploreMapSheet'), findsNothing);
     expect(find.text('Impossible d’ouvrir l’itinéraire.'), findsOneWidget);
     await unmountLive(tester);
   });
 
-  testWidgets('the profile opened from an exact pin offers directions', (
-    tester,
-  ) async {
-    final opened = <Uri>[];
+  testWidgets('pins say the live status, not only its colour', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpExplore(
+      tester,
+      explore: _repo(
+        map: [
+          ...mapCards(),
+          card(
+            6,
+            name: 'Walid Hamdi',
+            placeMode: PlaceMode.none,
+            localityId: 1601,
+            live: breakSnap(cardId(6)),
+          ),
+        ],
+      ),
+      location: _mapAt,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp(r'Amine Benali.*Ouvert')),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp(r'Alger Centre : 3 pros.*En pause : 1')),
+      findsOneWidget,
+    );
+    semantics.dispose();
+    await unmountLive(tester);
+
+    final clustered = tester.ensureSemantics();
+    await pumpExplore(
+      tester,
+      explore: _repo(
+        map: [
+          card(
+            20,
+            placeMode: PlaceMode.exact,
+            lat: 36.76,
+            lng: 3.06,
+            live: custSnap(cardId(20)),
+          ),
+          card(
+            21,
+            placeMode: PlaceMode.exact,
+            lat: 36.7608,
+            lng: 3.06,
+            live: closedSnap(cardId(21)),
+          ),
+        ],
+      ),
+      location: _mapAt,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp(r'2 pros ici.*Ouvert : 1.*Fermé : 1')),
+      findsOneWidget,
+    );
+    clustered.dispose();
+    await unmountLive(tester);
+  });
+
+  testWidgets('a card in the sheet opens the profile', (tester) async {
     final h = await pumpExplore(
       tester,
       explore: _repo(),
       pros: PublicProRepository(
-        listed: {
-          cardId(1): publicBarber(id: cardId(1)),
-          cardId(2): publicBarber(id: cardId(2)),
-        },
+        listed: {cardId(1): publicBarber(id: cardId(1))},
       ),
       location: _mapAt,
-      directionsLauncher: (uri) async {
-        opened.add(uri);
-        return true;
-      },
     );
     await tester.tap(byKey('exactPin_${cardId(1)}'));
     await settle(tester);
     await tester.tap(byKey('proCard_${cardId(1)}'));
     await settle(tester);
     expect(h.location, '/pro/${cardId(1)}');
-    await tester.ensureVisible(byKey('directions'));
-    await tester.tap(byKey('directions'));
-    await settle(tester);
-    expect(opened.single.host, 'www.google.com');
-
-    // An area pro's profile has none.
+    expect(byKey('exploreMapSheet'), findsNothing);
     h.router.pop();
     await settle(tester);
-    await tester.tap(byKey('areaPin_${cardId(2)}'));
-    await settle(tester);
-    await tester.tap(byKey('proCard_${cardId(2)}'));
-    await settle(tester);
-    expect(h.location, '/pro/${cardId(2)}');
-    expect(byKey('directions'), findsNothing);
+    expect(byKey('exploreMap'), findsOneWidget);
     await unmountLive(tester);
   });
 
-  testWidgets('a profile opened by link has no directions', (tester) async {
-    await pumpExplore(
+  group('the profile reads its own place', () {
+    Future<ExploreHarness> pumpProfile(
+      WidgetTester tester,
+      ProPlace? place, {
+      List<Uri>? opened,
+    }) => pumpExplore(
       tester,
       pros: PublicProRepository(
-        listed: {cardId(1): publicBarber(id: cardId(1))},
+        listed: {cardId(1): publicBarber(id: cardId(1), place: place)},
       ),
+      // A link: nothing from Explore travels with it.
       location: '/pro/${cardId(1)}',
+      directionsLauncher: (uri) async {
+        opened?.add(uri);
+        return true;
+      },
     );
-    expect(find.text('Amine Benali'), findsOneWidget);
-    expect(byKey('directions'), findsNothing);
-    await unmountLive(tester);
+
+    testWidgets('an exact place offers directions, even from a link', (
+      tester,
+    ) async {
+      final opened = <Uri>[];
+      await pumpProfile(
+        tester,
+        const ProPlace(mode: PlaceMode.exact, lat: 36.77, lng: 3.05),
+        opened: opened,
+      );
+      expect(find.text('Amine Benali'), findsOneWidget);
+      await tester.ensureVisible(byKey('directions'));
+      await tester.tap(byKey('directions'));
+      await settle(tester);
+      expect(opened, [
+        Uri.parse(
+          'https://www.google.com/maps/dir/?api=1&destination=36.77%2C3.05',
+        ),
+      ]);
+      await unmountLive(tester);
+    });
+
+    for (final (name, place) in [
+      (
+        'an area',
+        const ProPlace(
+          mode: PlaceMode.area,
+          lat: 36.77,
+          lng: 3.05,
+          areaRadiusM: 1000,
+        ),
+      ),
+      ('commune only', const ProPlace(mode: PlaceMode.none)),
+      // A pro that blocked the reader: RLS hides its pro_places row.
+      ('no place row (blocked reader)', null),
+    ]) {
+      testWidgets('$name offers none', (tester) async {
+        await pumpProfile(tester, place);
+        expect(find.text('Amine Benali'), findsOneWidget);
+        expect(byKey('directions'), findsNothing);
+        await unmountLive(tester);
+      });
+    }
   });
 }

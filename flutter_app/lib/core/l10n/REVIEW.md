@@ -451,3 +451,4 @@
 | `directionsMore` | final | final | draft | draft |
 | `directionsWaze` | final | final | draft | draft |
 | `directionsFailed` | final | final | draft | draft |
+| `exploreMapStatusCount` | final | final | draft | draft |

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Thin Supabase adapter (mockable). Every select/return lists its columns:
@@ -57,6 +58,16 @@ class SupabaseProApi implements ProApi {
   static const _placeCols =
       'place_mode, lat, lng, area_radius_m, landmark, updated_at';
 
+  /// What a customer reads of a pro's place: what it shows, never the
+  /// search point. RLS hides the row from a reader the pro blocked.
+  static const _publicPlaceCols =
+      'place_mode, lat, lng, area_radius_m, landmark';
+
+  @visibleForTesting
+  static const publicSelect =
+      '$_profileCols, pro_hours($_hoursCols), pro_photos($_photoCols), '
+      'pro_places($_publicPlaceCols)';
+
   static const _returning = {
     'pro_profiles': _profileCols,
     'pro_services': _serviceCols,
@@ -86,7 +97,7 @@ class SupabaseProApi implements ProApi {
   @override
   Future<Map<String, Object?>?> selectPublic(String proId) => _client
       .from('pro_profiles')
-      .select('$_profileCols, pro_hours($_hoursCols), pro_photos($_photoCols)')
+      .select(publicSelect)
       .eq('id', proId)
       .maybeSingle();
 

@@ -34,6 +34,8 @@ class DirectionsButton extends ConsumerWidget {
 
   Future<void> _open(BuildContext context, WidgetRef ref, Uri uri) async {
     final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final route = ModalRoute.of(context);
     final failed = context.l10n.directionsFailed;
     var opened = false;
     try {
@@ -41,7 +43,11 @@ class DirectionsButton extends ConsumerWidget {
     } on Object catch (e, st) {
       developer.log('directions launch failed', error: e, stackTrace: st);
     }
-    if (!opened) messenger.showSnackBar(SnackBar(content: Text(failed)));
+    if (opened) return;
+    // The message lands on the page's Scaffold: a sheet's barrier would dim
+    // it, so the sheet makes way.
+    if (route is ModalBottomSheetRoute && route.isCurrent) navigator.pop();
+    messenger.showSnackBar(SnackBar(content: Text(failed)));
   }
 
   @override

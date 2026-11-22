@@ -2079,5 +2079,17 @@
   "directionsFailed": "Impossible d’ouvrir l’itinéraire.",
   "@directionsFailed": {
     "description": "Snackbar when no app could open the directions link"
+  },
+  "exploreMapStatusCount": "{status} : {count}",
+  "@exploreMapStatusCount": {
+    "description": "Screen-reader part of a commune or cluster pin: how many of its pros have this live status (status is liveStatusOpen/OnBreak/Closed)",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

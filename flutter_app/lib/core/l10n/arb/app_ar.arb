@@ -584,5 +584,6 @@
   "directionsOpen": "الاتجاهات",
   "directionsMore": "تطبيقات اتجاهات أخرى",
   "directionsWaze": "افتح في Waze",
-  "directionsFailed": "تعذّر فتح الاتجاهات."
+  "directionsFailed": "تعذّر فتح الاتجاهات.",
+  "exploreMapStatusCount": "{status}: {count}"
 }

@@ -431,8 +431,9 @@ class ProProfile {
   final List<DayHours> hours;
   final List<ProPhoto> photos;
 
-  /// The owner's own place; null when read through the public path or when
-  /// the pro never chose (same as [PlaceMode.none]).
+  /// The shown place: the owner's own, or a listed pro's as a customer may
+  /// see it. Null when the pro never chose (same as [PlaceMode.none]) or,
+  /// on the public path, when the pro blocked the reader.
   final ProPlace? place;
 
   bool get isPublished => publishedAt != null;

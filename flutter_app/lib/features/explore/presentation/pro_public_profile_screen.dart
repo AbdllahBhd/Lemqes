@@ -31,9 +31,8 @@ import '../../pro/data/photo_uploader.dart';
 import '../../pro/data/pro_models.dart';
 import '../../pro/data/pro_providers.dart';
 import '../../pro/presentation/pro_failure_message.dart';
-import '../data/explore_models.dart';
+import '../data/explore_models.dart' show PlaceMode;
 import 'directions_button.dart';
-import 'explore_map_view.dart' show directionsPointOf;
 import 'photo_viewer.dart';
 import 'pro_avatar.dart';
 import 'pro_labels.dart';
@@ -89,17 +88,24 @@ int experienceBandOf(int years) => switch (years) {
   _ => 3,
 };
 
+/// Only an exact pin has a door to lead to. No row (a pro that blocked the
+/// reader) or an area or commune leaves the profile without directions.
+GeoPoint? _directionsPoint(ProPlace? place) {
+  final lat = place?.lat;
+  final lng = place?.lng;
+  if (place?.mode != PlaceMode.exact || lat == null || lng == null) {
+    return null;
+  }
+  return GeoPoint(lat, lng);
+}
+
 /// What a customer sees of one pro: who they are, where, what they offer at
 /// what price, when they work and their photos; a call when the number is
 /// public.
 class ProPublicProfileScreen extends ConsumerWidget {
-  const ProPublicProfileScreen({required this.proId, this.card, super.key});
+  const ProPublicProfileScreen({required this.proId, super.key});
 
   final String proId;
-
-  /// The explore card this was opened from; a link has none (and so no
-  /// directions: the public profile does not carry the pin).
-  final ProCard? card;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -131,14 +137,11 @@ class ProPublicProfileScreen extends ConsumerWidget {
     };
 
     if (!state.hasError && profile != null) {
-      final from = card;
       return ProPublicProfileView(
         profile: profile,
         bottomBar: callBar,
         asCustomer: true,
-        directionsTo: from != null && from.proId == proId
-            ? directionsPointOf(from)
-            : null,
+        directionsTo: _directionsPoint(profile.place),
       );
     }
 

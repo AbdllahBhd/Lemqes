@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/account/data/account_providers.dart';
 import '../../features/auth/presentation/auth_screen.dart';
-import '../../features/explore/data/explore_models.dart' show ProCard;
 import '../../features/explore/presentation/explore_map_view.dart';
 import '../../features/explore/presentation/pro_public_profile_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -108,15 +107,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // would otherwise be read as a profile id.
       GoRoute(
         path: '/pro/:id',
-        builder: (context, state) => ProPublicProfileScreen(
-          proId: state.pathParameters['id']!,
-          // The card it was opened from, when there was one: it carries the
-          // pin that directions lead to.
-          card: switch (state.extra) {
-            final ProCard card => card,
-            _ => null,
-          },
-        ),
+        builder: (context, state) =>
+            ProPublicProfileScreen(proId: state.pathParameters['id']!),
       ),
     ],
   );

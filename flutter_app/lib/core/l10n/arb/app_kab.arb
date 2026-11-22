@@ -584,5 +584,6 @@
   "directionsOpen": "Abrid",
   "directionsMore": "Isnasen-nniḍen n ubrid",
   "directionsWaze": "Ldi deg Waze",
-  "directionsFailed": "Ur yezmir ara ad yeldi ubrid."
+  "directionsFailed": "Ur yezmir ara ad yeldi ubrid.",
+  "exploreMapStatusCount": "{status}: {count}"
 }

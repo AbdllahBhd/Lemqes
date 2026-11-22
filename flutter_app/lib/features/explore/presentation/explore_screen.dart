@@ -232,7 +232,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             return ProCardTile(
               key: Key('proCard_${card.proId}'),
               card: card,
-              onTap: () => context.push('/pro/${card.proId}', extra: card),
+              onTap: () => context.push('/pro/${card.proId}'),
             );
           },
         ),
