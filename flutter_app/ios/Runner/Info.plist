@@ -70,6 +70,8 @@
 	<string>Choose photos of your work and your profile picture.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take photos of your work and your profile picture.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your approximate location sorts barbers by distance. It is never stored.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tel</string>

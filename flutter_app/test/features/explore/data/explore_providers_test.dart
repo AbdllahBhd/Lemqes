@@ -5,14 +5,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lemqes/features/account/data/account.dart';
 import 'package:lemqes/features/account/data/account_providers.dart';
 import 'package:lemqes/features/explore/data/explore_models.dart';
+import 'package:lemqes/core/storage/shared_preferences_provider.dart';
 import 'package:lemqes/features/explore/data/explore_providers.dart';
 import 'package:lemqes/features/explore/data/explore_repository.dart';
+import 'package:lemqes/features/geo/data/device_location.dart';
+import 'package:lemqes/features/geo/data/geo_models.dart';
+import 'package:lemqes/features/geo/data/origin.dart';
 import 'package:lemqes/features/live/data/live_models.dart';
 import 'package:lemqes/features/live/data/live_providers.dart';
 import 'package:lemqes/features/pro/data/pro_models.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../geo/data/fake_device_location.dart';
 import '../../live/data/live_fakes.dart';
 
 class _MockRepo extends Mock implements ExploreRepository {}
@@ -52,9 +58,14 @@ void main() {
 
   setUpAll(() => registerFallbackValue(const ExploreQuery()));
 
+  late SharedPreferences prefs;
+  late FakeDeviceLocation device;
+
   ProviderContainer make({Duration debounce = Duration.zero}) {
     final c = ProviderContainer(
       overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        deviceLocationProvider.overrideWithValue(device),
         exploreRepositoryProvider.overrideWithValue(repo),
         exploreDebounceProvider.overrideWithValue(debounce),
         accountProvider.overrideWith(_FakeAccount.new),
@@ -67,7 +78,10 @@ void main() {
     return c;
   }
 
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+    device = FakeDeviceLocation();
     factory = FakeFactory();
     sessions = StreamController<Session?>.broadcast();
     addTearDown(sessions.close);
@@ -118,6 +132,48 @@ void main() {
       () =>
           repo.search(const ExploreQuery(kidsOnly: true), offset: 0, limit: 30),
     ).called(1);
+  });
+
+  test('a new origin re-runs the search with it, other fields kept', () async {
+    container = make();
+    container.read(exploreQueryProvider.notifier).setKidsOnly(true);
+    await container.read(exploreResultsProvider.future);
+    container
+        .read(originProvider.notifier)
+        .useCommune(
+          const Locality(
+            id: 1601,
+            regionCode: '16',
+            nameAr: 'a',
+            nameFr: 'b',
+            lat: 36.7233,
+            lng: 3.1832,
+          ),
+        );
+    await container.read(exploreResultsProvider.future);
+    verify(
+      () => repo.search(
+        const ExploreQuery(kidsOnly: true, origin: GeoPoint(36.7233, 3.1832)),
+        offset: 0,
+        limit: 30,
+      ),
+    ).called(1);
+  });
+
+  test('the origin and bbox survive every other filter change', () {
+    device.status = DevicePermission.approximate;
+    container = make();
+    final n = container.read(exploreQueryProvider.notifier);
+    n.setBbox(const GeoBounds(2.9, 36.6, 3.2, 36.8));
+    n.setText('karim');
+    n.setRegion('16');
+    n.setLocality(1601);
+    n.setKidsOnly(true);
+    n.setCategory(ServiceCategory.beard);
+    final q = container.read(exploreQueryProvider);
+    expect(q.bbox, const GeoBounds(2.9, 36.6, 3.2, 36.8));
+    n.setBbox(null);
+    expect(container.read(exploreQueryProvider).bbox, isNull);
   });
 
   test('picking a region clears the locality; locality is kept otherwise', () {

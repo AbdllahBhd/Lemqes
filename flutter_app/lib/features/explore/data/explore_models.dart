@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import '../../live/data/live_models.dart';
+import '../../geo/data/geo_models.dart';
 import '../../pro/data/pro_models.dart';
 
 class ExploreQuery {
@@ -10,6 +11,8 @@ class ExploreQuery {
     this.localityId,
     this.kidsOnly = false,
     this.category,
+    this.origin,
+    this.bbox,
   });
 
   final String? text;
@@ -18,9 +21,17 @@ class ExploreQuery {
   final bool kidsOnly;
   final ServiceCategory? category;
 
+  /// Distances are measured from here; null sends no origin.
+  final GeoPoint? origin;
+
+  /// Map mode: only pros inside this view.
+  final GeoBounds? bbox;
+
   @override
   bool operator ==(Object other) =>
       other is ExploreQuery &&
+      other.origin == origin &&
+      other.bbox == bbox &&
       other.text == text &&
       other.regionCode == regionCode &&
       other.localityId == localityId &&
@@ -28,8 +39,15 @@ class ExploreQuery {
       other.category == category;
 
   @override
-  int get hashCode =>
-      Object.hash(text, regionCode, localityId, kidsOnly, category);
+  int get hashCode => Object.hash(
+    text,
+    regionCode,
+    localityId,
+    kidsOnly,
+    category,
+    origin,
+    bbox,
+  );
 }
 
 /// What location a pro shows (`public.place_mode`).

@@ -7,7 +7,7 @@ abstract interface class ProApi {
   Future<Object?> rpc(String fn, Map<String, Object?> params);
 
   /// The caller's own profile of [kind] with embedded `pro_services`,
-  /// `pro_hours` and `pro_photos`; null when there is none.
+  /// `pro_hours` `pro_photos` and the own `pro_places` row; null when there is none.
   ///
   /// Precondition: the caller acts as that pro role. RLS then limits the
   /// result to the own row; acting as a customer it would also expose other
@@ -53,6 +53,10 @@ class SupabaseProApi implements ProApi {
       'weekday, opens, closes, break_start, break_end, crosses_midnight';
   static const _photoCols = 'id, path, sort';
 
+  // `search_point` and `place` are not client columns.
+  static const _placeCols =
+      'place_mode, lat, lng, area_radius_m, landmark, updated_at';
+
   static const _returning = {
     'pro_profiles': _profileCols,
     'pro_services': _serviceCols,
@@ -74,7 +78,7 @@ class SupabaseProApi implements ProApi {
       .from('pro_profiles')
       .select(
         '$_profileCols, pro_services($_serviceCols), pro_hours($_hoursCols), '
-        'pro_photos($_photoCols)',
+        'pro_photos($_photoCols), pro_places($_placeCols)',
       )
       .eq('kind', kind)
       .maybeSingle();
