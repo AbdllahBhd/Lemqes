@@ -186,6 +186,26 @@ https://github.com/OthmanAdi/planning-with-files
 
 ## 🔧 Tools — reach beyond the terminal
 
+### Former `.mcp.json` defaults — opt-in only
+`.mcp.json` ships empty: every server adds its tool schemas to every session,
+and a 5-project audit (2026-11) found these two used 0–2 times (built-in
+Read/Grep/Glob and the `gh` CLI cover them). Add one only when a project needs it:
+```json
+"filesystem": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "."] },
+"github": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"],
+            "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" } }
+```
+Note: the filesystem server bypasses `Read(./.env)` deny rules — deny its tools too if you add it.
+
+### Staging WordPress over MCP — 🔧 MCP via `dotenv-cli`
+To let Claude read/act on a staging WordPress site, keep the credentials in a
+git-ignored `.env.staging` and wrap the WordPress MCP server in `dotenv-cli`,
+so `.mcp.json` holds no secret:
+```json
+"wp-staging": { "command": "npx", "args": ["-y", "dotenv-cli", "-e", ".env.staging", "--", "npx", "-y", "<wordpress-mcp-server>"] }
+```
+Staging only — never a production site.
+
 ### firecrawl — ⭐ ~188k — 🔧 MCP (needs API key)
 Web search/scrape/crawl as clean data. Requires a Firecrawl account + API key.
 ```bash
