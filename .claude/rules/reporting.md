@@ -40,6 +40,19 @@ so they can decide IMMEDIATELY without asking follow-up questions:
 Multiple suggestions = one short table with these columns. A suggestion the
 user must interrogate before deciding is a failed suggestion.
 
+## Requests to the owner
+
+- Open every request with one label saying who acts: **Your task** (the user
+  does it: numbered steps, what to report back) · **Your approval** (the AI
+  does it once the user says yes) · **Your decision** (the user picks an
+  option). Never leave the user to work out which it is.
+- Explain decisions as what the user sees and does in the product, with a
+  short everyday example — not in code terms. One question at a time.
+- Before creating anything that can never be renamed or reused (store
+  product/plan ids, package/bundle ids, database names other systems depend
+  on, public URLs, email addresses), show the exact names and wait for a yes,
+  even when a plan already lists them.
+
 ## Goal footer (while executing a plan)
 
 - During plan execution, end EVERY response with exactly one line:
@@ -53,7 +66,10 @@ user must interrogate before deciding is a failed suggestion.
 
 ## Context management (suggest, don't wait to be asked)
 
-- **Between unrelated tasks:** suggest starting a fresh session (or `/clear`).
+- **Between tasks:** a new task, branch or feature = a fresh session (or
+  `/clear`) — required, not optional (workflow.md, Context discipline). When
+  `session-guard` warns, relay it in one line; on a context warning also
+  write the handoff (Handoff prompt, below).
 - **Mid-task, when context grows heavy** (many files read, long exploration,
   repeated corrections): suggest `/compact` and NAME what must survive it —
   modified files, plan status, test commands, key decisions.
@@ -62,3 +78,22 @@ user must interrogate before deciding is a failed suggestion.
   important. Chat history is disposable; files are not.
 - After two failed corrections on the same issue, recommend a fresh session
   with a better prompt instead of a third attempt in polluted context.
+
+## Handoff prompt (when `session-guard` warns on context size, or on request)
+
+On a context warning: finish the current step, write the handoff, tell the
+user to start a fresh session — do not start a new step. Sessions also
+auto-compact at ~300k (`autoCompactWindow` in settings.json) instead of ~967k.
+
+Overwrite `docs/handoff.md` (git-ignored: local, per-session state — never
+committed, so it never conflicts across machines) with a prompt a session that has seen NOTHING can
+act on, and show it in a code block. Concrete names only — no "as discussed":
+
+- **Task** — the objective in one sentence.
+- **Repo + branch** — path and branch, and the base branch it came from.
+- **Done** — finished steps, each with its commit hash and subject.
+- **Files changed** — paths, one line each on what changed.
+- **Next steps** — ordered, each with how it is verified.
+- **Test/verify commands** — exact commands and their last known result.
+- **Constraints & rules to keep** — user decisions, hard rules (no push, etc.).
+- **Do NOT redo** — work, investigations and rejected approaches already settled.

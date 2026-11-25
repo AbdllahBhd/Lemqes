@@ -33,6 +33,9 @@
   it will be verified. Wait for the user's go-ahead on the plan.
 - For multi-session work, keep the plan in `task_plan.md` at the repo root and update
   it as steps complete — plans must survive a restart; memory does not.
+- Keep `task_plan.md` under ~300 lines: move finished tasks (with their
+  evidence) to `docs/plan-archive.md`. It is re-read constantly; audited
+  projects grew it to 120–535 KB (`hooks/session-guard.sh` warns).
 - Trivial fixes (typo, one-liner, rename) skip planning. When unsure, plan.
 
 ## Plan quality (large features & new projects)
@@ -47,9 +50,10 @@
   the skill says when.
 - **Adversarial plan review before presenting:** for large features and new
   projects, have the draft plan reviewed in a fresh context before showing it —
-  the `llm-council` skill when available, otherwise a subagent prompted as a
-  critical plan reviewer (gaps, wrong assumptions, missing verification — not
-  style). The review also checks every task's "Done when" for the two failure
+  ONE subagent prompted as a critical plan reviewer (gaps, wrong assumptions,
+  missing verification — not style), or an advisor call when the advisor is
+  on. The 11-agent `llm-council` (opt-in, `skills-optional/`) only when the
+  user asks to council it. The review also checks every task's "Done when" for the two failure
   modes: too weak (satisfiable without the real work) and wrong/too strict
   (tests the wrong thing, fences out files the task must touch). Address the
   findings, then present the plan noting it was reviewed and what changed.
@@ -95,6 +99,8 @@ OUTCOMES. On any conflict, this file and the other `.claude/rules/` win:
 
 ## Test-driven by default
 
+- Before writing or fixing tests, load the `testing-patterns` skill (stack
+  conventions); for new behavior use superpowers `test-driven-development`.
 - For new behavior: write the failing test FIRST, see it fail, implement, see it pass.
 - For bug fixes: write a test that reproduces the bug before touching the fix.
 - Never write tests after the fact that merely assert what the code already does.
@@ -114,6 +120,20 @@ A task is done ONLY when all of these are true — never claim done otherwise:
 If a gate cannot run (e.g. no test script yet), say so explicitly instead of
 implying it passed.
 
+The Stop gate skips when nothing changed since its last pass, and reports
+"NOT RUN" (without blocking) when the environment is confirmed down (Docker,
+wp-env, UNC path). That notice reaches the user, not you: so never write
+"gates pass" from the Stop hook's silence — state which gate commands YOU ran
+and their output, and treat a NOT RUN as not passed.
+Stack detection: npm, composer, Flutter/Dart; any other stack sets
+`DONE_GATE_CMD`. Localhost-first projects (owner checks before any gate) set
+`DONE_GATE_MODE=manual` in `.claude/settings.json` `env`.
+
+Choose the cheapest evidence that directly proves each claim (focused test,
+analyzer output, filtered log, DB assertion); screenshots prove rendering and
+layout only. Keep local checks, deploy output and real-device/account
+acceptance distinct in reports.
+
 ## Verification economy (scale the checks to the change)
 
 Running everything for everything wastes the user's time. Decide the blast
@@ -129,10 +149,14 @@ radius FIRST, verify accordingly, and say which level you chose and why:
 
 Avoid re-running what cannot have changed: record in `task_plan.md` which
 suites ran green at which commit; a suite needs re-running only when later
-diffs touch code it covers. The FULL gate is mandatory at exactly three
-moments: merge to `develop` (delivery.md step 1), release, and when the user
-asks. The Stop hook enforces the floor (lint + typecheck) and defers the full
-suite to the delivery gate by design (`DONE_GATE_FULL=1` forces it per stop).
+diffs touch code it covers. The merge gate is scoped by `scripts/gate-scope.sh`
+(cosmetic / targeted / full, driven by the project's `.claude/gate-core-paths`;
+no file = full, the safe default). The FULL suite is mandatory before a
+release and when the user asks. The Stop hook enforces the floor (lint +
+typecheck); `DONE_GATE_FULL=1` forces the full suite on a stop.
+Code that is UI-in-code (Dart widgets, JSX/TSX) cannot be classified by file
+type: there the scope comes from the core-paths file plus targeted tests for
+the touched feature.
 
 ## Primary sources for external facts
 
@@ -153,21 +177,109 @@ suite to the delivery gate by design (`DONE_GATE_FULL=1` forces it per stop).
 - Read only the parts of files relevant to the task when files are large.
 - Long research, log-dumping, or multi-file audits belong in subagents whose reports
   come back small.
+- **One task = one session.** A new task, branch or feature starts a fresh
+  session (or `/clear`) carrying over only `task_plan.md`. Every message
+  re-reads the whole context: in audited projects, 400k–970k-token sessions
+  spanning up to 20 branches were 65–87% of all cost. `hooks/session-guard.sh`
+  warns on a branch change and past 150k tokens — relay it and write the
+  handoff prompt (reporting.md, Handoff prompt); don't ignore it.
+- Consult the advisor only at decision points (approach choice, repeated failure, before claiming done), never for routine steps.
+- **Name the model on every subagent call** — an omitted model inherits the
+  most expensive one. Rule of thumb: a cheaper model is safe when the result
+  is OBJECTIVE (a test passes or fails, a script runs); keep the session
+  model where JUDGMENT decides quality.
+
+  | Task | Model |
+  |---|---|
+  | Run a test suite / analyzer, report failures — must return the exact command, exit code, the verbatim pass/fail count line and failing test names | `haiku` |
+  | Search, lookups, mechanical edits | `haiku` / `sonnet` |
+  | Scripted browser or emulator check (Playwright, flow click-through, `flutter test integration_test`, adb) — returns text, screenshots stay in the subagent | `sonnet` |
+  | Write tests for a clearly specified behavior (still red → green) | `sonnet` |
+  | Write/maintain Playwright or integration-test scripts | `sonnet` |
+  | Build from a tight brief | `sonnet` |
+  | Diagnose a failing/flaky test, hard bug, architecture | session model |
+  | Visual/UX judgment, test strategy for money/auth/concurrency | session model |
+  | Code review, security audit | session model |
+
+  Escalate, don't loop: if a cheaper subagent fails twice or returns
+  something you cannot verify, rerun that one step on the session model —
+  for a bug, via `systematic-debugging` (When things go wrong), not a third
+  blind retry.
+  Test runs and browser checks go to a subagent even on the same model —
+  running them in a long main thread re-reads its whole context per call
+  (audit: browser tests ~12% and unit tests ~6% of all usage, ~95% on Opus
+  in the main thread).
+- **Brief build subagents tightly:** the files to touch, the interfaces to
+  keep, what done looks like, and a "read only what you need" line. Open-ended
+  build agents ran to 15–64M tokens each in audited projects.
+- **Fan-out cap:** at most 4–6 parallel subagents per wave; wait for the wave
+  before starting the next. Implementer subagents report back after ~60 turns
+  (what is done, what is left) instead of running open-ended — the caller then
+  decides to continue, re-brief or split. `hooks/delegate-guard.sh` warns once
+  per session on a subagent call with no model (`DELEGATE_GUARD=strict` denies).
+- **Screenshots stay out of the main thread.** Visual checks run in a
+  subagent that returns text ("button clipped at 375px"); never re-read the
+  same image. Each image is re-paid on every later message.
+- Pipe long command output through `tail`/`grep`; never dump full test or
+  build logs into the conversation.
+- **Stay in this project.** Work in a sibling repo belongs in that repo's own
+  session (`hooks/repo-guard.sh` warns when a command leaves the project).
+
+## Skills at their step (load them — they do not auto-load reliably)
+
+- Writing/fixing tests → `testing-patterns` · new behavior → `test-driven-development`
+- Any bug after one failed fix → `systematic-debugging`
+- Any screen/component/layout → `ui-quality` · any animation → `motion`
+- API endpoint → `api-conventions` · new project/plugin/module → `project-structure`
+- About to claim done → `verification-before-completion`
+(`hooks/skill-nudge.sh` reminds once per session when test/UI files are edited.)
+
+## Data safety
+
+- No unscoped migration push (`supabase db push`, `prisma migrate deploy`,
+  `wp db import`…) without naming the target project/env explicitly: the
+  default target is whatever was linked last.
+- Test records on shared/staging data carry a `test_label`; a rerun resumes
+  the labelled test records, never reseeds (reseeding duplicates or wipes
+  what the owner is checking).
+
+## Windows / WSL projects
+
+- A project that lives in WSL is opened FROM WSL (Claude Code running in
+  Linux), never through `\\wsl.localhost\...` from Windows: UNC paths break
+  npm/CMD and gates, and `wsl.exe` wrappers churn retries.
+- In Git Bash, prefix commands that take Linux paths with
+  `MSYS_NO_PATHCONV=1` (e.g. docker/wp-env paths).
+- `pgrep -f` / `pkill -f` match their own command line (and the shell that
+  runs them): `pkill -f "node server"` from `bash -c` can kill that shell.
+  Prefer a PID file or the tool's own stop command.
+- Never edit a running shell script: bash reads scripts incrementally, so the
+  running process executes the new bytes mid-file. Copy, edit, then swap.
+- Shell scripts keep LF endings (`.gitattributes` enforces it).
 
 ## Adversarial review
 
-- After completing any significant change, run the `code-reviewer` agent on the diff.
-  The author must not be the only reviewer — the agent runs with fresh context and
-  judges the diff on its own merits.
-- Before a release or when touching auth/payments/input-handling, also run the
-  `security-auditor` agent.
+- Every change gets exactly ONE independent code review with fresh context
+  (`code-reviewer` agent) — the author must not be the only reviewer, and the
+  same commits are never code-reviewed twice:
+  - Plan executed task-by-task with per-task reviews (superpowers
+    `subagent-driven-development` — its spec+quality pair per task counts as
+    that task's one review)? Then the delivery review covers only the commits
+    no task review saw — usually just the integration.
+  - Otherwise one review of the branch diff at delivery (delivery.md step 2).
+  - A fix is re-checked by reviewing ONLY the fix diff; max 2 fix rounds,
+    then escalate to the user instead of looping.
+- The `security-auditor` agent is a separate, additional pass: run it before a
+  release and whenever the diff touches auth, payments, input handling, file
+  access or secrets — not on every branch.
 - Treat review findings as work items: fix or explicitly rebut each one; never
   silently ignore them.
 
 ## When things go wrong
 
-- Two failed attempts at the same fix = stop, re-read the actual error, and question
-  the diagnosis instead of trying a third variation of the same guess.
+- Two failed attempts at the same fix = stop, load superpowers
+  `systematic-debugging`, re-read the actual error, and question the diagnosis
+  instead of trying a third variation of the same guess.
 - Never "fix" a failing test by weakening the assertion unless the test is provably
   wrong — say so and explain why.
 - Never disable a linter rule inline to make a warning disappear without flagging it.

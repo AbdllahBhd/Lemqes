@@ -7,12 +7,18 @@
 
 Run this loop IN ORDER — never skip a step, never reorder:
 
-1. **Gate:** ALL quality gates green — this is the moment the FULL test suite
-   runs (per-step stops only enforce the lint/typecheck floor; see
-   "Verification economy" in workflow.md). Never merge on a partial gate.
-2. **Review:** run an adversarial review of the diff (`code-reviewer` agent, or
-   superpowers `requesting-code-review` when installed). Fix every finding that
-   affects correctness or requirements; list the ones deliberately skipped and why.
+1. **Gate, scoped by the branch diff:** run `bash scripts/gate-scope.sh` and
+   verify at the tier it prints — `cosmetic`: lint + look at the rendered
+   result; `targeted`: lint/typecheck + the tests covering the listed files;
+   `full`: the complete suite. Say the tier in the briefing. Never merge with a
+   failing gate. The full suite is still mandatory before a release and
+   whenever the user asks.
+2. **Review:** run ONE adversarial review (`code-reviewer` agent, or
+   superpowers `requesting-code-review`) of the commits no earlier review saw —
+   the whole branch diff unless per-task reviews already covered it (workflow.md,
+   Adversarial review). Fix every finding that affects correctness or
+   requirements, re-check only the fix diff; list the findings deliberately
+   skipped and why.
 3. **Commit** on the feature branch — Conventional Commits per pr.md
    (`feat: ...`, imperative, ≤72 chars).
 4. **Merge to `develop`:**
@@ -24,12 +30,11 @@ Run this loop IN ORDER — never skip a step, never reorder:
    - Solo flow note: the step-2 adversarial review IS the required review
      (pr.md's "never merge without review" is satisfied by it). Teams that
      require human PR review use a PR to develop instead of a direct merge.
-5. **Propose the next task:** suggest it with one line of reasoning (from
-   task_plan.md, the roadmap, or open issues), and wait for the user's pick or
-   confirmation.
-6. **Start it cleanly:** create the branch `<type>/<short-description>`
-   (naming per pr.md) from `develop`, recommend a fresh session for the new
-   task, and continue there.
+5. **Propose the next task** and 6. **start it in a NEW session:** run `/next`
+   (`$next` in Codex) — it picks ONE task with its why, writes
+   `docs/handoff.md`, creates the branch from `develop` only on the user's yes,
+   and stops. Never continue the next task in the current session: carrying
+   finished work forward is the single biggest cost in audited projects.
 
 ## Multitask opportunities
 

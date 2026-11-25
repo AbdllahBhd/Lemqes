@@ -20,6 +20,22 @@
 - One logical change per commit. Don't mix a refactor with a feature.
 - Never use `--no-verify`, never amend or force-push unless explicitly asked.
 
+- Paths with spaces: quote every path in commands and scripts. Renames use
+  anchored patterns (`git mv "old dir/x" "new dir/x"`, `sed 's#^old/#new/#'`),
+  never a bare substring that also hits other paths.
+
+## Two machines, one branch
+
+When the same branch is worked from more than one machine:
+
+- At session start, compare `HEAD` with `origin/<branch>` before editing.
+- When diverged: create a backup branch, then `git merge`. Never rebase or
+  force-push — the other machine already has the old history.
+- Generated files (l10n output, lockfiles, codegen): never hand-merge —
+  resolve the sources and regenerate.
+- Append-only logs (status, changelog, checklists): on conflict keep both
+  sides, local entries first.
+
 ## Before Opening a PR
 
 1. Run the full test suite — all green.
